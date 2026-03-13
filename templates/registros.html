@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registros · Daily Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #dbeafe;
+            --primary-glow: rgba(37, 99, 235, .15);
+            --surface: #ffffff;
+            --surface-alt: #f8fafc;
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #94a3b8;
+            --radius: 14px;
+            --radius-sm: 8px;
+            --shadow: 0 1px 3px rgba(15, 23, 42, .08), 0 4px 16px rgba(15, 23, 42, .06);
+            --shadow-lg: 0 8px 32px rgba(15, 23, 42, .12);
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --success: #22c55e;
+            --success-light: #dcfce7;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #f1f5f9;
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* ── NAV ── */
+        nav {
+            background: #fff;
+            border-bottom: 1px solid var(--border);
+            padding: 0 28px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 56px;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            box-shadow: 0 1px 8px rgba(15, 23, 42, .05);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: .95rem;
+            color: var(--text-main);
+            text-decoration: none;
+            margin-right: 16px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 99px;
+            font-size: .82rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all .2s;
+            color: #64748b;
+        }
+
+        .nav-link:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .nav-link.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        /* ── PAGE ── */
+        .page {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 32px 28px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .page-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .page-sub {
+            font-size: .85rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ── FILTER BAR ── */
+        .filter-bar {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 22px;
+            display: flex;
+            align-items: flex-end;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-label {
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            color: var(--text-muted);
+        }
+
+        .filter-item select,
+        .filter-item input[type="date"] {
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface-alt);
+            padding: 8px 12px;
+            font-size: .85rem;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-main);
+            outline: none;
+            min-width: 160px;
+            transition: border-color .2s;
+        }
+
+        .filter-item input[type="date"] {
+            min-width: 140px;
+        }
+
+        .filter-item select:focus,
+        .filter-item input:focus {
+            border-color: var(--primary);
+        }
+
+        /* Tom Select overrides */
+        .filter-item .ts-wrapper {
+            min-width: 180px;
+        }
+
+        .filter-item .ts-control {
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--radius-sm) !important;
+            background: var(--surface-alt) !important;
+            box-shadow: none !important;
+            padding: 7px 12px !important;
+            font-size: .85rem !important;
+            font-family: 'DM Sans', sans-serif !important;
+            min-height: 38px !important;
+        }
+
+        .filter-item .ts-wrapper.focus .ts-control {
+            border-color: var(--primary) !important;
+        }
+
+        .btn-filter {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 9px 20px;
+            font-size: .85rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all .2s;
+            white-space: nowrap;
+        }
+
+        .btn-filter:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .btn-clear {
+            background: var(--surface);
+            color: var(--text-secondary);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 8px 16px;
+            font-size: .85rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all .2s;
+        }
+
+        .btn-clear:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        /* ── STATS STRIP ── */
+        .stats-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-label {
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            color: var(--text-muted);
+        }
+
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-top: 4px;
+            font-family: 'DM Mono', monospace;
+        }
+
+        .stat-sub {
+            font-size: .75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ── TABLE ── */
+        .table-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .table-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .table-head-title {
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .table-count {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-size: .72rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 99px;
+        }
+
+        .btn-export {
+            background: var(--surface-alt);
+            color: var(--text-secondary);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 6px 14px;
+            font-size: .78rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all .2s;
+        }
+
+        .btn-export:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead tr {
+            background: var(--surface-alt);
+            border-bottom: 2px solid var(--border);
+        }
+
+        th {
+            padding: 11px 16px;
+            font-size: .67rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            color: var(--text-muted);
+            text-align: left;
+        }
+
+        th:first-child {
+            padding-left: 22px;
+        }
+
+        th:last-child {
+            padding-right: 22px;
+            text-align: center;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background .15s;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        td {
+            padding: 13px 16px;
+            font-size: .84rem;
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+
+        td:first-child {
+            padding-left: 22px;
+        }
+
+        td:last-child {
+            padding-right: 22px;
+            text-align: center;
+        }
+
+        .td-fecha {
+            font-family: 'DM Mono', monospace;
+            font-size: .78rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .td-usuario {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .7rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .td-proyecto {
+            font-size: .78rem;
+            color: var(--text-secondary);
+        }
+
+        .td-actividad {
+            font-size: .8rem;
+            color: var(--text-secondary);
+            max-width: 200px;
+        }
+
+        .td-accion {
+            max-width: 240px;
+        }
+
+        .td-accion-main {
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .td-accion-sub {
+            font-size: .73rem;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-top: 2px;
+        }
+
+        .badge-tipo {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-size: .68rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+
+        .badge-horas {
+            background: var(--surface-alt);
+            color: var(--text-main);
+            font-family: 'DM Mono', monospace;
+            font-size: .82rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 8px;
+            border: 1.5px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-action {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1.5px solid var(--border);
+            background: var(--surface);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .8rem;
+            color: var(--text-muted);
+            transition: all .2s;
+        }
+
+        .btn-action.edit:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .btn-action.del:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: var(--danger-light);
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 64px 32px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            font-size: .9rem;
+        }
+
+        /* ── MODAL ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, .45);
+            backdrop-filter: blur(4px);
+            z-index: 900;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 560px;
+            margin: 20px;
+            animation: slideUp .22s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px 0;
+        }
+
+        .modal-title {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1.5px solid var(--border);
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .85rem;
+            color: var(--text-muted);
+            transition: all .2s;
+        }
+
+        .modal-close:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .modal-body {
+            padding: 20px 24px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 0 24px 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .form-grid .full {
+            grid-column: 1 / -1;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            color: var(--text-muted);
+        }
+
+        .form-input {
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface-alt);
+            padding: 9px 12px;
+            font-size: .875rem;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-main);
+            outline: none;
+            width: 100%;
+            transition: border-color .2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            background: #fff;
+        }
+
+        textarea.form-input {
+            resize: vertical;
+            min-height: 72px;
+        }
+
+        /* Tom Select in modal */
+        .modal .ts-control {
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--radius-sm) !important;
+            background: var(--surface-alt) !important;
+            box-shadow: none !important;
+            padding: 8px 12px !important;
+            font-size: .875rem !important;
+            font-family: 'DM Sans', sans-serif !important;
+            min-height: 40px !important;
+        }
+
+        .modal .ts-wrapper.focus .ts-control {
+            border-color: var(--primary) !important;
+        }
+
+        .btn-save {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 10px 22px;
+            font-size: .875rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .btn-save:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-cancel {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 9px 18px;
+            font-size: .875rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .btn-cancel:hover {
+            border-color: #94a3b8;
+        }
+
+        /* Daily limit warning */
+        .limit-warn {
+            background: var(--warning-light);
+            border: 1px solid #fcd34d;
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            font-size: .78rem;
+            color: #92400e;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .limit-warn.show {
+            display: flex;
+        }
+
+        /* ── CORRECCIÓN TOM SELECT EN MODALES ── */
+        .ts-dropdown,
+        .ts-dropdown.single {
+            z-index: 9999 !important;
+            background-color: #ffffff !important;
+            /* Fondo sólido para tapar los botones */
+            border: 1px solid var(--border) !important;
+            border-radius: var(--radius-sm) !important;
+            box-shadow: var(--shadow-lg) !important;
+        }
+
+        /* Opcional: Mejorar el aspecto visual de las opciones al pasar el mouse */
+        .ts-dropdown .option:hover,
+        .ts-dropdown .option.active {
+            background-color: var(--primary-light) !important;
+            color: var(--primary) !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAV -->
+    <nav
+        style="background:#fff;border-bottom:1px solid #e8edf5;padding:0 28px;display:flex;align-items:center;gap:8px;height:56px;position:sticky;top:0;z-index:200;box-shadow:0 1px 8px rgba(15,23,42,.05);">
+        <a href="/"
+            style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:.95rem;color:#1e293b;text-decoration:none;margin-right:16px;font-family:'DM Sans',sans-serif;">
+            <i class="bi bi-layers-half" style="color:#2563eb;font-size:1.2rem;"></i>Dream Team Daily Tracker
+        </a>
+        <a href="/"
+            style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;font-size:.82rem;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;transition:all .2s;color:#64748b;"
+            onmouseover="this.style.background='#dbeafe';this.style.color='#2563eb'"
+            onmouseout="this.style.background='transparent';this.style.color='#64748b'">
+            <i class="bi bi-house"></i>Inicio
+        </a>
+        <a href="/actividades"
+            style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;font-size:.82rem;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;transition:all .2s;color:#64748b;"
+            onmouseover="this.style.background='#dbeafe';this.style.color='#2563eb'"
+            onmouseout="this.style.background='transparent';this.style.color='#64748b'">
+            <i class="bi bi-kanban"></i>Actividades
+        </a>
+        <a href="/registros"
+            style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;font-size:.82rem;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;transition:all .2s;background:#2563eb;color:#fff;">
+            <i class="bi bi-clock-history"></i>Registros
+        </a>
+        <a href="/catalogos"
+            style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;font-size:.82rem;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;transition:all .2s;color:#64748b;"
+            onmouseover="this.style.background='#dbeafe';this.style.color='#2563eb'"
+            onmouseout="this.style.background='transparent';this.style.color='#64748b'">
+            <i class="bi bi-sliders"></i>Catálogos
+        </a>
+    </nav>
+
+    <!-- PAGE -->
+    <div class="page">
+
+        <!-- Header -->
+        <div class="page-header">
+            <div>
+                <div class="page-title">Registros de horas</div>
+                <div class="page-sub">Consulta, edita y elimina registros de todos los desarrolladores</div>
+            </div>
+        </div>
+
+        <!-- Filter bar -->
+        <form method="GET" action="/registros">
+            <div class="filter-bar">
+                <div class="filter-item">
+                    <span class="filter-label">Desarrollador</span>
+                    <select name="user_id" id="f-user">
+                        <option value="">Todos</option>
+                        {% for u in users %}
+                        <option value="{{ u.ID }}" {% if filtros.user_id==u.ID %}selected{% endif %}>{{
+                            u.NOMBRE_COMPLETO }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">Proyecto</span>
+                    <select name="proyecto_id" id="f-proyecto">
+                        <option value="">Todos</option>
+                        {% for p in projects %}
+                        <option value="{{ p.ID }}" {% if filtros.proyecto_id==p.ID %}selected{% endif %}>{{
+                            p.NOMBRE_PROYECTO }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">Desde</span>
+                    <input type="date" name="fecha_ini" id="f-fecha-ini" value="{{ filtros.fecha_ini or '' }}">
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">Hasta</span>
+                    <input type="date" name="fecha_fin" id="f-fecha-fin" value="{{ filtros.fecha_fin or '' }}">
+                </div>
+                <button type="submit" class="btn-filter">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+                <a href="/registros" class="btn-clear">
+                    <i class="bi bi-x"></i> Limpiar
+                </a>
+            </div>
+        </form>
+
+        <!-- Stats strip -->
+        {% set total_horas = registros | sum(attribute='HORAS') %}
+        {% set num_registros = registros | length %}
+        {% set usuarios_uniq = registros | map(attribute='USUARIO') | unique | list %}
+        <div class="stats-strip">
+            <div class="stat-card">
+                <div class="stat-label">Total registros</div>
+                <div class="stat-value">{{ num_registros }}</div>
+                <div class="stat-sub">en el período</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Horas totales</div>
+                <div class="stat-value">{{ total_horas | round(1) }}h</div>
+                <div class="stat-sub">acumuladas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Desarrolladores</div>
+                <div class="stat-value">{{ usuarios_uniq | length }}</div>
+                <div class="stat-sub">con registros</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Promedio por registro</div>
+                <div class="stat-value">{{ ((total_horas / num_registros) if num_registros > 0 else 0) | round(1) }}h
+                </div>
+                <div class="stat-sub">horas promedio</div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-card">
+            <div class="table-head">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span class="table-head-title">Registros</span>
+                    <span class="table-count">{{ registros | length }}</span>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <!-- <button class="btn-export" onclick="exportCSV()">
+                        <i class="bi bi-filetype-csv"></i> CSV
+                    </button> -->
+                    <button class="btn-export" onclick="document.getElementById('modal-reporte').classList.add('open')"
+                        style="background:var(--primary);color:#fff;border-color:var(--primary);">
+                        <i class="bi bi-file-earmark-excel"></i> Reporte Excel
+                    </button>
+                </div>
+            </div>
+
+            {% if registros %}
+            <table id="tbl-registros">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Desarrollador</th>
+                        <th>Proyecto</th>
+                        <th>Actividad</th>
+                        <th>Tipo</th>
+                        <th>Acción / Detalles</th>
+                        <th style="text-align:right;">Horas</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in registros %}
+                    <tr id="row-{{ r.ID }}">
+                        <td class="td-fecha">{{ r.FECHA }}</td>
+                        <td>
+                            <div class="td-usuario">
+                                <div class="avatar">{{ r.USUARIO[0] }}</div>
+                                <span style="font-weight:600;font-size:.83rem;">{{ r.USUARIO }}</span>
+                            </div>
+                        </td>
+                        <td class="td-proyecto">{{ r.NOMBRE_PROYECTO }}</td>
+                        <td class="td-actividad">
+                            {% if r.NOMBRE_ACTIVIDAD %}
+                            <span title="{{ r.NOMBRE_ACTIVIDAD }}"
+                                style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:180px;">
+                                {{ r.NOMBRE_ACTIVIDAD }}
+                            </span>
+                            {% else %}
+                            <span style="color:var(--text-muted);">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r.TIPO %}
+                            <span class="badge-tipo">{{ r.TIPO }}</span>
+                            {% else %}
+                            <span style="color:var(--text-muted);font-size:.8rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="td-accion">
+                            <div class="td-accion-main" title="{{ r.ACCION }}">{{ r.ACCION }}</div>
+                            {% if r.DETALLES %}
+                            <div class="td-accion-sub" title="{{ r.DETALLES }}">{{ r.DETALLES }}</div>
+                            {% endif %}
+                        </td>
+                        <td style="text-align:right;">
+                            <span class="badge-horas">{{ r.HORAS }}h</span>
+                        </td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn-action edit" title="Editar"
+                                    onclick="abrirEditar('{{ r.ID }}','{{ r.FECHA }}','{{ r.HORAS }}','{{ r.ACCION | replace("'","\\'")|replace('"','
+                                    &quot;') }}','{{ r.DETALLES or '' | replace("'","\\'") }}','{{ r.ID_USUARIO }}','{{
+                                    r.ID_PROYECTO }}','{{ r.ID_ACTIVIDAD or "" }}','{{ r.ID_TIPO_ACT or "" }}')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn-action del" title="Eliminar"
+                                    onclick="eliminarRegistro('{{ r.ID }}','{{ r.ACCION | replace("'","\\'") }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <i class="bi bi-clock-history"></i>
+                <p>No hay registros con los filtros seleccionados.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- EDIT MODAL -->
+    <div class="modal-overlay" id="modal-edit">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title"><i class="bi bi-pencil me-2" style="color:var(--primary);"></i>Editar
+                    registro</span>
+                <button class="modal-close" onclick="cerrarModal()"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Fecha</label>
+                        <input type="date" class="form-input" id="edit-fecha">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Horas</label>
+                        <input type="number" class="form-input" id="edit-horas" step="0.5" min="0.5" max="8">
+                        <div class="limit-warn" id="warn-horas">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <span id="warn-text"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Desarrollador</label>
+                        <select id="edit-usuario">
+                            {% for u in users %}
+                            <option value="{{ u.ID }}">{{ u.NOMBRE_COMPLETO }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Proyecto</label>
+                        <select id="edit-proyecto">
+                            {% for p in projects %}
+                            <option value="{{ p.ID }}">{{ p.NOMBRE_PROYECTO }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group full">
+                        <label class="form-label">Actividad <span
+                                style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);">(opcional)</span></label>
+                        <select id="edit-actividad">
+                            <option value="">Sin actividad</option>
+                        </select>
+                    </div>
+                    <div class="form-group full">
+                        <label class="form-label">Tipo</label>
+                        <select id="edit-tipo">
+                            <option value="">Sin tipo</option>
+                            {% for t in tipos_actividad %}
+                            <option value="{{ t.ID }}">{{ t.DESCRIPCION }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group full">
+                        <label class="form-label">Acción</label>
+                        <input type="text" class="form-input" id="edit-accion" placeholder="Descripción de la acción">
+                    </div>
+                    <div class="form-group full">
+                        <label class="form-label">Detalles técnicos <span
+                                style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);">(opcional)</span></label>
+                        <textarea class="form-input" id="edit-detalles"
+                            placeholder="Detalles adicionales..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+                <button class="btn-save" onclick="guardarEdicion()">
+                    <i class="bi bi-check2"></i> Guardar cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL REPORTE EXCEL -->
+    <div class="modal-overlay" id="modal-reporte">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">
+                    <i class="bi bi-file-earmark-excel me-2" style="color:#16a34a;"></i>
+                    Exportar Reporte Excel
+                </span>
+                <button class="modal-close" onclick="document.getElementById('modal-reporte').classList.remove('open')">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:16px;">
+                    Selecciona el proyecto para generar el reporte. Se descargará un Excel con una fila por actividad,
+                    incluyendo responsables, recursos, horas y evidencias.
+                </p>
+                <div class="form-group">
+                    <label class="form-label">Proyecto</label>
+                    <select id="sel-reporte-proyecto" class="form-input">
+                        <option value="">Selecciona un proyecto...</option>
+                        {% for p in projects %}
+                        <option value="{{ p.ID }}">{{ p.NOMBRE_PROYECTO }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="document.getElementById('modal-reporte').classList.remove('open')">
+                    Cancelar
+                </button>
+                <button class="btn-save" onclick="descargarReporte()" style="background:#16a34a;">
+                    <i class="bi bi-file-earmark-excel"></i> Descargar Excel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+    <script>
+        // ── Tom Select filtros ─────────────────────────────────────────────────
+        const fUserTs = new TomSelect('#f-user', {
+            create: false,
+            render: {
+                option: (d, e) => `<div class="option">${e(d.text)}</div>`,
+                item: (d, e) => `<div class="item">${e(d.text)}</div>`,
+            }
+        });
+        const fProyTs = new TomSelect('#f-proyecto', {
+            create: false,
+            render: {
+                option: (d, e) => `<div class="option">${e(d.text)}</div>`,
+                item: (d, e) => `<div class="item">${e(d.text)}</div>`,
+            }
+        });
+
+        // ── Tom Select modal ───────────────────────────────────────────────────
+        const editUsuarioTs = new TomSelect('#edit-usuario', { create: false });
+        const editProyectoTs = new TomSelect('#edit-proyecto', {
+            create: false,
+            onChange: val => cargarActividades(val)
+        });
+        const editActividadTs = new TomSelect('#edit-actividad', { create: false });
+        const editTipoTs = new TomSelect('#edit-tipo', { create: false });
+        new TomSelect('#sel-reporte-proyecto', {
+            create: false,
+            dropdownParent: 'body',
+            render: {
+                option: (d, e) => `<div class="option">${e(d.text)}</div>`,
+                item: (d, e) => `<div class="item">${e(d.text)}</div>`,
+            }
+        });
+
+        // ── Cargar actividades por proyecto ───────────────────────────────────
+        async function cargarActividades(proyectoId, seleccionada = '') {
+            editActividadTs.clear();
+            editActividadTs.clearOptions();
+            editActividadTs.addOption({ value: '', text: 'Sin actividad' });
+
+            if (!proyectoId) { editActividadTs.refreshOptions(false); return; }
+            try {
+                const r = await fetch(`/api/actividades_proyecto?proyecto=${proyectoId}`);
+                const data = await r.json();
+                data.forEach(a => editActividadTs.addOption({ value: a.id, text: a.nombre }));
+                editActividadTs.refreshOptions(false);
+                if (seleccionada) editActividadTs.setValue(seleccionada);
+            } catch (e) { console.error(e); }
+        }
+
+        // ── Validar límite diario al editar ───────────────────────────────────
+        let editOriginalHoras = 0;
+        let editOriginalFecha = '';
+        let editOriginalUsuario = '';
+
+        async function validarLimiteDiario() {
+            const fecha = document.getElementById('edit-fecha').value;
+            const usuario = editUsuarioTs.getValue();
+            const horas = parseFloat(document.getElementById('edit-horas').value) || 0;
+            const warn = document.getElementById('warn-horas');
+            const warnTxt = document.getElementById('warn-text');
+
+            if (!fecha || !usuario) return true;
+
+            try {
+                const r = await fetch(`/api/daily_hours?user=${usuario}&date=${fecha}`);
+                const d = await r.json();
+                let ocupadas = parseFloat(d.total) || 0;
+
+                // Si es el mismo usuario y misma fecha del registro original, restar las horas originales
+                if (usuario === editOriginalUsuario && fecha === editOriginalFecha) {
+                    ocupadas -= editOriginalHoras;
+                }
+
+                const disponibles = 8 - ocupadas;
+                if (horas > disponibles) {
+                    warnTxt.textContent = `Solo quedan ${disponibles.toFixed(1)}h disponibles ese día para este usuario.`;
+                    warn.classList.add('show');
+                    return false;
+                } else {
+                    warn.classList.remove('show');
+                    return true;
+                }
+            } catch (e) { return true; }
+        }
+
+        document.getElementById('edit-horas').addEventListener('input', validarLimiteDiario);
+        document.getElementById('edit-fecha').addEventListener('change', validarLimiteDiario);
+
+        // ── Abrir modal de edición ─────────────────────────────────────────────
+        async function abrirEditar(id, fecha, horas, accion, detalles, userId, proyId, actId, tipoId) {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-fecha').value = fecha;
+            document.getElementById('edit-horas').value = horas;
+            document.getElementById('edit-accion').value = accion;
+            document.getElementById('edit-detalles').value = detalles;
+            document.getElementById('warn-horas').classList.remove('show');
+
+            editOriginalHoras = parseFloat(horas);
+            editOriginalFecha = fecha;
+            editOriginalUsuario = userId;
+
+            editUsuarioTs.setValue(userId);
+            editProyectoTs.setValue(proyId);
+            await cargarActividades(proyId, actId);
+            editTipoTs.setValue(tipoId);
+
+            document.getElementById('modal-edit').classList.add('open');
+        }
+
+        function cerrarModal() {
+            document.getElementById('modal-edit').classList.remove('open');
+        }
+
+        // Cerrar al hacer clic fuera
+        document.getElementById('modal-edit').addEventListener('click', function (e) {
+            if (e.target === this) cerrarModal();
+        });
+        document.getElementById('modal-reporte').addEventListener('click', function (e) {
+            if (e.target === this) this.classList.remove('open');
+        });
+
+        // ── Guardar edición ───────────────────────────────────────────────────
+        async function guardarEdicion() {
+            const valido = await validarLimiteDiario();
+            if (!valido) {
+                Swal.fire({
+                    icon: 'warning', title: 'Límite diario excedido',
+                    text: 'Ajusta las horas antes de guardar.', confirmButtonColor: '#2563eb'
+                });
+                return;
+            }
+
+            const id = document.getElementById('edit-id').value;
+            const payload = {
+                fecha: document.getElementById('edit-fecha').value,
+                horas: document.getElementById('edit-horas').value,
+                accion: document.getElementById('edit-accion').value,
+                detalles: document.getElementById('edit-detalles').value,
+                id_actividad: editActividadTs.getValue(),
+                id_tipo_act: editTipoTs.getValue(),
+            };
+
+            if (!payload.fecha || !payload.horas || !payload.accion.trim()) {
+                Swal.fire({
+                    icon: 'warning', title: 'Campos requeridos',
+                    text: 'Fecha, horas y acción son obligatorios.', confirmButtonColor: '#2563eb'
+                });
+                return;
+            }
+
+            Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const r = await fetch(`/registros/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const res = await r.json();
+                if (res.status === 'success') {
+                    Swal.fire({ icon: 'success', title: 'Guardado', timer: 1200, showConfirmButton: false })
+                        .then(() => location.reload());
+                } else throw new Error(res.message);
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+            }
+        }
+
+        // ── Eliminar registro ─────────────────────────────────────────────────
+        async function eliminarRegistro(id, accion) {
+            const conf = await Swal.fire({
+                title: '¿Eliminar registro?',
+                html: `<span style="font-weight:600;">${accion}</span><br><span style="font-size:.85rem;color:#64748b;">Esta acción no se puede deshacer.</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            });
+            if (!conf.isConfirmed) return;
+
+            Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const r = await fetch(`/registros/${id}`, { method: 'DELETE' });
+                const res = await r.json();
+                if (res.status === 'success') {
+                    Swal.fire({ icon: 'success', title: 'Eliminado', timer: 1200, showConfirmButton: false })
+                        .then(() => {
+                            document.getElementById('row-' + id)?.remove();
+                            // Recargar para actualizar stats
+                            location.reload();
+                        });
+                } else throw new Error(res.message);
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+            }
+        }
+
+        // ── Descargar Reporte Excel ───────────────────────────────────────────
+        function descargarReporte() {
+            const proyId = document.getElementById('sel-reporte-proyecto').value;
+            if (!proyId) {
+                Swal.fire({
+                    icon: 'warning', title: 'Selecciona un proyecto',
+                    confirmButtonColor: '#2563eb'
+                });
+                return;
+            }
+            Swal.fire({
+                title: 'Generando Excel...', text: 'Un momento por favor.',
+                allowOutsideClick: false, didOpen: () => Swal.showLoading()
+            });
+            // Descarga directa via link
+            const a = document.createElement('a');
+            a.href = `/reporte/excel/${proyId}`;
+            a.click();
+            setTimeout(() => Swal.close(), 1500);
+            document.getElementById('modal-reporte').classList.remove('open');
+        }
+
+        // ── Export CSV ────────────────────────────────────────────────────────
+        function exportCSV() {
+            const table = document.getElementById('tbl-registros');
+            if (!table) return;
+            const rows = [...table.querySelectorAll('tr')];
+            const csv = rows.map(row => {
+                const cells = [...row.querySelectorAll('th, td')];
+                // Skip last column (actions)
+                return cells.slice(0, cells.length - 1)
+                    .map(c => `"${c.innerText.replace(/"/g, '""').replace(/\n/g, ' ')}"`)
+                    .join(',');
+            }).join('\n');
+
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'registros.csv'; a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+
+</html>

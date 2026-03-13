@@ -1,0 +1,12 @@
+---
+applications:
+  - name: dream-team-daily-tracker
+    memory: 512M
+    instances: 1
+    buildpack: https://github.com/cloudfoundry/python-buildpack.git#v1.8.4
+    command: gunicorn -w 2 --threads 2 app:app --bind 0.0.0.0:$PORT --timeout 120
+    health-check-type: http
+    health-check-http-endpoint: /health
+    env:
+      FLASK_ENV: production
+      PYTHONUNBUFFERED: "true"
