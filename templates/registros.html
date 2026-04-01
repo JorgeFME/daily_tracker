@@ -129,22 +129,51 @@
 
         /* ── FILTER BAR ── */
         .filter-bar {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 18px 22px;
-            display: flex;
-            align-items: flex-end;
-            gap: 16px;
-            flex-wrap: wrap;
             margin-bottom: 24px;
-            box-shadow: var(--shadow);
+        }
+
+        .filters-panel {
+            background: linear-gradient(180deg, rgba(248, 250, 253, .96), rgba(241, 245, 249, .94));
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), var(--shadow);
+            backdrop-filter: blur(6px);
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 14px;
+            align-items: end;
         }
 
         .filter-item {
+            grid-column: span 3;
             display: flex;
             flex-direction: column;
             gap: 6px;
+            min-width: 0;
+        }
+
+        .filter-item-dates {
+            grid-column: span 3;
+        }
+
+        .filter-date-range {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .filter-actions {
+            grid-column: span 12;
+            display: flex;
+            align-items: end;
+            justify-content: flex-end;
+            gap: 10px;
+            min-height: 100%;
+            flex-wrap: wrap;
         }
 
         .filter-label {
@@ -159,18 +188,20 @@
         .filter-item input[type="date"] {
             border: 1.5px solid var(--border);
             border-radius: var(--radius-sm);
-            background: var(--surface-alt);
+            background: var(--surface);
             padding: 8px 12px;
             font-size: .85rem;
             font-family: 'DM Sans', sans-serif;
             color: var(--text-main);
             outline: none;
-            min-width: 160px;
+            min-width: 0;
+            width: 100%;
             transition: border-color .2s;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
         }
 
         .filter-item input[type="date"] {
-            min-width: 140px;
+            min-width: 0;
         }
 
         .filter-item select:focus,
@@ -180,13 +211,14 @@
 
         /* Tom Select overrides */
         .filter-item .ts-wrapper {
-            min-width: 180px;
+            min-width: 0;
+            width: 100%;
         }
 
         .filter-item .ts-control {
             border: 1.5px solid var(--border) !important;
             border-radius: var(--radius-sm) !important;
-            background: var(--surface-alt) !important;
+            background: var(--surface) !important;
             box-shadow: none !important;
             padding: 7px 12px !important;
             font-size: .85rem !important;
@@ -198,47 +230,65 @@
             border-color: var(--primary) !important;
         }
 
-        .btn-filter {
-            background: var(--primary);
-            color: #fff;
-            border: none;
-            border-radius: var(--radius-sm);
-            padding: 9px 20px;
-            font-size: .85rem;
-            font-weight: 600;
-            font-family: 'DM Sans', sans-serif;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all .2s;
-            white-space: nowrap;
-        }
-
-        .btn-filter:hover {
-            background: #1d4ed8;
-            transform: translateY(-1px);
-        }
-
         .btn-clear {
-            background: var(--surface);
+            background: rgba(255, 255, 255, .72);
             color: var(--text-secondary);
-            border: 1.5px solid var(--border);
+            border: 1.5px dashed var(--border);
             border-radius: var(--radius-sm);
-            padding: 8px 16px;
+            padding: 9px 16px;
+            min-height: 40px;
             font-size: .85rem;
             font-weight: 600;
             font-family: 'DM Sans', sans-serif;
             cursor: pointer;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             transition: all .2s;
         }
 
         .btn-clear:hover {
             border-color: var(--danger);
+            background: #fff7f7;
             color: var(--danger);
+        }
+
+        @media (max-width: 1100px) {
+            .filter-item,
+            .filter-item-dates {
+                grid-column: span 6;
+            }
+
+            .filter-actions {
+                grid-column: span 12;
+                justify-content: stretch;
+            }
+
+            .btn-clear {
+                flex: 1 1 220px;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page {
+                padding: 24px 16px;
+            }
+
+            .filters-panel {
+                padding: 14px;
+            }
+
+            .filter-item,
+            .filter-item-dates,
+            .filter-actions {
+                grid-column: span 12;
+            }
+
+            .filter-date-range {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* ── STATS STRIP ── */
@@ -788,43 +838,56 @@
             </div>
         </div>
 
+        {% set has_filters = filtros.user_id or filtros.proyecto_id or filtros.tipo_id or filtros.fecha_ini or filtros.fecha_fin %}
+
         <!-- Filter bar -->
         <form method="GET" action="/registros">
             <div class="filter-bar">
-                <div class="filter-item">
-                    <span class="filter-label">Desarrollador</span>
-                    <select name="user_id" id="f-user">
-                        <option value="">Todos</option>
-                        {% for u in users %}
-                        <option value="{{ u.ID }}" {% if filtros.user_id==u.ID %}selected{% endif %}>{{
-                            u.NOMBRE_COMPLETO }}</option>
-                        {% endfor %}
-                    </select>
+                <div class="filters-panel">
+                    <div class="filters-grid">
+                        <div class="filter-item">
+                            <span class="filter-label">Desarrollador</span>
+                            <select name="user_id" id="f-user">
+                                <option value="">Todos</option>
+                                {% for u in users %}
+                                <option value="{{ u.ID }}" {% if filtros.user_id|string == u.ID|string %}selected{% endif %}>{{ u.NOMBRE_COMPLETO }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <span class="filter-label">Proyecto</span>
+                            <select name="proyecto_id" id="f-proyecto">
+                                <option value="">Todos</option>
+                                {% for p in projects %}
+                                <option value="{{ p.ID }}" {% if filtros.proyecto_id|string == p.ID|string %}selected{% endif %}>{{ p.NOMBRE_PROYECTO }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <span class="filter-label">Tipo</span>
+                            <select name="tipo_id" id="f-tipo">
+                                <option value="">Todos</option>
+                                {% for t in tipos_actividad %}
+                                <option value="{{ t.ID }}" {% if filtros.tipo_id|string == t.ID|string %}selected{% endif %}>{{ t.DESCRIPCION }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="filter-item filter-item-dates">
+                            <span class="filter-label">Rango de fechas</span>
+                            <div class="filter-date-range">
+                                <input type="date" name="fecha_ini" id="f-fecha-ini" value="{{ filtros.fecha_ini or '' }}">
+                                <input type="date" name="fecha_fin" id="f-fecha-fin" value="{{ filtros.fecha_fin or '' }}">
+                            </div>
+                        </div>
+                        {% if has_filters %}
+                        <div class="filter-actions">
+                            <a href="/registros" class="btn-clear">
+                                <i class="bi bi-x"></i> Limpiar filtros
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="filter-item">
-                    <span class="filter-label">Proyecto</span>
-                    <select name="proyecto_id" id="f-proyecto">
-                        <option value="">Todos</option>
-                        {% for p in projects %}
-                        <option value="{{ p.ID }}" {% if filtros.proyecto_id==p.ID %}selected{% endif %}>{{
-                            p.NOMBRE_PROYECTO }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-item">
-                    <span class="filter-label">Desde</span>
-                    <input type="date" name="fecha_ini" id="f-fecha-ini" value="{{ filtros.fecha_ini or '' }}">
-                </div>
-                <div class="filter-item">
-                    <span class="filter-label">Hasta</span>
-                    <input type="date" name="fecha_fin" id="f-fecha-fin" value="{{ filtros.fecha_fin or '' }}">
-                </div>
-                <button type="submit" class="btn-filter">
-                    <i class="bi bi-search"></i> Filtrar
-                </button>
-                <a href="/registros" class="btn-clear">
-                    <i class="bi bi-x"></i> Limpiar
-                </a>
             </div>
         </form>
 
@@ -1067,9 +1130,17 @@
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
     <script>
+        const filtrosForm = document.querySelector('form[action="/registros"]');
+
+        function submitFiltros() {
+            if (filtrosForm) filtrosForm.submit();
+        }
+
         // ── Tom Select filtros ─────────────────────────────────────────────────
         const fUserTs = new TomSelect('#f-user', {
             create: false,
+            items: {{ [filtros.user_id] | tojson if filtros.user_id else '[]' }},
+            onChange: () => submitFiltros(),
             render: {
                 option: (d, e) => `<div class="option">${e(d.text)}</div>`,
                 item: (d, e) => `<div class="item">${e(d.text)}</div>`,
@@ -1077,11 +1148,25 @@
         });
         const fProyTs = new TomSelect('#f-proyecto', {
             create: false,
+            items: {{ [filtros.proyecto_id] | tojson if filtros.proyecto_id else '[]' }},
+            onChange: () => submitFiltros(),
             render: {
                 option: (d, e) => `<div class="option">${e(d.text)}</div>`,
                 item: (d, e) => `<div class="item">${e(d.text)}</div>`,
             }
         });
+        const fTipoTs = new TomSelect('#f-tipo', {
+            create: false,
+            items: {{ [filtros.tipo_id] | tojson if filtros.tipo_id else '[]' }},
+            onChange: () => submitFiltros(),
+            render: {
+                option: (d, e) => `<div class="option">${e(d.text)}</div>`,
+                item: (d, e) => `<div class="item">${e(d.text)}</div>`,
+            }
+        });
+
+        document.getElementById('f-fecha-ini')?.addEventListener('change', submitFiltros);
+        document.getElementById('f-fecha-fin')?.addEventListener('change', submitFiltros);
 
         // ── Tom Select modal ───────────────────────────────────────────────────
         const editUsuarioTs = new TomSelect('#edit-usuario', { create: false });

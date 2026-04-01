@@ -660,6 +660,120 @@
             font-family: 'DM Mono', monospace;
         }
 
+        .badge-tipo {
+            background: #f5f3ff;
+            color: #7c3aed;
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .select-filter-tipo {
+            border: 1.5px solid var(--border);
+            border-radius: 99px;
+            background: white;
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            padding: 5px 12px;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+            max-width: 170px;
+        }
+
+        .select-filter-tipo:focus {
+            border-color: var(--primary);
+        }
+
+        .records-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .records-toolbar-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            min-width: 0;
+        }
+
+        .records-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 30px;
+            height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: var(--primary);
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .records-toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .btn-clear-soft {
+            padding: 7px 12px;
+            border-radius: 99px;
+            border: 1.5px dashed var(--border);
+            background: rgba(255,255,255,.8);
+            color: var(--text-secondary);
+            font-size: 0.74rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-clear-soft:hover {
+            border-color: #fecaca;
+            background: #fff7f7;
+            color: var(--danger);
+        }
+
+        .btn-clear-soft.hidden {
+            display: none;
+        }
+
+        .records-filter-state {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(248,250,253,.95), rgba(255,255,255,.9));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .records-filter-text {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        .records-filter-text strong {
+            color: var(--text-main);
+        }
+
         .btn-export {
             padding: 7px 14px;
             border-radius: 99px;
@@ -1065,6 +1179,19 @@
                 padding: 10px 10px;
             }
 
+            .records-toolbar-actions {
+                width: 100%;
+                justify-content: stretch;
+            }
+
+            .select-filter-tipo,
+            .btn-clear-soft,
+            .btn-export {
+                flex: 1 1 180px;
+                max-width: none;
+                justify-content: center;
+            }
+
             /* Nav brand: hide text on small screens */
             .nav-brand-text {
                 display: none;
@@ -1362,13 +1489,29 @@
                 <!-- Recent Records -->
                 <div class="card-panel">
                     <div class="panel-head">
-                        <span class="panel-head-title">
-                            <i class="bi bi-clock-history"></i>
-                            <span id="records-title">Registros Recientes — Global</span>
-                        </span>
-                        <button class="btn-export" id="btn-export">
-                            <i class="bi bi-download"></i> Exportar
-                        </button>
+                        <div class="records-toolbar">
+                            <div class="records-toolbar-info">
+                                <span class="panel-head-title">
+                                    <i class="bi bi-clock-history"></i>
+                                    <span id="records-title">Registros Recientes — Global</span>
+                                </span>
+                                <span class="records-count" id="records-count">0</span>
+                            </div>
+                            <div class="records-toolbar-actions">
+                                <select id="filtro-tipo-act" class="select-filter-tipo" title="Filtrar por tipo de actividad">
+                                    <option value="">Todos los tipos</option>
+                                </select>
+                                <button type="button" class="btn-clear-soft hidden" id="btn-clear-tipo">
+                                    <i class="bi bi-x-circle"></i> Limpiar filtro
+                                </button>
+                                <button class="btn-export" id="btn-export">
+                                    <i class="bi bi-download"></i> Exportar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="records-filter-state" id="records-filter-state">
+                        <span class="records-filter-text" id="records-filter-text">Mostrando <strong>todos los tipos</strong> del período actual.</span>
                     </div>
                     <div class="table-wrap">
                         <table class="records-table">
@@ -1377,13 +1520,14 @@
                                     <th>Fecha</th>
                                     <th id="th-usuario">Desarrollador</th>
                                     <th>Proyecto</th>
+                                    <th id="th-tipo">Tipo</th>
                                     <th>Acción</th>
                                     <th style="text-align:center;">Hrs</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-recientes">
                                 <tr>
-                                    <td colspan="5">
+                                    <td colspan="6">
                                         <div class="empty-state">
                                             <i class="bi bi-bar-chart-line"></i>
                                             <p>Cargando datos globales...</p>
@@ -1722,6 +1866,13 @@
         let currentPeriod = 'day';
         let periodOffset = 0;
         let dashboardRecords = [];
+        let lastDashboardMode = 'global';
+        let activeTipoFilter = '';
+
+        const recordsCountEl = document.getElementById('records-count');
+        const recordsFilterTextEl = document.getElementById('records-filter-text');
+        const clearTipoBtn = document.getElementById('btn-clear-tipo');
+        const exportBtn = document.getElementById('btn-export');
 
         const MESES_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
             'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -1792,6 +1943,17 @@
             if (periodOffset < 0) { periodOffset++; syncNavUI(); updateDashboard(); }
         });
 
+        document.getElementById('filtro-tipo-act').addEventListener('change', function () {
+            activeTipoFilter = this.value;
+            renderTable(dashboardRecords, lastDashboardMode);
+        });
+
+        clearTipoBtn.addEventListener('click', () => {
+            activeTipoFilter = '';
+            document.getElementById('filtro-tipo-act').value = '';
+            renderTable(dashboardRecords, lastDashboardMode);
+        });
+
         async function updateDashboard() {
             const uid = userSelect.getValue() || null;
             const refDate = toYMD(computeRefDate());
@@ -1806,11 +1968,12 @@
                 const r = await fetch(`/api/dashboard_data?${params}`);
                 const d = await r.json();
                 dashboardRecords = d.records || [];
+                lastDashboardMode = d.mode;
 
                 updateDashboardHeader(d.mode, uid);
                 renderChart(d.chart);
                 renderKPIs(d.chart, d.mode, parseFloat(d.ausencia_horas) || 0);
-                renderTable(d.records, d.mode);
+                renderTable(dashboardRecords, d.mode);
             } catch (e) {
                 console.error('Dashboard error:', e);
             } finally {
@@ -1981,18 +2144,52 @@
             const tbody = document.getElementById('tabla-recientes');
             const showUser = mode === 'global';
 
-            if (!records || records.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="bi bi-inbox"></i><p>Sin registros para este período</p></div></td></tr>`;
+            // Update the tipo filter dropdown with unique types from the full records set
+            const tipoSelect = document.getElementById('filtro-tipo-act');
+            const tiposDisponibles = [...new Set((records || []).map(r => r.tipo).filter(t => t && t !== '—'))].sort();
+            const currentFilter = activeTipoFilter || tipoSelect.value;
+            tipoSelect.innerHTML = '<option value="">Todos los tipos</option>' +
+                tiposDisponibles.map(t => `<option value="${t}"${t === currentFilter ? ' selected' : ''}>${t}</option>`).join('');
+
+            if (activeTipoFilter && !tiposDisponibles.includes(activeTipoFilter)) {
+                activeTipoFilter = '';
+                tipoSelect.value = '';
+            }
+
+            // Apply client-side tipo filter
+            const filtered = activeTipoFilter
+                ? (records || []).filter(r => r.tipo === activeTipoFilter)
+                : (records || []);
+
+            if (recordsCountEl) recordsCountEl.textContent = String(filtered.length);
+            if (recordsFilterTextEl) {
+                recordsFilterTextEl.innerHTML = activeTipoFilter
+                    ? `Mostrando <strong>${activeTipoFilter}</strong> del período actual.`
+                    : 'Mostrando <strong>todos los tipos</strong> del período actual.';
+            }
+            clearTipoBtn.classList.toggle('hidden', !activeTipoFilter);
+            exportBtn.disabled = filtered.length === 0;
+            exportBtn.style.opacity = filtered.length === 0 ? '0.5' : '1';
+            exportBtn.style.cursor = filtered.length === 0 ? 'not-allowed' : 'pointer';
+
+            const colSpan = 6;
+
+            if (!filtered || filtered.length === 0) {
+                const emptyMsg = activeTipoFilter
+                    ? `No hay registros del tipo ${activeTipoFilter} en este período`
+                    : 'Sin registros para este período';
+                tbody.innerHTML = `<tr><td colspan="${colSpan}"><div class="empty-state"><i class="bi bi-inbox"></i><p>${emptyMsg}</p></div></td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = records.map(r => `
+            tbody.innerHTML = filtered.map(r => `
                 <tr>
                     <td style="white-space:nowrap; color:var(--text-secondary); font-family:'DM Mono',monospace; font-size:0.78rem;">${formatDate(r.fecha)}</td>
                     <td style="${showUser ? '' : 'display:none'}">
                         <span style="font-size:0.8rem; color:var(--text-secondary);">${r.usuario || '—'}</span>
                     </td>
                     <td><span class="badge-project">${r.proyecto}</span></td>
+                    <td><span class="badge-tipo">${r.tipo || '—'}</span></td>
                     <td class="accion-cell" title="${r.accion}">${r.accion}</td>
                     <td style="text-align:center;"><span class="badge-hrs">${parseFloat(r.horas).toFixed(1)}h</span></td>
                 </tr>
@@ -2007,11 +2204,15 @@
 
         // Export CSV
         document.getElementById('btn-export').addEventListener('click', () => {
-            if (!dashboardRecords.length) return;
+            const recordsToExport = activeTipoFilter
+                ? dashboardRecords.filter(r => r.tipo === activeTipoFilter)
+                : dashboardRecords;
+
+            if (!recordsToExport.length) return;
             const uid = userSelect.getValue() || null;
             const showUser = !uid;
             const headers = ['Fecha', showUser ? 'Desarrollador' : null, 'Proyecto', 'Tipo', 'Acción', 'Horas'].filter(Boolean).join(',');
-            const rows = dashboardRecords.map(r =>
+            const rows = recordsToExport.map(r =>
                 [r.fecha, showUser ? `"${r.usuario}"` : null, `"${r.proyecto}"`, `"${r.tipo}"`, `"${r.accion}"`, r.horas].filter(v => v !== null).join(',')
             );
             const csv = [headers, ...rows].join('\n');

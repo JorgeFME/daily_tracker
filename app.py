@@ -51,6 +51,7 @@ from db import (
     obtener_recursos_actividad,
     guardar_recursos_actividad,
     reasignar_registros_proyecto,
+    contar_actividades,
 )
 
 load_env_from_dotenv()
@@ -321,12 +322,77 @@ def actividades():
     usuario_id   = request.args.get("usuario")     or None
     fecha_desde  = request.args.get("fecha_desde") or None
     fecha_hasta  = request.args.get("fecha_hasta") or None
+    scope        = request.args.get("scope") or "all"
+    q            = (request.args.get("q") or "").strip() or None
+    sort_by      = request.args.get("sort") or "prioridad"
+    try:
+        page = max(int(request.args.get("page", 1)), 1)
+    except (TypeError, ValueError):
+        page = 1
+    page_size    = 24
+    estatus_list = obtener_estatus_actividad()
+
+    def _estatus_id_por_desc(*targets):
+        targets_up = {t.upper() for t in targets}
+        for e in estatus_list:
+            desc = (e.get("DESCRIPCION") or "").upper()
+            if desc in targets_up:
+                return e.get("ID")
+        return None
+
+    # Default UX escalable: mostrar actividades activas del mes actual solo cuando scope=all
+    # y no hay filtros explícitos.
+    sin_filtros = (
+        scope == "all"
+        and not any([proyecto_id, estatus_id, usuario_id, fecha_desde, fecha_hasta, q])
+    )
+    solo_activas = False
+    default_scope = None
+    if scope == "active" and not estatus_id:
+        solo_activas = True
+    elif scope == "completed" and not estatus_id:
+        estatus_id = _estatus_id_por_desc("COMPLETADO")
+    elif scope == "canceled" and not estatus_id:
+        estatus_id = _estatus_id_por_desc("CANCELADO")
+
+    if sin_filtros:
+        today = date.today()
+        fecha_desde = today.replace(day=1).isoformat()
+        fecha_hasta = today.isoformat()
+        scope = "active"
+        solo_activas = True
+        default_scope = "Activas del mes"
+
+    total_actividades = contar_actividades(
+        proyecto_id=proyecto_id,
+        estatus_id=estatus_id,
+        usuario_id=usuario_id,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        q=q,
+        solo_activas=solo_activas,
+    )
+    total_paginas = max((total_actividades + page_size - 1) // page_size, 1)
+    if page > total_paginas:
+        page = total_paginas
+
     base = _catalogo_base()
     return render_template(
         "actividades.html",
-        actividades=obtener_actividades(proyecto_id, estatus_id, usuario_id, fecha_desde, fecha_hasta),
+        actividades=obtener_actividades(
+            proyecto_id=proyecto_id,
+            estatus_id=estatus_id,
+            usuario_id=usuario_id,
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            q=q,
+            sort_by=sort_by,
+            page=page,
+            page_size=page_size,
+            solo_activas=solo_activas,
+        ),
         todas_actividades=obtener_actividades(),
-        estatus_list=obtener_estatus_actividad(),
+        estatus_list=estatus_list,
         projects=base["projects"],
         users=base["users"],
         recursos=obtener_recursos(),
@@ -335,6 +401,14 @@ def actividades():
         filtro_usuario=usuario_id,
         filtro_fecha_desde=fecha_desde,
         filtro_fecha_hasta=fecha_hasta,
+        filtro_q=q,
+        filtro_sort=sort_by,
+        page=page,
+        total_paginas=total_paginas,
+        total_actividades=total_actividades,
+        page_size=page_size,
+        default_scope=default_scope,
+        filtro_scope=scope,
     )
 
 
@@ -506,6 +580,7 @@ def vista_registros():
     filtros = {
         "user_id": request.args.get("user_id"),
         "proyecto_id": request.args.get("proyecto_id"),
+        "tipo_id": request.args.get("tipo_id"),
         "fecha_ini": request.args.get("fecha_ini"),
         "fecha_fin": request.args.get("fecha_fin"),
     }

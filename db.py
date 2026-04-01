@@ -327,8 +327,8 @@ def guardar_registro_actividad(datos):
 
     sql = """
         INSERT INTO "REGISTRO_ACTIVIDADES"
-            ("ID","FECHA","ID_USUARIO","ID_PROYECTO","ID_ACTIVIDAD","ID_TIPO_ACT","ACCION","HORAS","DETALLES")
-        VALUES (SYSUUID,?,?,?,?,?,?,?,?)
+            ("ID","FECHA","ID_USUARIO","ID_PROYECTO","ID_ACTIVIDAD","ID_TIPO_ACT","ACCION","HORAS","DETALLES","CREADO_EN")
+        VALUES (SYSUUID,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
     """
     ok = ejecutar_dml(sql, (
         datos.get('date'),
@@ -557,8 +557,17 @@ def obtener_registros_recientes_filtrados(user_id=None, period='month', fecha_re
 #  ACTIVIDADES
 # ══════════════════════════════════════════════════════════════════════════════
 
-def obtener_actividades(proyecto_id=None, estatus_id=None, usuario_id=None, fecha_desde=None, fecha_hasta=None):
+def _filtros_actividades_sql(
+    proyecto_id=None,
+    estatus_id=None,
+    usuario_id=None,
+    fecha_desde=None,
+    fecha_hasta=None,
+    q=None,
+    solo_activas=False,
+):
     filtros, params = [], []
+
     if proyecto_id:
         filtros.append('A."ID_PROYECTO"=?')
         params.append(proyecto_id)
@@ -574,7 +583,54 @@ def obtener_actividades(proyecto_id=None, estatus_id=None, usuario_id=None, fech
     if fecha_hasta:
         filtros.append('A."FECHA_SOLICITUD" <= ?')
         params.append(fecha_hasta)
+    if q:
+        filtros.append('(UPPER(A."NOMBRE_ACTIVIDAD") LIKE ? OR UPPER(COALESCE(A."DESCRIPCION", \'\')) LIKE ?)')
+        q_norm = f"%{q.strip().upper()}%"
+        params.extend([q_norm, q_norm])
+    if solo_activas:
+        filtros.append('UPPER(E."DESCRIPCION") NOT IN (\'COMPLETADO\', \'CANCELADO\', \'ESPERANDO APROBACIÓN\')')
+
     where = ('WHERE ' + ' AND '.join(filtros)) if filtros else ''
+    return where, params
+
+
+def obtener_actividades(
+    proyecto_id=None,
+    estatus_id=None,
+    usuario_id=None,
+    fecha_desde=None,
+    fecha_hasta=None,
+    q=None,
+    sort_by='prioridad',
+    page=None,
+    page_size=None,
+    solo_activas=False,
+):
+    where, params = _filtros_actividades_sql(
+        proyecto_id=proyecto_id,
+        estatus_id=estatus_id,
+        usuario_id=usuario_id,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        q=q,
+        solo_activas=solo_activas,
+    )
+
+    sort_map = {
+        'prioridad': 'A."PRIORIDAD" ASC, A."CREADO_EN" DESC',
+        'recientes': 'A."CREADO_EN" DESC',
+        'nombre': 'A."NOMBRE_ACTIVIDAD" ASC',
+        'horas': '"HORAS_INVERTIDAS" DESC, A."CREADO_EN" DESC',
+    }
+    order_by = sort_map.get(sort_by, sort_map['prioridad'])
+
+    pagination_sql = ''
+    if page is not None and page_size is not None:
+        safe_page = max(int(page), 1)
+        safe_page_size = max(min(int(page_size), 100), 1)
+        offset = (safe_page - 1) * safe_page_size
+        pagination_sql = f' LIMIT {safe_page_size} OFFSET {offset}'
+
     sql = f"""SELECT A."ID", A."NOMBRE_ACTIVIDAD", A."DESCRIPCION",
                      A."FECHA_SOLICITUD", A."SOLICITANTE",
                      A."FECHA_INICIO", A."FECHA_FIN_REAL",
@@ -594,8 +650,37 @@ def obtener_actividades(proyecto_id=None, estatus_id=None, usuario_id=None, fech
               FROM "ACTIVIDADES" A
               JOIN "PROYECTOS" P ON A."ID_PROYECTO"=P."ID"
               JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS"=E."ID"
-              {where} ORDER BY A."PRIORIDAD" ASC, A."CREADO_EN" DESC"""
+              {where}
+              ORDER BY {order_by}{pagination_sql}"""
     return ejecutar_query(sql, tuple(params) if params else None)
+
+
+def contar_actividades(
+    proyecto_id=None,
+    estatus_id=None,
+    usuario_id=None,
+    fecha_desde=None,
+    fecha_hasta=None,
+    q=None,
+    solo_activas=False,
+):
+    where, params = _filtros_actividades_sql(
+        proyecto_id=proyecto_id,
+        estatus_id=estatus_id,
+        usuario_id=usuario_id,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        q=q,
+        solo_activas=solo_activas,
+    )
+    sql = f"""
+        SELECT COUNT(*) AS "TOTAL"
+        FROM "ACTIVIDADES" A
+        JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS"=E."ID"
+        {where}
+    """
+    rows = ejecutar_query(sql, tuple(params) if params else None)
+    return int(rows[0]["TOTAL"]) if rows else 0
 
 
 def obtener_actividad_por_id(actividad_id):
@@ -951,6 +1036,9 @@ def obtener_registros(filtros=None):
     if filtros.get('fecha_fin'):
         where.append('"R"."FECHA" <= ?')
         params.append(filtros['fecha_fin'])
+    if filtros.get('tipo_id'):
+        where.append('"R"."ID_TIPO_ACT" = ?')
+        params.append(filtros['tipo_id'])
 
     where_sql = ('WHERE ' + ' AND '.join(where)) if where else ''
     sql = f"""

@@ -17,7 +17,12 @@
             --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
             --font: 'DM Sans', sans-serif; --mono: 'DM Mono', monospace;
         }
-        body { font-family: var(--font); background: var(--bg); color: var(--text); margin: 0; }
+        body {
+            font-family: var(--font);
+            background: radial-gradient(circle at top, rgba(37, 99, 235, .06), transparent 30%), var(--bg);
+            color: var(--text);
+            margin: 0;
+        }
 
         /* ─── NAV ─────────────────────────────────────────────── */
         .main-nav {
@@ -87,24 +92,62 @@
 
         /* ── Layout ── */
         .page-wrap { max-width: 1300px; margin: 0 auto; padding: 28px 20px; }
-        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+        .page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
         .page-title { font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
         .page-title i { color: var(--primary); }
+        .page-subtitle { margin-top: 4px; font-size: .84rem; color: var(--text-secondary); }
 
         /* ── Cards ── */
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+        .card {
+            background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.96));
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 28px rgba(15,23,42,.06), 0 1px 4px rgba(15,23,42,.05);
+        }
         .card-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; color: var(--text); }
         .card-title i { color: var(--primary); }
 
         /* ── Calendar Grid ── */
-        .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .cal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .cal-header-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .cal-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .cal-month-label { font-size: 1.1rem; font-weight: 700; color: var(--text); }
-        .cal-nav-btn { background: var(--border); border: none; border-radius: 8px; padding: 6px 12px; cursor: pointer; color: var(--text); font-size: 0.85rem; transition: background .2s; }
-        .cal-nav-btn:hover { background: var(--primary-light); color: var(--primary); }
+        .cal-month-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #eff6ff;
+            color: var(--primary);
+            border: 1px solid #bfdbfe;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: .76rem;
+            font-weight: 700;
+        }
+        .cal-nav-btn {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 7px 12px;
+            cursor: pointer;
+            color: var(--text);
+            font-size: 0.85rem;
+            transition: all .2s;
+        }
+        .cal-nav-btn:hover { background: var(--primary-light); color: var(--primary); border-color: #bfdbfe; }
 
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .calendar-frame { overflow-x: auto; padding-bottom: 4px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; min-width: 760px; }
         .cal-day-name { text-align: center; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); padding: 4px 0; text-transform: uppercase; }
-        .cal-cell { min-height: 80px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 6px; position: relative; }
+        .cal-cell { min-height: 92px; background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 6px; position: relative; }
         .cal-cell.today { border-color: var(--primary); background: #eff6ff; }
         .cal-cell.other-month { opacity: .4; }
         .cal-cell.weekend { background: #f1f5f9; }
@@ -118,6 +161,7 @@
         .cal-event.PERMISO       { background: #fef9c3; color: #854d0e; }
         .cal-event.OTRO          { background: #f3e8ff; color: #6b21a8; }
         .cal-event.FESTIVO       { background: #fee2e2; color: #991b1b; }
+        .cal-more { font-size: .66rem; color: var(--text-secondary); font-weight: 700; padding: 2px 4px; }
 
         /* ── Type badges ── */
         .tipo-badge { display: inline-block; font-size: 0.72rem; font-weight: 600; border-radius: 20px; padding: 2px 10px; }
@@ -149,8 +193,91 @@
         .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; color: var(--text-secondary); }
         .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
+        /* ── Toolbars / filters ── */
+        .section-toolbar {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .section-toolbar-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .section-toolbar-title {
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .section-toolbar-sub {
+            font-size: .78rem;
+            color: var(--text-secondary);
+        }
+
+        .filter-panel {
+            background: linear-gradient(180deg, rgba(248,250,253,.96), rgba(241,245,249,.94));
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 12px;
+            align-items: end;
+        }
+
+        .filter-group {
+            grid-column: span 4;
+            min-width: 0;
+        }
+
+        .filter-group-wide {
+            grid-column: span 5;
+        }
+
+        .filter-actions {
+            grid-column: span 3;
+            display: flex;
+            justify-content: flex-end;
+            align-items: end;
+            gap: 10px;
+        }
+
+        .filter-label-inline {
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .filter-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 30px;
+            height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: var(--primary);
+            font-size: .74rem;
+            font-weight: 700;
+        }
+
         /* ── Tabs ── */
-        .tab-bar { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+        .tab-bar { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; }
         .tab-btn { background: none; border: none; padding: 8px 16px; font-family: var(--font); font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .2s; }
         .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
 
@@ -161,14 +288,76 @@
         .modal-title { font-size: 1rem; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }
         .modal-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary); }
         .form-label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 5px; }
-        .form-control, .form-select { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-family: var(--font); font-size: 0.875rem; outline: none; box-sizing: border-box; }
+        .form-control, .form-select {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 9px 12px;
+            font-family: var(--font);
+            font-size: 0.875rem;
+            outline: none;
+            box-sizing: border-box;
+            background: #fff;
+            min-height: 42px;
+        }
         .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
         .mb-3 { margin-bottom: 14px; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
+        .btn-secondary-soft {
+            background: rgba(255,255,255,.75);
+            color: var(--text-secondary);
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            padding: 9px 14px;
+            font-size: .84rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            min-height: 42px;
+            white-space: nowrap;
+        }
+
+        .btn-secondary-soft:hover {
+            color: var(--danger);
+            border-color: #fecaca;
+            background: #fff7f7;
+        }
+
         /* ── Empty state ── */
         .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
         .empty-state i { font-size: 2.5rem; display: block; margin-bottom: 12px; opacity: .4; }
+
+        @media (max-width: 920px) {
+            .filter-group,
+            .filter-group-wide {
+                grid-column: span 6;
+            }
+
+            .filter-actions {
+                grid-column: span 12;
+                justify-content: stretch;
+            }
+
+            .btn-secondary-soft,
+            .btn-primary-custom {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .page-wrap { padding: 22px 14px; }
+            .card { padding: 16px; }
+            .grid-2 { grid-template-columns: 1fr; }
+            .filter-group,
+            .filter-group-wide,
+            .filter-actions { grid-column: span 12; }
+            .tab-btn { width: 100%; text-align: left; }
+            .cal-header-actions { width: 100%; justify-content: space-between; }
+        }
     </style>
 </head>
 <body>
@@ -179,7 +368,7 @@
     <a href="/" class="nav-link-pill"><i class="bi bi-house"></i> Inicio</a>
     <a href="/actividades" class="nav-link-pill"><i class="bi bi-kanban"></i> Actividades</a>
     <a href="/registros" class="nav-link-pill"><i class="bi bi-journal-text"></i> Registros</a>
-    <a href="/calendario" class="nav-link-pill active"><i class="bi bi-clock-history"></i> Calendario</a>
+    <a href="/calendario" class="nav-link-pill active"><i class="bi bi-calendar3"></i> Calendario</a>
     <a href="/catalogos" class="nav-link-pill"><i class="bi bi-sliders"></i> Catálogos</a>
 </nav>
 
@@ -187,16 +376,25 @@
 
     <!-- ── Header ── -->
     <div class="page-header">
-        <div class="page-title"><i class="bi bi-calendar3"></i> Calendario de Ausencias</div>
+        <div>
+            <div class="page-title"><i class="bi bi-calendar3"></i> Calendario de Ausencias</div>
+            <div class="page-subtitle">Consulta ausencias del equipo y administra días festivos desde la misma vista.</div>
+        </div>
         <button class="btn-primary-custom" onclick="abrirModal()"><i class="bi bi-plus-lg"></i> Nueva Ausencia</button>
     </div>
 
     <!-- ── Navegacion mes ── -->
     <div class="card" style="margin-bottom:20px;">
         <div class="cal-header">
-            <button class="cal-nav-btn" onclick="navMes(-1)"><i class="bi bi-chevron-left"></i></button>
-            <span class="cal-month-label" id="cal-month-label"></span>
-            <button class="cal-nav-btn" onclick="navMes(1)"><i class="bi bi-chevron-right"></i></button>
+            <div class="cal-header-main">
+                <span class="cal-month-label" id="cal-month-label"></span>
+                <span class="cal-month-badge"><i class="bi bi-info-circle"></i> Vista mensual</span>
+            </div>
+            <div class="cal-header-actions">
+                <button class="cal-nav-btn" onclick="navMes(-1)"><i class="bi bi-chevron-left"></i></button>
+                <button class="cal-nav-btn" onclick="goToday()"><i class="bi bi-calendar-check"></i> Hoy</button>
+                <button class="cal-nav-btn" onclick="navMes(1)"><i class="bi bi-chevron-right"></i></button>
+            </div>
         </div>
 
         <!-- Leyenda -->
@@ -210,14 +408,16 @@
         </div>
 
         <!-- Grid -->
-        <div class="cal-grid" id="cal-grid">
-            <div class="cal-day-name">Lun</div>
-            <div class="cal-day-name">Mar</div>
-            <div class="cal-day-name">Mié</div>
-            <div class="cal-day-name">Jue</div>
-            <div class="cal-day-name">Vie</div>
-            <div class="cal-day-name" style="color:#ef4444">Sáb</div>
-            <div class="cal-day-name" style="color:#ef4444">Dom</div>
+        <div class="calendar-frame">
+            <div class="cal-grid" id="cal-grid">
+                <div class="cal-day-name">Lun</div>
+                <div class="cal-day-name">Mar</div>
+                <div class="cal-day-name">Mié</div>
+                <div class="cal-day-name">Jue</div>
+                <div class="cal-day-name">Vie</div>
+                <div class="cal-day-name" style="color:#ef4444">Sáb</div>
+                <div class="cal-day-name" style="color:#ef4444">Dom</div>
+            </div>
         </div>
     </div>
 
@@ -230,21 +430,39 @@
 
         <!-- Ausencias table -->
         <div id="panel-ausencias">
-            <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-                <select class="form-select" style="max-width:200px" id="flt-usuario" onchange="renderTabla()">
-                    <option value="">— Todos los usuarios —</option>
-                    {% for u in users %}
-                    <option value="{{ u.ID }}">{{ u.NOMBRE_COMPLETO }}</option>
-                    {% endfor %}
-                </select>
-                <select class="form-select" style="max-width:180px" id="flt-tipo" onchange="renderTabla()">
-                    <option value="">— Todos los tipos —</option>
-                    <option value="VACACIONES">Vacaciones</option>
-                    <option value="INCAPACIDAD">Incapacidad</option>
-                    <option value="DIA_LIBRE">Día libre</option>
-                    <option value="PERMISO">Permiso</option>
-                    <option value="OTRO">Otro</option>
-                </select>
+            <div class="section-toolbar">
+                <div class="section-toolbar-info">
+                    <div class="section-toolbar-title">Ausencias del equipo</div>
+                    <div class="section-toolbar-sub">Filtra rápidamente por usuario o tipo de ausencia.</div>
+                </div>
+                <span class="filter-count" id="count-ausencias">0</span>
+            </div>
+            <div class="filter-panel">
+                <div class="filter-grid">
+                    <div class="filter-group filter-group-wide">
+                        <label class="filter-label-inline" for="flt-usuario">Usuario</label>
+                        <select class="form-select" id="flt-usuario" onchange="renderTabla()">
+                            <option value="">Todos los usuarios</option>
+                            {% for u in users %}
+                            <option value="{{ u.ID }}">{{ u.NOMBRE_COMPLETO }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label-inline" for="flt-tipo">Tipo</label>
+                        <select class="form-select" id="flt-tipo" onchange="renderTabla()">
+                            <option value="">Todos los tipos</option>
+                            <option value="VACACIONES">Vacaciones</option>
+                            <option value="INCAPACIDAD">Incapacidad</option>
+                            <option value="DIA_LIBRE">Día libre</option>
+                            <option value="PERMISO">Permiso</option>
+                            <option value="OTRO">Otro</option>
+                        </select>
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" class="btn-secondary-soft" onclick="limpiarFiltrosAusencias()"><i class="bi bi-x-circle"></i> Limpiar filtros</button>
+                    </div>
+                </div>
             </div>
             <div class="table-wrap">
                 <table>
@@ -258,15 +476,27 @@
 
         <!-- Festivos table -->
         <div id="panel-festivos" style="display:none">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
-                <div style="display:flex;gap:8px;align-items:center">
-                    <select class="form-select" style="max-width:120px" id="flt-anio-festivos" onchange="loadFestivos()">
-                        <option value="2025">2025</option>
-                        <option value="2026" selected>2026</option>
-                        <option value="2027">2027</option>
-                    </select>
+            <div class="section-toolbar">
+                <div class="section-toolbar-info">
+                    <div class="section-toolbar-title">Días festivos</div>
+                    <div class="section-toolbar-sub">Administra el calendario anual y valida qué fechas están activas.</div>
                 </div>
-                <button class="btn-primary-custom" onclick="abrirModalFestivo()"><i class="bi bi-plus-lg"></i> Agregar festivo</button>
+                <span class="filter-count" id="count-festivos">0</span>
+            </div>
+            <div class="filter-panel">
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label class="filter-label-inline" for="flt-anio-festivos">Año</label>
+                        <select class="form-select" id="flt-anio-festivos" onchange="loadFestivos()">
+                            <option value="2025" {% if anio == 2025 %}selected{% endif %}>2025</option>
+                            <option value="2026" {% if anio == 2026 %}selected{% endif %}>2026</option>
+                            <option value="2027" {% if anio == 2027 %}selected{% endif %}>2027</option>
+                        </select>
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn-primary-custom" onclick="abrirModalFestivo()"><i class="bi bi-plus-lg"></i> Agregar festivo</button>
+                    </div>
+                </div>
             </div>
             <div class="table-wrap">
                 <table>
@@ -446,13 +676,21 @@ function buildCalendar() {
         numEl.textContent = d;
         cell.appendChild(numEl);
 
-        (evMap[fechaStr] || []).slice(0, 3).forEach(ev => {
+        const events = evMap[fechaStr] || [];
+        events.slice(0, 3).forEach(ev => {
             const evEl = document.createElement('div');
             evEl.className = 'cal-event ' + ev.tipo;
             evEl.textContent = ev.texto;
             evEl.title = ev.texto;
             cell.appendChild(evEl);
         });
+
+        if (events.length > 3) {
+            const moreEl = document.createElement('div');
+            moreEl.className = 'cal-more';
+            moreEl.textContent = `+${events.length - 3} más`;
+            cell.appendChild(moreEl);
+        }
 
         grid.appendChild(cell);
     }
@@ -465,11 +703,21 @@ function navMes(delta) {
     loadMes();
 }
 
+function goToday() {
+    calAnio = HOY.getFullYear();
+    calMes = HOY.getMonth() + 1;
+    loadMes();
+}
+
 async function loadMes() {
     const res  = await fetch(`/api/ausencias?anio=${calAnio}`);
     const resF = await fetch(`/api/festivos?anio=${calAnio}`);
     ausencias  = await res.json();
     festivos   = await resF.json();
+    const festivosYear = document.getElementById('flt-anio-festivos');
+    if (festivosYear && Array.from(festivosYear.options).some(opt => opt.value === String(calAnio))) {
+        festivosYear.value = String(calAnio);
+    }
     buildCalendar();
     renderTabla();
 }
@@ -486,6 +734,9 @@ function renderTabla() {
     let rows = ausencias;
     if (uidFlt)  rows = rows.filter(a => a.id_usuario === uidFlt);
     if (tipoFlt) rows = rows.filter(a => a.tipo === tipoFlt);
+
+    const countEl = document.getElementById('count-ausencias');
+    if (countEl) countEl.textContent = String(rows.length);
 
     if (!rows.length) {
         tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="bi bi-inbox"></i><p>Sin ausencias para este filtro</p></div></td></tr>`;
@@ -506,6 +757,12 @@ function renderTabla() {
             </td>
         </tr>
     `).join('');
+}
+
+function limpiarFiltrosAusencias() {
+    document.getElementById('flt-usuario').value = '';
+    document.getElementById('flt-tipo').value = '';
+    renderTabla();
 }
 
 // ─── CRUD Ausencias ───────────────────────────────────────────────────────────
@@ -556,6 +813,8 @@ async function eliminarAusencia(id) {
 // ─── Tabla festivos ───────────────────────────────────────────────────────────
 function renderFestivos() {
     const tbody = document.getElementById('tbody-festivos');
+    const countEl = document.getElementById('count-festivos');
+    if (countEl) countEl.textContent = String(festivos.length);
     if (!festivos.length) {
         tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="bi bi-inbox"></i><p>Sin días festivos para este año</p></div></td></tr>`;
         return;
@@ -668,6 +927,7 @@ festivos = festivos.map(f => ({
 
 buildCalendar();
 renderTabla();
+renderFestivos();
 </script>
 </body>
 </html>
