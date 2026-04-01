@@ -1,6 +1,7 @@
 import os
 import uuid
 from datetime import datetime, timedelta, date
+from zoneinfo import ZoneInfo
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, jsonify, url_for, send_file
 import io
@@ -50,6 +51,8 @@ from db import (
     obtener_recursos,
     obtener_recursos_actividad,
     guardar_recursos_actividad,
+    obtener_actividades_default_mes,
+    contar_actividades_default_mes,
     reasignar_registros_proyecto,
     contar_actividades,
 )
@@ -164,6 +167,15 @@ def _catalogo_base():
             'SELECT "ID","NOMBRE_PROYECTO" FROM "PROYECTOS" WHERE "ACTIVO"=1'
         ),
     }
+
+
+def _local_today() -> date:
+    """Fecha local configurable para evitar desfases entre servidor y operación."""
+    tz_name = os.getenv("APP_TIMEZONE", "America/Mexico_City")
+    try:
+        return datetime.now(ZoneInfo(tz_name)).date()
+    except Exception:
+        return date.today()
 
 
 # ── DAILY TRACKER ─────────────────────────────────────────────────────────
@@ -340,8 +352,7 @@ def actividades():
                 return e.get("ID")
         return None
 
-    # Default UX escalable: mostrar actividades activas del mes actual solo cuando scope=all
-    # y no hay filtros explícitos.
+    # Default UX: mostrar actividades del mes actual y conservar abiertas anteriores al final.
     sin_filtros = (
         scope == "all"
         and not any([proyecto_id, estatus_id, usuario_id, fecha_desde, fecha_hasta, q])
@@ -355,31 +366,40 @@ def actividades():
     elif scope == "canceled" and not estatus_id:
         estatus_id = _estatus_id_por_desc("CANCELADO")
 
+    actividades_data = None
     if sin_filtros:
-        today = date.today()
+        today = _local_today()
         fecha_desde = today.replace(day=1).isoformat()
         fecha_hasta = today.isoformat()
-        scope = "active"
-        solo_activas = True
-        default_scope = "Activas del mes"
-
-    total_actividades = contar_actividades(
-        proyecto_id=proyecto_id,
-        estatus_id=estatus_id,
-        usuario_id=usuario_id,
-        fecha_desde=fecha_desde,
-        fecha_hasta=fecha_hasta,
-        q=q,
-        solo_activas=solo_activas,
-    )
-    total_paginas = max((total_actividades + page_size - 1) // page_size, 1)
-    if page > total_paginas:
-        page = total_paginas
-
-    base = _catalogo_base()
-    return render_template(
-        "actividades.html",
-        actividades=obtener_actividades(
+        default_scope = "Mes actual + abiertas anteriores"
+        total_actividades = contar_actividades_default_mes(
+            mes_inicio=fecha_desde,
+            fecha_hasta=fecha_hasta,
+        )
+        total_paginas = max((total_actividades + page_size - 1) // page_size, 1)
+        if page > total_paginas:
+            page = total_paginas
+        actividades_data = obtener_actividades_default_mes(
+            mes_inicio=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            sort_by=sort_by,
+            page=page,
+            page_size=page_size,
+        )
+    else:
+        total_actividades = contar_actividades(
+            proyecto_id=proyecto_id,
+            estatus_id=estatus_id,
+            usuario_id=usuario_id,
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            q=q,
+            solo_activas=solo_activas,
+        )
+        total_paginas = max((total_actividades + page_size - 1) // page_size, 1)
+        if page > total_paginas:
+            page = total_paginas
+        actividades_data = obtener_actividades(
             proyecto_id=proyecto_id,
             estatus_id=estatus_id,
             usuario_id=usuario_id,
@@ -390,7 +410,12 @@ def actividades():
             page=page,
             page_size=page_size,
             solo_activas=solo_activas,
-        ),
+        )
+
+    base = _catalogo_base()
+    return render_template(
+        "actividades.html",
+        actividades=actividades_data,
         todas_actividades=obtener_actividades(),
         estatus_list=estatus_list,
         projects=base["projects"],

@@ -683,6 +683,81 @@ def contar_actividades(
     return int(rows[0]["TOTAL"]) if rows else 0
 
 
+def _base_select_actividades():
+    return '''SELECT A."ID", A."NOMBRE_ACTIVIDAD", A."DESCRIPCION",
+                     A."FECHA_SOLICITUD", A."SOLICITANTE",
+                     A."FECHA_INICIO", A."FECHA_FIN_REAL",
+                     A."PRIORIDAD", A."CREADO_EN",
+                     P."NOMBRE_PROYECTO",
+                     E."DESCRIPCION" as "ESTATUS", E."COLOR_HEX" as "ESTATUS_COLOR",
+                     COALESCE((SELECT SUM(R."HORAS") FROM "REGISTRO_ACTIVIDADES" R
+                                WHERE R."ID_ACTIVIDAD"=A."ID"), 0) as "HORAS_INVERTIDAS",
+                     (SELECT STRING_AGG(U2."NOMBRE_COMPLETO", ', ')
+                      FROM "ACTIVIDAD_RESPONSABLES" AR
+                      JOIN "USUARIOS" U2 ON AR."ID_USUARIO"=U2."ID"
+                      WHERE AR."ID_ACTIVIDAD"=A."ID") as "RESPONSABLES",
+                     (SELECT STRING_AGG(R2."NOMBRE", ', ')
+                      FROM "ACTIVIDAD_RECURSOS" ARR
+                      JOIN "CAT_RECURSOS" R2 ON ARR."ID_RECURSO"=R2."ID"
+                      WHERE ARR."ID_ACTIVIDAD"=A."ID") as "RECURSOS"
+              FROM "ACTIVIDADES" A
+              JOIN "PROYECTOS" P ON A."ID_PROYECTO"=P."ID"
+              JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS"=E."ID"'''
+
+
+def obtener_actividades_default_mes(
+    mes_inicio,
+    fecha_hasta,
+    sort_by='prioridad',
+    page=None,
+    page_size=None,
+):
+    sort_map = {
+        'prioridad': 'A."PRIORIDAD" ASC, A."CREADO_EN" DESC',
+        'recientes': 'A."CREADO_EN" DESC',
+        'nombre': 'A."NOMBRE_ACTIVIDAD" ASC',
+        'horas': '"HORAS_INVERTIDAS" DESC, A."CREADO_EN" DESC',
+    }
+    order_by = sort_map.get(sort_by, sort_map['prioridad'])
+
+    pagination_sql = ''
+    if page is not None and page_size is not None:
+        safe_page = max(int(page), 1)
+        safe_page_size = max(min(int(page_size), 100), 1)
+        offset = (safe_page - 1) * safe_page_size
+        pagination_sql = f' LIMIT {safe_page_size} OFFSET {offset}'
+
+    # Bucket 0: actividades del mes actual. Bucket 1: abiertas anteriores (al final).
+    sql = f'''{_base_select_actividades()}
+              WHERE (
+                    A."FECHA_SOLICITUD" BETWEEN ? AND ?
+              ) OR (
+                    (A."FECHA_SOLICITUD" < ? OR A."FECHA_SOLICITUD" IS NULL)
+                    AND UPPER(E."DESCRIPCION") NOT IN ('COMPLETADO', 'CANCELADO', 'ESPERANDO APROBACIÓN')
+              )
+              ORDER BY CASE
+                  WHEN A."FECHA_SOLICITUD" BETWEEN ? AND ? THEN 0
+                  ELSE 1
+              END ASC,
+              {order_by}{pagination_sql}'''
+    params = (mes_inicio, fecha_hasta, mes_inicio, mes_inicio, fecha_hasta)
+    return ejecutar_query(sql, params)
+
+
+def contar_actividades_default_mes(mes_inicio, fecha_hasta):
+    sql = '''SELECT COUNT(*) AS "TOTAL"
+             FROM "ACTIVIDADES" A
+             JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS"=E."ID"
+             WHERE (
+                   A."FECHA_SOLICITUD" BETWEEN ? AND ?
+             ) OR (
+                   (A."FECHA_SOLICITUD" < ? OR A."FECHA_SOLICITUD" IS NULL)
+                   AND UPPER(E."DESCRIPCION") NOT IN ('COMPLETADO', 'CANCELADO', 'ESPERANDO APROBACIÓN')
+             )'''
+    rows = ejecutar_query(sql, (mes_inicio, fecha_hasta, mes_inicio))
+    return int(rows[0]["TOTAL"]) if rows else 0
+
+
 def obtener_actividad_por_id(actividad_id):
     sql = """SELECT A."ID", A."NOMBRE_ACTIVIDAD", A."DESCRIPCION",
                     A."FECHA_SOLICITUD", A."SOLICITANTE",
