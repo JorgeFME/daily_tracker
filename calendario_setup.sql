@@ -1,0 +1,61 @@
+-- ============================================================
+-- MÓDULO CALENDARIO / AUSENCIAS
+-- Ejecutar en SAP HANA Cloud antes de iniciar la aplicación
+-- ============================================================
+
+-- 1. Tabla principal de ausencias por usuario
+CREATE COLUMN TABLE "AUSENCIAS_USUARIO" (
+    "ID"            NVARCHAR(36)  NOT NULL DEFAULT SYSUUID,
+    "ID_USUARIO"    NVARCHAR(36)  NOT NULL,
+    "FECHA_INICIO"  DATE          NOT NULL,
+    "FECHA_FIN"     DATE          NOT NULL,
+    "TIPO"          NVARCHAR(50)  NOT NULL,  -- VACACIONES | INCAPACIDAD | DIA_LIBRE | PERMISO | OTRO
+    "HORAS_DIA"     DECIMAL(4,2)  DEFAULT 8 NOT NULL,  -- horas ausentes por día (8 = día completo)
+    "DESCRIPCION"   NVARCHAR(500),
+    "CREADO_EN"     LONGDATE      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "CREADO_POR"    NVARCHAR(36),
+    "ACTUALIZADO_EN" LONGDATE,
+    PRIMARY KEY ("ID")
+) UNLOAD PRIORITY 5 AUTO MERGE;
+
+ALTER TABLE "AUSENCIAS_USUARIO"
+    ADD FOREIGN KEY ("ID_USUARIO")
+    REFERENCES "USUARIOS" ("ID")
+    ON UPDATE RESTRICT ON DELETE RESTRICT
+    ENFORCED VALIDATED INITIALLY IMMEDIATE;
+
+
+-- 2. Tabla de días festivos (editables por el equipo)
+CREATE COLUMN TABLE "DIAS_FESTIVOS" (
+    "ID"            NVARCHAR(36)  NOT NULL DEFAULT SYSUUID,
+    "FECHA"         DATE          NOT NULL,
+    "NOMBRE"        NVARCHAR(150) NOT NULL,
+    "TIPO"          NVARCHAR(50)  DEFAULT 'OFICIAL',   -- OFICIAL | PUENTE | ESPECIAL
+    "APLICA_TODOS"  TINYINT       DEFAULT 1,           -- 1 = aplica a todo el equipo
+    "ACTIVO"        TINYINT       DEFAULT 1,
+    "CREADO_EN"     LONGDATE      DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY ("ID")
+) UNLOAD PRIORITY 5 AUTO MERGE;
+
+
+-- 3. Días festivos México 2025 precargados
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2025-01-01', 'Año Nuevo', 'OFICIAL');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2025-02-03', 'Día de la Constitución (puente)', 'PUENTE');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2025-03-17', 'Natalicio de Benito Juárez (puente)', 'PUENTE');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2025-04-17', 'Jueves Santo', 'ESPECIAL');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2025-04-18', 'Viernes Santo', 'OFICIAL');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2025-05-01', 'Día del Trabajo', 'OFICIAL');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2025-09-16', 'Día de la Independencia', 'OFICIAL');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2025-11-17', 'Día de la Revolución (puente)', 'PUENTE');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2025-12-25', 'Navidad', 'OFICIAL');
+
+-- 4. Días festivos México 2026
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2026-01-01', 'Año Nuevo', 'OFICIAL');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2026-02-02', 'Día de la Constitución (puente)', 'PUENTE');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2026-03-16', 'Natalicio de Benito Juárez (puente)', 'PUENTE');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2026-04-02', 'Jueves Santo', 'ESPECIAL');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2026-04-03', 'Viernes Santo', 'OFICIAL');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2026-05-01', 'Día del Trabajo', 'OFICIAL');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2026-09-16', 'Día de la Independencia', 'OFICIAL');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2026-11-16', 'Día de la Revolución (puente)', 'PUENTE');
+INSERT INTO "DIAS_FESTIVOS" ("FECHA","NOMBRE","TIPO") VALUES ('2026-12-25', 'Navidad', 'OFICIAL');

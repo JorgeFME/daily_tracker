@@ -307,7 +307,10 @@ def _get_date_range(period, fecha_ref_str=None):
 
 def guardar_registro_actividad(datos):
     # Validar que la actividad no esté Completada o Cancelada
-    actividad_id = datos.get('actividad_id') or None
+    actividad_id = datos.get('actividad_id')
+    if actividad_id == 'ad_hoc' or not actividad_id:
+        actividad_id = None
+        
     if actividad_id:
         rows = ejecutar_query(
             'SELECT E."DESCRIPCION" FROM "ACTIVIDADES" A '
@@ -327,7 +330,7 @@ def guardar_registro_actividad(datos):
             ("ID","FECHA","ID_USUARIO","ID_PROYECTO","ID_ACTIVIDAD","ID_TIPO_ACT","ACCION","HORAS","DETALLES")
         VALUES (SYSUUID,?,?,?,?,?,?,?,?)
     """
-    return ejecutar_dml(sql, (
+    ok = ejecutar_dml(sql, (
         datos.get('date'),
         datos.get('user'),
         datos.get('project'),
@@ -337,6 +340,18 @@ def guardar_registro_actividad(datos):
         datos.get('hours'),
         datos.get('details'),
     ))
+
+    if ok and actividad_id and datos.get('finalizar_actividad') == '1':
+        rows_estatus = ejecutar_query('SELECT "ID" FROM "CAT_ESTATUS_ACTIVIDAD" WHERE UPPER("DESCRIPCION")=?', ('COMPLETADO',))
+        if rows_estatus:
+            id_completado = rows_estatus[0]["ID"]
+            fecha_termino = datos.get('date')
+            ejecutar_dml(
+                'UPDATE "ACTIVIDADES" SET "ID_ESTATUS"=?, "FECHA_FIN_REAL"=?, "ACTUALIZADO_EN"=CURRENT_TIMESTAMP WHERE "ID"=?',
+                (id_completado, fecha_termino, actividad_id)
+            )
+
+    return ok
 
 
 def get_horas_semanales(user_id, fecha_str):
@@ -380,6 +395,115 @@ def get_horas_diarias(user_id, fecha_str):
             return 0.0
         finally:
             cur.close()
+
+
+def get_horas_ausencia_dia(user_id, fecha_str):
+    """Devuelve las horas de ausencia de un usuario en una fecha.
+    Considera tanto ausencias personales como días festivos activos."""
+    if not user_id or not fecha_str:
+        return 0.0
+    total = 0.0
+    with _pool.get_connection() as conn:
+        cur = conn.cursor()
+        try:
+            # 1. Ausencias personales del usuario
+            cur.execute(
+                'SELECT COALESCE(SUM("HORAS_DIA"), 0) FROM "AUSENCIAS_USUARIO" '
+                'WHERE "ID_USUARIO"=? AND ? BETWEEN "FECHA_INICIO" AND "FECHA_FIN"',
+                (user_id, fecha_str)
+            )
+            r = cur.fetchone()
+            total += float(r[0]) if r and r[0] else 0.0
+
+            # 2. Días festivos activos que aplican a todos
+            cur.execute(
+                'SELECT COUNT(*) FROM "DIAS_FESTIVOS" '
+                'WHERE "FECHA"=? AND "APLICA_TODOS"=1 AND "ACTIVO"=1',
+                (fecha_str,)
+            )
+            r2 = cur.fetchone()
+            if r2 and int(r2[0]) > 0:
+                total = 8.0  # día festivo = día completo ausente
+        except Exception as e:
+            print(f"[get_horas_ausencia_dia] {e}")
+        finally:
+            cur.close()
+    return min(total, 8.0)  # tope máximo de 8h
+
+
+def get_active_user_count():
+    try:
+        rows = ejecutar_query('SELECT COUNT(*) AS CNT FROM "USUARIOS" WHERE "ACTIVO"=1')
+        return int(rows[0]["CNT"]) if rows else 0
+    except Exception as e:
+        print(f"[get_active_user_count] {e}")
+        return 0
+
+
+def get_horas_ausencia_periodo(user_id, start_date, end_date):
+    """Devuelve horas de ausencia en un periodo (inclusive)."""
+    if not start_date or not end_date:
+        return 0.0
+
+    total = 0.0
+    with _pool.get_connection() as conn:
+        cur = conn.cursor()
+        try:
+            # Ausencias personales (rango solapado)
+            query = (
+                'SELECT "ID_USUARIO", "FECHA_INICIO", "FECHA_FIN", "HORAS_DIA" '
+                'FROM "AUSENCIAS_USUARIO" '
+                'WHERE "FECHA_FIN" >= ? AND "FECHA_INICIO" <= ?'
+            )
+            params = [start_date, end_date]
+            if user_id:
+                query += ' AND "ID_USUARIO" = ?'
+                params.append(user_id)
+
+            cur.execute(query, params)
+            rows = cur.fetchall()
+
+            for row in rows:
+                _user_id, fecha_inicio, fecha_fin, horas_dia = row
+
+                # Normaliza a date
+                if isinstance(fecha_inicio, datetime):
+                    fecha_inicio = fecha_inicio.date()
+                if isinstance(fecha_fin, datetime):
+                    fecha_fin = fecha_fin.date()
+
+                if isinstance(fecha_inicio, str):
+                    fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+                if isinstance(fecha_fin, str):
+                    fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+
+                inicio = max(fecha_inicio, datetime.strptime(start_date, '%Y-%m-%d').date())
+                fin = min(fecha_fin, datetime.strptime(end_date, '%Y-%m-%d').date())
+                dias = (fin - inicio).days + 1
+                if dias > 0:
+                    total += float(horas_dia or 0) * dias
+
+            # Festivos globales
+            cur.execute(
+                'SELECT COUNT(*) FROM "DIAS_FESTIVOS" '
+                'WHERE "FECHA" BETWEEN ? AND ? AND "APLICA_TODOS"=1 AND "ACTIVO"=1',
+                (start_date, end_date)
+            )
+            festivo_row = cur.fetchone()
+            festivos = int(festivo_row[0]) if festivo_row and festivo_row[0] is not None else 0
+            if festivos:
+                if user_id:
+                    total += 8.0 * festivos
+                else:
+                    usuarios_activos = get_active_user_count()
+                    total += 8.0 * festivos * usuarios_activos
+
+        except Exception as e:
+            print(f"[get_horas_ausencia_periodo] {e}")
+        finally:
+            cur.close()
+
+    return float(total)
 
 
 def agregar_categoria_db(descripcion):
@@ -1009,6 +1133,56 @@ def obtener_datos_reporte_proyecto(proyecto_id):
                 act_id = ev["ID_ACTIVIDAD"]
                 evidencias_por_actividad.setdefault(act_id, []).append(ev)
 
+            # Inyectar pseudo-actividades individuales para Actividades Rápidas (Ad-hoc)
+            sql_adhoc = """
+                SELECT 
+                    R."FECHA", 
+                    R."HORAS", 
+                    R."ACCION", 
+                    R."DETALLES",
+                    T."DESCRIPCION" AS "TIPO",
+                    U."NOMBRE_COMPLETO" AS "RESPONSABLE",
+                    P."NOMBRE_PROYECTO"
+                FROM "REGISTRO_ACTIVIDADES" R
+                LEFT JOIN "CAT_TIPO_ACTIVIDAD" T ON R."ID_TIPO_ACT" = T."ID"
+                LEFT JOIN "USUARIOS" U ON R."ID_USUARIO" = U."ID"
+                LEFT JOIN "PROYECTOS" P ON R."ID_PROYECTO" = P."ID"
+                WHERE R."ID_PROYECTO"=? AND R."ID_ACTIVIDAD" IS NULL
+                ORDER BY R."FECHA" ASC
+            """
+            cur.execute(sql_adhoc, (proyecto_id,))
+            for rec in cur.fetchall():
+                fecha_val = rec[0]
+                horas_val = float(rec[1] or 0)
+                accion_val = rec[2] or "Actividad Rápida"
+                detalles_val = rec[3] or "Horas registradas directamente al proyecto."
+                tipo_val = rec[4] or "Ad-hoc"
+                responsable_val = rec[5] or "—"
+                proyecto_nombre = rec[6] or "Proyecto"
+                
+                # Format to YYYY-MM-DD
+                fecha_str = str(fecha_val)[:10] if fecha_val else None
+                
+                actividades.append({
+                    "ID": None,
+                    "NOMBRE_ACTIVIDAD": f"⚡ {tipo_val} - {accion_val}",
+                    "DESCRIPCION": detalles_val,
+                    "FECHA_SOLICITUD": fecha_str,
+                    "FECHA_INICIO": fecha_str,
+                    "FECHA_FIN_REAL": fecha_str,
+                    "PRIORIDAD": None,
+                    "SOLICITANTE": "—",
+                    "ID_ACTIVIDAD_PADRE": None,
+                    "NOMBRE_ACTIVIDAD_PADRE": None,
+                    "ESTATUS": "Completado",
+                    "NOMBRE_PROYECTO": proyecto_nombre,
+                    "HORAS_TOTALES": horas_val,
+                    "RESPONSABLES": responsable_val,
+                    "RECURSOS": "—",
+                    "NUM_HIJAS": 0,
+                    "NOMBRES_HIJAS": ""
+                })
+
             return actividades, evidencias_por_actividad
         finally:
             cur.close()
@@ -1178,3 +1352,134 @@ def eliminar_recurso(id_val: str):
     ok = _cat_delete("CAT_RECURSOS", id_val)
     if ok: invalidar_cache("cat_recursos")
     return ok, "" if ok else "Error al eliminar."
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MÓDULO CALENDARIO — AUSENCIAS DE USUARIO
+# ══════════════════════════════════════════════════════════════════════════════
+
+def obtener_ausencias(filtros=None):
+    if filtros is None:
+        filtros = {}
+    params, where = [], []
+    if filtros.get("user_id"):
+        where.append('"A"."ID_USUARIO" = ?')
+        params.append(filtros["user_id"])
+    if filtros.get("tipo"):
+        where.append('"A"."TIPO" = ?')
+        params.append(filtros["tipo"])
+    if filtros.get("anio"):
+        where.append('(YEAR("A"."FECHA_INICIO") = ? OR YEAR("A"."FECHA_FIN") = ?)')
+        params += [int(filtros["anio"]), int(filtros["anio"])]
+    where_sql = ("WHERE " + " AND ".join(where)) if where else ""
+    sql = f"""
+        SELECT A."ID", A."ID_USUARIO", A."FECHA_INICIO", A."FECHA_FIN",
+               A."TIPO", A."HORAS_DIA", A."DESCRIPCION", A."CREADO_EN",
+               U."NOMBRE_COMPLETO" AS "USUARIO"
+        FROM "AUSENCIAS_USUARIO" A
+        JOIN "USUARIOS" U ON A."ID_USUARIO" = U."ID"
+        {where_sql}
+        ORDER BY A."FECHA_INICIO" DESC
+    """
+    return ejecutar_query(sql, tuple(params) if params else None)
+
+
+def obtener_ausencias_mes(anio: int, mes: int):
+    from datetime import date, timedelta
+    primer_dia = date(anio, mes, 1)
+    ultimo_dia = date(anio + 1, 1, 1) - timedelta(days=1) if mes == 12 else date(anio, mes + 1, 1) - timedelta(days=1)
+    sql = """
+        SELECT A."ID", A."ID_USUARIO", A."FECHA_INICIO", A."FECHA_FIN",
+               A."TIPO", A."HORAS_DIA", A."DESCRIPCION",
+               U."NOMBRE_COMPLETO" AS "USUARIO"
+        FROM "AUSENCIAS_USUARIO" A
+        JOIN "USUARIOS" U ON A."ID_USUARIO" = U."ID"
+        WHERE A."FECHA_FIN" >= ? AND A."FECHA_INICIO" <= ?
+        ORDER BY A."FECHA_INICIO" ASC
+    """
+    return ejecutar_query(sql, (primer_dia.strftime("%Y-%m-%d"), ultimo_dia.strftime("%Y-%m-%d")))
+
+
+def guardar_ausencia(datos: dict) -> bool:
+    sql = """
+        INSERT INTO "AUSENCIAS_USUARIO"
+            ("ID","ID_USUARIO","FECHA_INICIO","FECHA_FIN","TIPO","HORAS_DIA","DESCRIPCION","CREADO_POR")
+        VALUES (SYSUUID,?,?,?,?,?,?,?)
+    """
+    return ejecutar_dml(sql, (
+        datos.get("id_usuario"),
+        datos.get("fecha_inicio"),
+        datos.get("fecha_fin"),
+        datos.get("tipo", "DIA_LIBRE"),
+        float(datos.get("horas_dia", 8)),
+        datos.get("descripcion") or None,
+        datos.get("creado_por") or None,
+    ))
+
+
+def actualizar_ausencia(ausencia_id: str, datos: dict) -> bool:
+    sql = """
+        UPDATE "AUSENCIAS_USUARIO"
+        SET "ID_USUARIO"=?, "FECHA_INICIO"=?, "FECHA_FIN"=?,
+            "TIPO"=?, "HORAS_DIA"=?, "DESCRIPCION"=?, "ACTUALIZADO_EN"=CURRENT_TIMESTAMP
+        WHERE "ID"=?
+    """
+    return ejecutar_dml(sql, (
+        datos.get("id_usuario"),
+        datos.get("fecha_inicio"),
+        datos.get("fecha_fin"),
+        datos.get("tipo", "DIA_LIBRE"),
+        float(datos.get("horas_dia", 8)),
+        datos.get("descripcion") or None,
+        ausencia_id,
+    ))
+
+
+def eliminar_ausencia(ausencia_id: str) -> bool:
+    return ejecutar_dml('DELETE FROM "AUSENCIAS_USUARIO" WHERE "ID"=?', (ausencia_id,))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MÓDULO CALENDARIO — DÍAS FESTIVOS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def obtener_dias_festivos(anio: int = None):
+    if anio:
+        return ejecutar_query(
+            'SELECT "ID","FECHA","NOMBRE","TIPO","APLICA_TODOS","ACTIVO" '
+            'FROM "DIAS_FESTIVOS" WHERE YEAR("FECHA")=? ORDER BY "FECHA"',
+            (anio,)
+        )
+    return ejecutar_query(
+        'SELECT "ID","FECHA","NOMBRE","TIPO","APLICA_TODOS","ACTIVO" FROM "DIAS_FESTIVOS" ORDER BY "FECHA"'
+    )
+
+
+def obtener_dias_festivos_mes(anio: int, mes: int):
+    return ejecutar_query(
+        'SELECT "ID","FECHA","NOMBRE","TIPO","APLICA_TODOS","ACTIVO" '
+        'FROM "DIAS_FESTIVOS" WHERE YEAR("FECHA")=? AND MONTH("FECHA")=? AND "ACTIVO"=1 ORDER BY "FECHA"',
+        (anio, mes)
+    )
+
+
+def guardar_dia_festivo(datos: dict) -> bool:
+    return ejecutar_dml(
+        'INSERT INTO "DIAS_FESTIVOS" ("ID","FECHA","NOMBRE","TIPO","APLICA_TODOS","ACTIVO") VALUES (SYSUUID,?,?,?,?,1)',
+        (datos.get("fecha"), datos.get("nombre"), datos.get("tipo", "OFICIAL"), 1 if datos.get("aplica_todos", True) else 0)
+    )
+
+
+def actualizar_dia_festivo(festivo_id: str, datos: dict) -> bool:
+    return ejecutar_dml(
+        'UPDATE "DIAS_FESTIVOS" SET "FECHA"=?, "NOMBRE"=?, "TIPO"=?, "APLICA_TODOS"=? WHERE "ID"=?',
+        (datos.get("fecha"), datos.get("nombre"), datos.get("tipo", "OFICIAL"), 1 if datos.get("aplica_todos", True) else 0, festivo_id)
+    )
+
+
+def toggle_dia_festivo(festivo_id: str, activo: int) -> bool:
+    return ejecutar_dml('UPDATE "DIAS_FESTIVOS" SET "ACTIVO"=? WHERE "ID"=?', (activo, festivo_id))
+
+
+def eliminar_dia_festivo(festivo_id: str) -> bool:
+    return ejecutar_dml('DELETE FROM "DIAS_FESTIVOS" WHERE "ID"=?', (festivo_id,))

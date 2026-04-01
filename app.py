@@ -1,5 +1,6 @@
 import os
 import uuid
+from datetime import datetime, timedelta, date
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, jsonify, url_for, send_file
 import io
@@ -10,6 +11,8 @@ from db import (
     guardar_registro_actividad,
     get_horas_semanales,
     get_horas_diarias,
+    get_horas_ausencia_dia,
+    get_horas_ausencia_periodo,
     agregar_categoria_db,
     eliminar_categoria_db,
     obtener_datos_grafica_proyectos,
@@ -201,9 +204,11 @@ def api_weekly_hours():
 
 @app.route("/api/daily_hours")
 def api_daily_hours():
-    return jsonify(
-        {"total": get_horas_diarias(request.args.get("user"), request.args.get("date"))}
-    )
+    user_id = request.args.get("user")
+    fecha = request.args.get("date")
+    total = get_horas_diarias(user_id, fecha)
+    horas_ausencia = get_horas_ausencia_dia(user_id, fecha)
+    return jsonify({"total": total, "horas_ausencia": horas_ausencia})
 
 
 @app.route("/api/actividades_proyecto")
@@ -250,6 +255,30 @@ def dashboard_data():
     period = request.args.get("period", "month")
     fecha_ref = request.args.get("fecha_ref") or None
 
+    try:
+        ref_date = datetime.strptime(fecha_ref, "%Y-%m-%d").date() if fecha_ref else date.today()
+    except Exception:
+        ref_date = date.today()
+
+    if period == 'day':
+        start_date = ref_date
+        end_date = ref_date
+    elif period == 'week':
+        start_date = ref_date - timedelta(days=ref_date.weekday())
+        end_date = start_date + timedelta(days=6)
+    elif period == 'month':
+        from calendar import monthrange
+        start_date = date(ref_date.year, ref_date.month, 1)
+        end_date = date(ref_date.year, ref_date.month, monthrange(ref_date.year, ref_date.month)[1])
+    elif period == 'year':
+        start_date = date(ref_date.year, 1, 1)
+        end_date = date(ref_date.year, 12, 31)
+    else:
+        start_date = date.today()
+        end_date = date.today()
+
+    ausencia_horas = get_horas_ausencia_periodo(user_id, start_date.isoformat(), end_date.isoformat())
+
     proyectos = obtener_datos_grafica_proyectos(
         user_id=user_id, period=period, fecha_ref=fecha_ref
     )
@@ -277,6 +306,7 @@ def dashboard_data():
                 }
                 for r in registros
             ],
+            "ausencia_horas": float(ausencia_horas),
         }
     )
 
@@ -638,6 +668,124 @@ def api_cat_rec_toggle(id):
 def api_cat_rec_eliminar(id):
     ok, msg = eliminar_recurso(id)
     return _json_ok() if ok else _json_err(msg, 400)
+
+# ── CALENDARIO ─────────────────────────────────────────────────────────────
+
+from db import (
+    obtener_ausencias, obtener_ausencias_mes, guardar_ausencia,
+    actualizar_ausencia, eliminar_ausencia,
+    obtener_dias_festivos, obtener_dias_festivos_mes,
+    guardar_dia_festivo, actualizar_dia_festivo,
+    toggle_dia_festivo, eliminar_dia_festivo,
+    get_horas_ausencia_dia,
+)
+
+
+@app.route("/calendario")
+def calendario():
+    from datetime import date
+    hoy = date.today()
+    anio = int(request.args.get("anio", hoy.year))
+    mes  = int(request.args.get("mes",  hoy.month))
+    base = _catalogo_base()
+    return render_template(
+        "calendario.html",
+        users=base["users"],
+        anio=anio,
+        mes=mes,
+        ausencias=obtener_ausencias_mes(anio, mes),
+        festivos=obtener_dias_festivos_mes(anio, mes),
+        todos_festivos=obtener_dias_festivos(anio),
+        todas_ausencias=obtener_ausencias({"anio": anio}),
+    )
+
+
+@app.route("/api/ausencias")
+def api_ausencias():
+    filtros = {
+        "user_id": request.args.get("user_id"),
+        "tipo":    request.args.get("tipo"),
+        "anio":    request.args.get("anio"),
+    }
+    rows = obtener_ausencias(filtros)
+    return jsonify([
+        {
+            "id":           r["ID"],
+            "id_usuario":   r["ID_USUARIO"],
+            "usuario":      r["USUARIO"],
+            "fecha_inicio": str(r["FECHA_INICIO"]),
+            "fecha_fin":    str(r["FECHA_FIN"]),
+            "tipo":         r["TIPO"],
+            "horas_dia":    float(r["HORAS_DIA"]),
+            "descripcion":  r.get("DESCRIPCION") or "",
+        }
+        for r in rows
+    ])
+
+
+@app.route("/api/ausencias", methods=["POST"])
+def api_ausencia_crear():
+    datos = request.get_json()
+    return _json_ok() if guardar_ausencia(datos) else _json_err("Error al guardar la ausencia.")
+
+
+@app.route("/api/ausencias/<ausencia_id>", methods=["PUT"])
+def api_ausencia_editar(ausencia_id):
+    return _json_ok() if actualizar_ausencia(ausencia_id, request.get_json()) else _json_err("Error al actualizar.")
+
+
+@app.route("/api/ausencias/<ausencia_id>", methods=["DELETE"])
+def api_ausencia_eliminar(ausencia_id):
+    return _json_ok() if eliminar_ausencia(ausencia_id) else _json_err("Error al eliminar.")
+
+
+@app.route("/api/ausencias/dia")
+def api_ausencias_dia():
+    user_id = request.args.get("user")
+    fecha   = request.args.get("fecha")
+    horas   = get_horas_ausencia_dia(user_id, fecha)
+    return jsonify({"horas_ausencia": horas})
+
+
+# ── DÍAS FESTIVOS ──────────────────────────────────────────────────────────
+
+@app.route("/api/festivos")
+def api_festivos():
+    from datetime import date
+    anio = int(request.args.get("anio", date.today().year))
+    rows = obtener_dias_festivos(anio)
+    return jsonify([
+        {
+            "id":          r["ID"],
+            "fecha":       str(r["FECHA"]),
+            "nombre":      r["NOMBRE"],
+            "tipo":        r["TIPO"],
+            "aplica_todos": bool(r["APLICA_TODOS"]),
+            "activo":      bool(r["ACTIVO"]),
+        }
+        for r in rows
+    ])
+
+
+@app.route("/api/festivos", methods=["POST"])
+def api_festivo_crear():
+    return _json_ok() if guardar_dia_festivo(request.get_json()) else _json_err("Error al guardar.")
+
+
+@app.route("/api/festivos/<festivo_id>", methods=["PUT"])
+def api_festivo_editar(festivo_id):
+    return _json_ok() if actualizar_dia_festivo(festivo_id, request.get_json()) else _json_err("Error al actualizar.")
+
+
+@app.route("/api/festivos/<festivo_id>/toggle", methods=["POST"])
+def api_festivo_toggle(festivo_id):
+    return _json_ok() if toggle_dia_festivo(festivo_id, request.get_json().get("activo", 1)) else _json_err("Error.")
+
+
+@app.route("/api/festivos/<festivo_id>", methods=["DELETE"])
+def api_festivo_eliminar(festivo_id):
+    return _json_ok() if eliminar_dia_festivo(festivo_id) else _json_err("Error al eliminar.")
+
 
 # health route
 

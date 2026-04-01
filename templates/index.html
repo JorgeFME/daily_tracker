@@ -33,7 +33,9 @@
             --shadow-input: 0 2px 8px rgba(15, 23, 42, 0.04);
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             background-color: #f0f4fb;
@@ -62,7 +64,10 @@
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
         }
-        .main-nav::-webkit-scrollbar { display: none; }
+
+        .main-nav::-webkit-scrollbar {
+            display: none;
+        }
 
         .nav-brand {
             display: flex;
@@ -93,10 +98,12 @@
             flex-shrink: 0;
             color: #64748b;
         }
+
         .nav-link-pill.active {
             background: #2563eb;
             color: #fff;
         }
+
         .nav-link-pill:hover:not(.active) {
             background: #dbeafe;
             color: #2563eb;
@@ -127,6 +134,7 @@
             padding: 4px;
             gap: 4px;
         }
+
         .mobile-tab {
             flex: 1;
             display: flex;
@@ -144,12 +152,16 @@
             cursor: pointer;
             transition: all 0.2s;
         }
+
         .mobile-tab.active {
             background: var(--primary);
             color: white;
             box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
         }
-        .mobile-tab i { font-size: 0.95rem; }
+
+        .mobile-tab i {
+            font-size: 0.95rem;
+        }
 
         /* ─── CARDS ───────────────────────────────────────────── */
         .card-panel {
@@ -202,6 +214,32 @@
             border-radius: 14px;
             padding: 14px 16px;
             margin-bottom: 20px;
+            /* Animación */
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-width: 0;
+            transition:
+                max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.35s ease,
+                margin-top 0.4s ease,
+                margin-bottom 0.4s ease,
+                padding-top 0.4s ease,
+                padding-bottom 0.4s ease,
+                border-width 0.4s ease;
+        }
+
+        .weekly-widget.visible {
+            max-height: 160px;
+            opacity: 1;
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-top: 14px;
+            padding-bottom: 14px;
+            border-width: 1px;
         }
 
         .weekly-header {
@@ -227,8 +265,14 @@
             font-weight: 700;
             font-family: 'DM Mono', monospace;
         }
-        .weekly-count .current { color: var(--primary); }
-        .weekly-count .total { color: var(--text-muted); }
+
+        .weekly-count .current {
+            color: var(--primary);
+        }
+
+        .weekly-count .total {
+            color: var(--text-muted);
+        }
 
         .progress-track {
             height: 8px;
@@ -244,6 +288,7 @@
             background: linear-gradient(90deg, #10b981, #2563eb);
             transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
         #progress-semana.danger {
             background: linear-gradient(90deg, #f59e0b, #ef4444);
         }
@@ -271,7 +316,9 @@
             padding: 20px 20px;
         }
 
-        .field-group { margin-bottom: 18px; }
+        .field-group {
+            margin-bottom: 18px;
+        }
 
         .field-label {
             font-size: 0.68rem;
@@ -314,11 +361,22 @@
             transition: background 0.2s;
         }
 
-        .input-wrap:focus-within .input-icon { background: #fff; }
+        .input-wrap:focus-within .input-icon {
+            background: #fff;
+        }
 
         /* Tom Select */
-        .ts-wrapper { flex: 1; min-width: 0; position: relative; }
-        .ts-wrapper .ts-control .placeholder { color: var(--text-muted) !important; opacity: 1 !important; font-size: .9rem; }
+        .ts-wrapper {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+        }
+
+        .ts-wrapper .ts-control .placeholder {
+            color: var(--text-muted) !important;
+            opacity: 1 !important;
+            font-size: .9rem;
+        }
 
         .ts-control {
             border: none !important;
@@ -332,11 +390,30 @@
             display: flex !important;
             align-items: center !important;
         }
-        .ts-control input { font-family: 'DM Sans', sans-serif !important; font-size: 0.9rem !important; color: var(--text-main) !important; }
-        .ts-control .item { font-size: 0.9rem; color: var(--text-main); }
-        .ts-control .placeholder { color: var(--text-muted) !important; }
-        .ts-control:after { border: none !important; }
-        .ts-control.focus { box-shadow: none !important; outline: none !important; }
+
+        .ts-control input {
+            font-family: 'DM Sans', sans-serif !important;
+            font-size: 0.9rem !important;
+            color: var(--text-main) !important;
+        }
+
+        .ts-control .item {
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        .ts-control .placeholder {
+            color: var(--text-muted) !important;
+        }
+
+        .ts-control:after {
+            border: none !important;
+        }
+
+        .ts-control.focus {
+            box-shadow: none !important;
+            outline: none !important;
+        }
 
         .ts-dropdown {
             border-radius: 14px !important;
@@ -347,9 +424,24 @@
             z-index: 9999 !important;
             font-family: 'DM Sans', sans-serif !important;
         }
-        .ts-dropdown .option { border-radius: 8px; padding: 9px 12px; font-size: 0.88rem; color: var(--text-main); }
-        .ts-dropdown .option:hover, .ts-dropdown .option.active { background: var(--primary-light) !important; color: var(--primary) !important; }
-        .ts-dropdown .option.selected { background: var(--primary) !important; color: white !important; }
+
+        .ts-dropdown .option {
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-size: 0.88rem;
+            color: var(--text-main);
+        }
+
+        .ts-dropdown .option:hover,
+        .ts-dropdown .option.active {
+            background: var(--primary-light) !important;
+            color: var(--primary) !important;
+        }
+
+        .ts-dropdown .option.selected {
+            background: var(--primary) !important;
+            color: white !important;
+        }
 
         /* Native inputs */
         .field-input {
@@ -365,8 +457,15 @@
             /* Fix iOS zoom on focus */
             font-size: max(16px, 0.9rem);
         }
-        .field-input::placeholder { color: var(--text-muted); }
-        .field-input:disabled { cursor: not-allowed; opacity: 0.6; }
+
+        .field-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .field-input:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
 
         textarea.field-input {
             resize: none;
@@ -392,11 +491,13 @@
             transition: border-color 0.2s, box-shadow 0.2s;
             overflow: hidden;
         }
+
         .input-wrap-suffix:focus-within {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px var(--primary-glow);
             background: #fff;
         }
+
         .input-suffix {
             padding: 0 12px;
             display: flex;
@@ -407,6 +508,7 @@
             border-left: 1px solid var(--border);
             flex-shrink: 0;
         }
+
         .hours-input {
             flex: 1;
             border: none;
@@ -440,11 +542,25 @@
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
         }
-        .btn-submit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4); }
-        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
 
         /* ─── DASHBOARD PANEL ─────────────────────────────────── */
-        .dashboard-col { display: flex; flex-direction: column; gap: 20px; }
+        .dashboard-col {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
         .panel-head {
             padding: 18px 20px 16px;
@@ -466,7 +582,11 @@
             align-items: center;
             gap: 8px;
         }
-        .panel-head-title i { color: var(--primary); font-size: 1rem; }
+
+        .panel-head-title i {
+            color: var(--primary);
+            font-size: 1rem;
+        }
 
         .chart-wrapper {
             padding: 16px 16px 20px;
@@ -475,13 +595,18 @@
         }
 
         /* TABLE */
-        .table-wrap { padding: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .table-wrap {
+            padding: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
 
         .records-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.875rem;
-            min-width: 460px; /* allow horizontal scroll on mobile */
+            min-width: 460px;
+            /* allow horizontal scroll on mobile */
         }
 
         .records-table thead th {
@@ -500,8 +625,15 @@
             border-bottom: 1px solid var(--border);
             transition: background 0.15s;
         }
-        .records-table tbody tr:last-child { border-bottom: none; }
-        .records-table tbody tr:hover { background: var(--surface-alt); }
+
+        .records-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .records-table tbody tr:hover {
+            background: var(--surface-alt);
+        }
+
         .records-table tbody td {
             padding: 12px 14px;
             color: var(--text-main);
@@ -517,6 +649,7 @@
             font-weight: 600;
             white-space: nowrap;
         }
+
         .badge-hrs {
             background: #f0fdf4;
             color: #059669;
@@ -544,12 +677,30 @@
             white-space: nowrap;
             -webkit-tap-highlight-color: transparent;
         }
-        .btn-export:hover { background: var(--primary-light); border-color: #bfdbfe; }
+
+        .btn-export:hover {
+            background: var(--primary-light);
+            border-color: #bfdbfe;
+        }
 
         /* EMPTY STATE */
-        .empty-state { text-align: center; padding: 32px 20px; color: var(--text-muted); }
-        .empty-state i { font-size: 2rem; opacity: 0.4; display: block; margin-bottom: 8px; }
-        .empty-state p { font-size: 0.85rem; margin: 0; }
+        .empty-state {
+            text-align: center;
+            padding: 32px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            opacity: 0.4;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 0.85rem;
+            margin: 0;
+        }
 
         /* PERIOD PILLS */
         .period-pills {
@@ -560,6 +711,7 @@
             border-radius: 99px;
             padding: 4px;
         }
+
         .pill {
             border: none;
             background: transparent;
@@ -575,8 +727,17 @@
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
         }
-        .pill:hover { color: var(--primary); background: var(--primary-light); }
-        .pill.active { background: var(--primary); color: white; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3); }
+
+        .pill:hover {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .pill.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
 
         /* KPI STRIP */
         .kpi-strip-wrapper {
@@ -588,7 +749,10 @@
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
         }
-        .kpi-strip-wrapper::-webkit-scrollbar { display: none; }
+
+        .kpi-strip-wrapper::-webkit-scrollbar {
+            display: none;
+        }
 
         .kpi-card {
             display: flex;
@@ -599,6 +763,7 @@
             flex: 1;
             min-width: 130px;
         }
+
         .kpi-icon {
             width: 34px;
             height: 34px;
@@ -609,7 +774,13 @@
             font-size: 0.9rem;
             flex-shrink: 0;
         }
-        .kpi-body { display: flex; flex-direction: column; gap: 2px; }
+
+        .kpi-body {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
         .kpi-label {
             font-size: 0.65rem;
             font-weight: 700;
@@ -617,6 +788,7 @@
             letter-spacing: 0.8px;
             color: var(--text-muted);
         }
+
         .kpi-value {
             font-size: 1.05rem;
             font-weight: 800;
@@ -626,7 +798,12 @@
         }
 
         /* PERIOD NAVIGATOR */
-        .period-nav { display: flex; align-items: center; gap: 5px; }
+        .period-nav {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
         .nav-arrow {
             width: 28px;
             height: 28px;
@@ -644,8 +821,18 @@
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
         }
-        .nav-arrow:hover:not(:disabled) { background: var(--primary-light); color: var(--primary); border-color: #bfdbfe; }
-        .nav-arrow:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        .nav-arrow:hover:not(:disabled) {
+            background: var(--primary-light);
+            color: var(--primary);
+            border-color: #bfdbfe;
+        }
+
+        .nav-arrow:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
         .nav-label {
             font-size: 0.75rem;
             font-weight: 700;
@@ -666,6 +853,7 @@
             background: rgba(255, 255, 255, 0.8);
             z-index: 10;
         }
+
         .spinner {
             width: 28px;
             height: 28px;
@@ -674,7 +862,12 @@
             border-radius: 50%;
             animation: spin 0.7s linear infinite;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
         /* Mode badges */
         .mode-badge {
@@ -687,8 +880,18 @@
             font-weight: 700;
             letter-spacing: 0.4px;
         }
-        .mode-badge.global { background: #f0fdf4; color: #059669; border: 1px solid #bbf7d0; }
-        .mode-badge.individual { background: var(--primary-light); color: var(--primary); border: 1px solid #bfdbfe; }
+
+        .mode-badge.global {
+            background: #f0fdf4;
+            color: #059669;
+            border: 1px solid #bbf7d0;
+        }
+
+        .mode-badge.individual {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid #bfdbfe;
+        }
 
         .accion-cell {
             max-width: 160px;
@@ -697,7 +900,9 @@
             white-space: nowrap;
         }
 
-        .flatpickr-input { width: 100%; }
+        .flatpickr-input {
+            width: 100%;
+        }
 
         /* Dashboard controls row */
         .dashboard-controls {
@@ -712,6 +917,7 @@
             .tracker-layout {
                 grid-template-columns: 1fr;
             }
+
             .form-panel {
                 position: relative !important;
                 top: 0 !important;
@@ -721,7 +927,8 @@
         /* ─── RESPONSIVE: MOBILE ─────────────────────────────── */
         @media (max-width: 640px) {
             .page-content {
-                padding: 12px 12px 80px;  /* bottom padding for floating submit */
+                padding: 12px 12px 80px;
+                /* bottom padding for floating submit */
             }
 
             .tracker-layout {
@@ -737,13 +944,16 @@
             .form-panel {
                 display: none;
             }
+
             .dashboard-col {
                 display: none;
             }
+
             .form-panel.tab-active,
             .dashboard-col.tab-active {
                 display: block;
             }
+
             .dashboard-col.tab-active {
                 display: flex;
             }
@@ -752,15 +962,21 @@
             .panel-header {
                 padding: 18px 16px 14px;
             }
+
             .panel-icon {
                 width: 40px;
                 height: 40px;
                 font-size: 1.2rem;
                 margin-bottom: 8px;
             }
-            .panel-title { font-size: 1.1rem; }
 
-            .form-body { padding: 16px 14px; }
+            .panel-title {
+                font-size: 1.1rem;
+            }
+
+            .form-body {
+                padding: 16px 14px;
+            }
 
             /* Date + hours: stack on very small screens */
             .row-fields {
@@ -780,8 +996,11 @@
                 padding: 16px;
                 box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45);
             }
+
             /* Make sure form doesn't hide behind floating button */
-            form { padding-bottom: 64px; }
+            form {
+                padding-bottom: 64px;
+            }
 
             /* Chart smaller */
             .chart-wrapper {
@@ -794,6 +1013,7 @@
                 min-width: 120px;
                 padding: 10px 12px;
             }
+
             #kpi-cumplimiento {
                 min-width: 180px;
             }
@@ -803,6 +1023,7 @@
                 padding: 14px 14px 12px;
                 gap: 8px;
             }
+
             .panel-head-first-row {
                 width: 100%;
                 display: flex;
@@ -811,20 +1032,43 @@
             }
 
             /* Period pills: smaller */
-            .period-pills { padding: 3px; }
-            .pill { padding: 5px 9px; font-size: 0.7rem; }
-            .nav-label { min-width: 90px; font-size: 0.72rem; }
+            .period-pills {
+                padding: 3px;
+            }
+
+            .pill {
+                padding: 5px 9px;
+                font-size: 0.7rem;
+            }
+
+            .nav-label {
+                min-width: 90px;
+                font-size: 0.72rem;
+            }
 
             /* Dashboard subtitle */
-            #dashboard-subtitle { flex-wrap: wrap; }
+            #dashboard-subtitle {
+                flex-wrap: wrap;
+            }
 
             /* Table */
-            .records-table { min-width: 420px; font-size: 0.8rem; }
-            .records-table thead th { padding: 10px 10px; }
-            .records-table tbody td { padding: 10px 10px; }
+            .records-table {
+                min-width: 420px;
+                font-size: 0.8rem;
+            }
+
+            .records-table thead th {
+                padding: 10px 10px;
+            }
+
+            .records-table tbody td {
+                padding: 10px 10px;
+            }
 
             /* Nav brand: hide text on small screens */
-            .nav-brand-text { display: none; }
+            .nav-brand-text {
+                display: none;
+            }
         }
 
         @media (max-width: 380px) {
@@ -851,6 +1095,9 @@
         </a>
         <a href="/registros" class="nav-link-pill">
             <i class="bi bi-clock-history"></i><span>Registros</span>
+        </a>
+        <a href="/calendario" class="nav-link-pill">
+            <i class="bi bi-calendar3"></i><span>Calendario</span>
         </a>
         <a href="/catalogos" class="nav-link-pill">
             <i class="bi bi-sliders"></i><span>Catálogos</span>
@@ -879,26 +1126,6 @@
                 </div>
 
                 <div class="form-body">
-                    <!-- Weekly Progress -->
-                    <div class="weekly-widget">
-                        <div class="weekly-header">
-                            <span class="weekly-label"><i class="bi bi-clock-history text-primary"></i>Progreso del Día</span>
-                            <span class="weekly-count">
-                                <span class="current" id="horas-acumuladas">0</span>
-                                <span class="total">/ 8h</span>
-                            </span>
-                        </div>
-                        <div class="progress-track">
-                            <div id="progress-semana" style="width: 0%;"></div>
-                        </div>
-                        <div class="weekly-footer">
-                            <span style="font-size:0.78rem; color:var(--text-secondary);">
-                                Restan: <strong id="horas-restantes" style="color:var(--text-main)">8</strong> hrs hoy
-                            </span>
-                            <span class="badge-week" id="semana-label">Selecciona una fecha</span>
-                        </div>
-                    </div>
-
                     <form method="POST">
                         <!-- Desarrollador -->
                         <div class="field-group">
@@ -911,6 +1138,28 @@
                                     <option value="{{ user.ID }}">{{ user.NOMBRE_COMPLETO }}</option>
                                     {% endfor %}
                                 </select>
+                            </div>
+                        </div>
+
+                        <!-- Weekly Progress (oculto hasta seleccionar usuario) -->
+                        <div class="weekly-widget" id="weekly-widget-box">
+                            <div class="weekly-header">
+                                <span class="weekly-label"><i class="bi bi-clock-history text-primary"></i>Progreso del
+                                    Día</span>
+                                <span class="weekly-count">
+                                    <span class="current" id="horas-acumuladas">0</span>
+                                    <span class="total">/ 8h</span>
+                                </span>
+                            </div>
+                            <div class="progress-track">
+                                <div id="progress-semana" style="width: 0%;"></div>
+                            </div>
+                            <div class="weekly-footer">
+                                <span style="font-size:0.78rem; color:var(--text-secondary);">
+                                    Restan: <strong id="horas-restantes" style="color:var(--text-main)">8</strong> hrs
+                                    hoy
+                                </span>
+                                <span class="badge-week" id="semana-label">Selecciona una fecha</span>
                             </div>
                         </div>
 
@@ -952,7 +1201,8 @@
                         <div class="field-group">
                             <label class="field-label">
                                 Actividad
-                                <span style="font-size:0.68rem; font-weight:500; color:var(--text-muted);">Del proyecto seleccionado</span>
+                                <span style="font-size:0.68rem; font-weight:500; color:var(--text-muted);">Del proyecto
+                                    seleccionado</span>
                             </label>
                             <div class="input-wrap">
                                 <span class="input-icon"><i class="bi bi-kanban"></i></span>
@@ -981,9 +1231,11 @@
 
                         <!-- Acción -->
                         <div class="field-group">
-                            <label class="field-label" style="color: var(--primary); opacity:0.9;">Acción de la Actividad</label>
+                            <label class="field-label" style="color: var(--primary); opacity:0.9;">Acción de la
+                                Actividad</label>
                             <div class="input-wrap">
-                                <span class="input-icon"><i class="bi bi-play-circle" style="color:var(--primary);"></i></span>
+                                <span class="input-icon"><i class="bi bi-play-circle"
+                                        style="color:var(--primary);"></i></span>
                                 <input type="text" class="field-input" name="activity_action"
                                     placeholder="Ej: Migración de script..." required disabled>
                             </div>
@@ -993,10 +1245,20 @@
                         <div class="field-group">
                             <label class="field-label">Detalles Técnicos</label>
                             <div class="input-wrap" style="align-items: flex-start;">
-                                <span class="input-icon" style="padding-top:14px;"><i class="bi bi-card-text"></i></span>
+                                <span class="input-icon" style="padding-top:14px;"><i
+                                        class="bi bi-card-text"></i></span>
                                 <textarea class="field-input" name="details" rows="3"
                                     placeholder="Descripción detallada..." required disabled></textarea>
                             </div>
+                        </div>
+
+                        <div class="form-check mb-3 mt-2" id="div-finalizar-actividad" style="display: none;">
+                            <input class="form-check-input" type="checkbox" id="finalizar_actividad"
+                                name="finalizar_actividad" value="1">
+                            <label class="form-check-label text-secondary" for="finalizar_actividad"
+                                style="font-weight: 500;">
+                                <i class="bi bi-check2-circle me-1"></i> Dar por finalizada la actividad
+                            </label>
                         </div>
 
                         <button id="btn-submit" type="submit" class="btn-submit" disabled>
@@ -1029,8 +1291,8 @@
                         <!-- Period Pills + Navigator -->
                         <div class="dashboard-controls">
                             <div class="period-pills" id="period-pills">
-                                <button class="pill" data-period="day">Día</button>
-                                <button class="pill active" data-period="week">Semana</button>
+                                <button class="pill active" data-period="day">Día</button>
+                                <button class="pill" data-period="week">Semana</button>
                                 <button class="pill" data-period="month">Mes</button>
                                 <button class="pill" data-period="year">Año</button>
                             </div>
@@ -1049,29 +1311,34 @@
                     <!-- KPI Strip -->
                     <div id="kpi-strip" class="kpi-strip-wrapper">
                         <div class="kpi-card" id="kpi-registradas">
-                            <div class="kpi-icon" style="background:#eff6ff; color:#2563eb;"><i class="bi bi-clock-fill"></i></div>
+                            <div class="kpi-icon" style="background:#eff6ff; color:#2563eb;"><i
+                                    class="bi bi-clock-fill"></i></div>
                             <div class="kpi-body">
                                 <div class="kpi-label">Registradas</div>
                                 <div class="kpi-value" id="kpi-val-registradas">—</div>
                             </div>
                         </div>
                         <div class="kpi-card" id="kpi-meta">
-                            <div class="kpi-icon" style="background:#f0fdf4; color:#059669;"><i class="bi bi-bullseye"></i></div>
+                            <div class="kpi-icon" style="background:#f0fdf4; color:#059669;"><i
+                                    class="bi bi-bullseye"></i></div>
                             <div class="kpi-body">
                                 <div class="kpi-label">Meta</div>
                                 <div class="kpi-value" id="kpi-val-meta">—</div>
                             </div>
                         </div>
                         <div class="kpi-card" id="kpi-cumplimiento" style="flex:1.4;">
-                            <div class="kpi-icon" style="background:#fefce8; color:#ca8a04;" id="kpi-cumpl-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                            <div class="kpi-icon" style="background:#fefce8; color:#ca8a04;" id="kpi-cumpl-icon"><i
+                                    class="bi bi-graph-up-arrow"></i></div>
                             <div class="kpi-body" style="flex:1;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                                <div
+                                    style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
                                     <span class="kpi-label">Cumplimiento</span>
                                     <span class="kpi-value" id="kpi-val-pct" style="font-size:0.95rem;">—</span>
                                 </div>
                                 <div style="height:5px; background:#f1f5f9; border-radius:99px; overflow:hidden;">
                                     <div id="kpi-progress-bar"
-                                        style="height:100%; width:0%; border-radius:99px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1), background 0.3s;"></div>
+                                        style="height:100%; width:0%; border-radius:99px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1), background 0.3s;">
+                                    </div>
                                 </div>
                                 <div class="kpi-label" id="kpi-faltante" style="margin-top:4px;">—</div>
                             </div>
@@ -1086,7 +1353,8 @@
                         <div id="chart-empty" class="empty-state"
                             style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">
                             <i class="bi bi-bar-chart"></i>
-                            <p>Sin datos para este período</p>
+                            <p style="display: grid; place-items: center; margin-left: 10px;">Sin datos para este
+                                período</p>
                         </div>
                     </div>
                 </div>
@@ -1220,6 +1488,10 @@
             actionInput.disabled = true;
             detailsInput.disabled = true;
             if (fp?.altInput) { fp.input.disabled = true; fp.altInput.disabled = true; }
+            const divFinalizar = document.getElementById('div-finalizar-actividad');
+            if (divFinalizar) divFinalizar.style.display = 'none';
+            const checkFinalizar = document.getElementById('finalizar_actividad');
+            if (checkFinalizar) checkFinalizar.checked = false;
         }
 
         // ─── 3. VALIDACIÓN ────────────────────────────────────────────────────────
@@ -1237,8 +1509,22 @@
 
         // ─── 4. CASCADA ───────────────────────────────────────────────────────────
         userSelect.on('change', val => {
-            if (val) { projectSelect.enable(); fetchWeeklyHours(); }
-            else { projectSelect.clear(); projectSelect.disable(); }
+            const widget = document.getElementById('weekly-widget-box');
+            if (val) {
+                projectSelect.enable();
+                fetchWeeklyHours();
+                widget.classList.add('visible');
+            } else {
+                projectSelect.clear();
+                projectSelect.disable();
+                widget.classList.remove('visible');
+                // Resetear valores del widget
+                document.getElementById('horas-acumuladas').textContent = '0';
+                document.getElementById('horas-restantes').textContent = '8';
+                document.getElementById('semana-label').textContent = 'Selecciona una fecha';
+                const bar = document.getElementById('progress-semana');
+                if (bar) { bar.style.width = '0%'; bar.classList.remove('danger'); }
+            }
             updateDashboard();
             validateForm();
         });
@@ -1255,12 +1541,14 @@
                     const res = await fetch(`/api/actividades_proyecto?proyecto=${val}`);
                     const acts = await res.json();
                     activitySelect.clearOptions();
-                    if (acts.length === 0) {
-                        activitySelect.addOption({ value: '', text: 'Sin actividades registradas' });
-                    } else {
+                    
+                    // Siempre agregar la opción para actividades fugaces (juntas, etc.)
+                    activitySelect.addOption({ value: 'ad_hoc', text: '⚡ Actividad Rápida / Junta' });
+                    
+                    if (acts.length > 0) {
                         acts.forEach(a => activitySelect.addOption({ value: a.id, text: `${a.nombre} · ${a.estatus}` }));
-                        activitySelect.enable();
                     }
+                    activitySelect.enable();
                 } catch (e) {
                     activitySelect.clearOptions();
                     activitySelect.addOption({ value: '', text: 'Error al cargar' });
@@ -1273,8 +1561,26 @@
         });
 
         activitySelect.on('change', val => {
-            if (val) { tipoSelect.enable(); }
-            else { tipoSelect.clear(); tipoSelect.disable(); actionInput.disabled = true; actionInput.value = ''; }
+            const divFinalizar = document.getElementById('div-finalizar-actividad');
+            const checkFinalizar = document.getElementById('finalizar_actividad');
+            if (val) {
+                tipoSelect.enable();
+                if (divFinalizar) {
+                    if (val === 'ad_hoc') {
+                        divFinalizar.style.display = 'none';
+                        if (checkFinalizar) checkFinalizar.checked = false;
+                    } else {
+                        divFinalizar.style.display = 'block';
+                    }
+                }
+            } else {
+                tipoSelect.clear();
+                tipoSelect.disable();
+                actionInput.disabled = true;
+                actionInput.value = '';
+                if (divFinalizar) divFinalizar.style.display = 'none';
+                if (checkFinalizar) checkFinalizar.checked = false;
+            }
             validateForm();
         });
 
@@ -1332,6 +1638,11 @@
         async function fetchWeeklyHours() {
             const uid = userSelect.getValue(), date = fp.input.value;
             if (!uid || !date) return;
+
+            // Limpiar banner de ausencia previo
+            let bannerEl = document.getElementById('ausencia-banner');
+            if (bannerEl) bannerEl.remove();
+
             try {
                 const [resW, resD] = await Promise.all([
                     fetch(`/api/weekly_hours?user=${uid}&date=${date}`),
@@ -1341,15 +1652,37 @@
                 const dataD = await resD.json();
                 horasEnDB = dataW.total || 0;
                 horasDiarias = parseFloat(dataD.total) || 0;
+                const horasAusencia = parseFloat(dataD.horas_ausencia) || 0;
 
                 const fechaLabel = fp.altInput ? fp.altInput.value : date;
                 const labelEl = document.getElementById('semana-label');
                 if (labelEl) labelEl.textContent = fechaLabel;
 
-                const disponibles = Math.max(0, 8 - horasDiarias);
+                const maxHoras = Math.max(0, 8 - horasAusencia);
+                const disponibles = Math.max(0, maxHoras - horasDiarias);
                 hoursInput.max = disponibles;
 
-                if (disponibles === 0) {
+                if (horasAusencia >= 8) {
+                    const banner = document.createElement('div');
+                    banner.id = 'ausencia-banner';
+                    banner.style.cssText = 'background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:0.85rem;color:#854d0e;display:flex;align-items:center;gap:8px;';
+                    banner.innerHTML = '<i class="bi bi-calendar-x-fill" style="font-size:1.1rem"></i><span><strong>Ausencia registrada.</strong> Este día no contabiliza horas laborables.</span>';
+                    const wrap = hoursInput.closest('form');
+                    if (wrap) wrap.prepend(banner);
+                    hoursInput.value = '';
+                    hoursInput.disabled = true;
+                    hoursInput.placeholder = 'Día de ausencia';
+                } else if (horasAusencia > 0) {
+                    const banner = document.createElement('div');
+                    banner.id = 'ausencia-banner';
+                    banner.style.cssText = 'background:#fff7ed;border:1px solid #fdba74;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:0.85rem;color:#9a3412;display:flex;align-items:center;gap:8px;';
+                    banner.innerHTML = `<i class="bi bi-clock-history" style="font-size:1.1rem"></i><span><strong>Ausencia parcial (${horasAusencia}h).</strong> Máximo registrable hoy: ${maxHoras}h.</span>`;
+                    const wrap = hoursInput.closest('form');
+                    if (wrap) wrap.prepend(banner);
+                    if (projectSelect.getValue()) hoursInput.disabled = false;
+                    hoursInput.placeholder = `Máx. ${disponibles}h`;
+                    if (parseFloat(hoursInput.value) > disponibles) hoursInput.value = disponibles;
+                } else if (disponibles === 0) {
                     hoursInput.value = '';
                     hoursInput.disabled = true;
                     hoursInput.placeholder = 'Límite alcanzado';
@@ -1386,7 +1719,7 @@
 
         // ─── 7. DASHBOARD ─────────────────────────────────────────────────────────
         let myChart = null;
-        let currentPeriod = 'week';
+        let currentPeriod = 'day';
         let periodOffset = 0;
         let dashboardRecords = [];
 
@@ -1476,7 +1809,7 @@
 
                 updateDashboardHeader(d.mode, uid);
                 renderChart(d.chart);
-                renderKPIs(d.chart, d.mode);
+                renderKPIs(d.chart, d.mode, parseFloat(d.ausencia_horas) || 0);
                 renderTable(d.records, d.mode);
             } catch (e) {
                 console.error('Dashboard error:', e);
@@ -1490,6 +1823,14 @@
             setInitialState();
             projectSelect.clear();
             activitySelect.clear();
+            // Ocultar y resetear widget de progreso
+            const widget = document.getElementById('weekly-widget-box');
+            if (widget) widget.classList.remove('visible');
+            document.getElementById('horas-acumuladas').textContent = '0';
+            document.getElementById('horas-restantes').textContent = '8';
+            document.getElementById('semana-label').textContent = 'Selecciona una fecha';
+            const bar = document.getElementById('progress-semana');
+            if (bar) { bar.style.width = '0%'; bar.classList.remove('danger'); }
         };
 
         function updateDashboardHeader(mode, uid) {
@@ -1541,18 +1882,28 @@
             return 0;
         }
 
-        function renderKPIs(chartData, mode) {
+        function renderKPIs(chartData, mode, ausenciaHoras = 0) {
             const totalHrs = (chartData?.values || []).reduce((a, b) => a + b, 0);
             const devCount = mode === 'global' ? Object.keys(userSelect.options).filter(k => k !== '').length : 1;
             const ref = computeRefDate();
-            const meta = computeGoal(currentPeriod, ref, devCount);
+            const metaBase = computeGoal(currentPeriod, ref, devCount);
+            const meta = Math.max(0, metaBase - (ausenciaHoras || 0));
             const pct = meta > 0 ? Math.min((totalHrs / meta) * 100, 100) : 0;
             const faltante = Math.max(0, meta - totalHrs);
 
             document.getElementById('kpi-val-registradas').textContent = totalHrs.toFixed(1) + ' h';
-            document.getElementById('kpi-val-meta').textContent = meta.toFixed(0) + ' h' + (devCount > 1 ? ` (${devCount})` : '');
+            document.getElementById('kpi-val-meta').textContent =
+                meta > 0
+                    ? `${meta.toFixed(0)} h${devCount > 1 ? ` (${devCount})` : ''}`
+                    : '0 h';
             document.getElementById('kpi-val-pct').textContent = pct.toFixed(0) + '%';
-            document.getElementById('kpi-faltante').textContent = faltante > 0 ? `Faltan ${faltante.toFixed(1)} h` : '✓ Meta alcanzada';
+
+            const descripcionAusencia = ausenciaHoras > 0
+                ? `Ajuste por ausencias: ${ausenciaHoras.toFixed(1)} h` : '';
+            const textoFaltante = faltante > 0
+                ? `Faltan ${faltante.toFixed(1)} h` : '✓ Meta alcanzada';
+            document.getElementById('kpi-faltante').textContent =
+                descripcionAusencia ? `${textoFaltante} · ${descripcionAusencia}` : textoFaltante;
 
             const bar = document.getElementById('kpi-progress-bar');
             bar.style.width = pct + '%';
@@ -1679,4 +2030,5 @@
     </script>
 
 </body>
+
 </html>
