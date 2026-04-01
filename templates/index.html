@@ -109,6 +109,37 @@
             color: #2563eb;
         }
 
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .nav-hamburger {
+            display: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            color: var(--text-secondary);
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .nav-hamburger:hover {
+            background: var(--primary-light);
+            border-color: #bfdbfe;
+            color: var(--primary);
+        }
+
         /* ─── PAGE ────────────────────────────────────────────── */
         .page-content {
             padding: 20px 16px;
@@ -560,6 +591,7 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+            min-width: 0;
         }
 
         .panel-head {
@@ -592,6 +624,13 @@
             padding: 16px 16px 20px;
             height: 260px;
             position: relative;
+            overflow-x: hidden;
+        }
+
+        .chart-wrapper canvas {
+            display: block;
+            width: 100% !important;
+            max-width: 100% !important;
         }
 
         /* TABLE */
@@ -1040,6 +1079,68 @@
 
         /* ─── RESPONSIVE: MOBILE ─────────────────────────────── */
         @media (max-width: 640px) {
+            body {
+                overflow-x: hidden;
+            }
+
+            .main-nav {
+                padding: 0 12px;
+                gap: 8px;
+                overflow: visible;
+            }
+
+            .nav-brand {
+                margin-right: 0;
+                flex: 1;
+                min-width: 0;
+            }
+
+            .nav-hamburger {
+                display: inline-flex;
+                margin-left: 0;
+            }
+
+            .nav-menu {
+                position: absolute;
+                top: calc(100% + 8px);
+                left: 12px;
+                right: 12px;
+                display: none;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 8px;
+                box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+                z-index: 210;
+            }
+
+            .main-nav.menu-open .nav-menu {
+                display: flex;
+                animation: navDropIn 0.18s ease-out;
+            }
+
+            .nav-menu .nav-link-pill {
+                width: 100%;
+                justify-content: flex-start;
+                padding: 10px 12px;
+                border-radius: 10px;
+            }
+
+            @keyframes navDropIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-6px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
             .page-content {
                 padding: 12px 12px 80px;
                 /* bottom padding for floating submit */
@@ -1070,6 +1171,18 @@
 
             .dashboard-col.tab-active {
                 display: flex;
+            }
+
+            .dashboard-col,
+            .dashboard-col .card-panel,
+            .panel-head,
+            .dashboard-controls,
+            .kpi-strip-wrapper,
+            .chart-wrapper,
+            .table-wrap {
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
             }
 
             /* Form adjustments */
@@ -1119,7 +1232,8 @@
             /* Chart smaller */
             .chart-wrapper {
                 padding: 12px 12px 16px;
-                height: 220px;
+                min-height: 220px;
+                height: auto;
             }
 
             /* KPIs: scrollable strip */
@@ -1136,6 +1250,24 @@
             .panel-head {
                 padding: 14px 14px 12px;
                 gap: 8px;
+            }
+
+            .dashboard-controls {
+                width: 100%;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            .period-pills {
+                width: 100%;
+                overflow-x: auto;
+                justify-content: flex-start;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .period-nav {
+                width: 100%;
+                justify-content: space-between;
             }
 
             .panel-head-first-row {
@@ -1156,7 +1288,8 @@
             }
 
             .nav-label {
-                min-width: 90px;
+                min-width: 0;
+                flex: 1;
                 font-size: 0.72rem;
             }
 
@@ -1194,7 +1327,13 @@
 
             /* Nav brand: hide text on small screens */
             .nav-brand-text {
-                display: none;
+                display: block;
+                flex: 1;
+                text-align: center;
+                padding-right: 10px;
+                font-size: 0.78rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
         }
 
@@ -1209,26 +1348,34 @@
 <body>
 
     <!-- NAV -->
-    <nav class="main-nav">
+    <nav class="main-nav" id="main-nav">
         <a href="/" class="nav-brand">
             <i class="bi bi-layers-half" style="color:#2563eb;font-size:1.2rem;flex-shrink:0;"></i>
             <span class="nav-brand-text">Dream Team Daily Tracker</span>
         </a>
-        <a href="/" class="nav-link-pill active">
-            <i class="bi bi-house"></i><span>Inicio</span>
-        </a>
-        <a href="/actividades" class="nav-link-pill">
-            <i class="bi bi-kanban"></i><span>Actividades</span>
-        </a>
-        <a href="/registros" class="nav-link-pill">
-            <i class="bi bi-clock-history"></i><span>Registros</span>
-        </a>
-        <a href="/calendario" class="nav-link-pill">
-            <i class="bi bi-calendar3"></i><span>Calendario</span>
-        </a>
-        <a href="/catalogos" class="nav-link-pill">
-            <i class="bi bi-sliders"></i><span>Catálogos</span>
-        </a>
+
+        <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Abrir menú de navegación"
+            aria-expanded="false" aria-controls="nav-menu">
+            <i class="bi bi-list"></i>
+        </button>
+
+        <div class="nav-menu" id="nav-menu">
+            <a href="/" class="nav-link-pill active">
+                <i class="bi bi-house"></i><span>Inicio</span>
+            </a>
+            <a href="/actividades" class="nav-link-pill">
+                <i class="bi bi-kanban"></i><span>Actividades</span>
+            </a>
+            <a href="/registros" class="nav-link-pill">
+                <i class="bi bi-clock-history"></i><span>Registros</span>
+            </a>
+            <a href="/calendario" class="nav-link-pill">
+                <i class="bi bi-calendar3"></i><span>Calendario</span>
+            </a>
+            <a href="/catalogos" class="nav-link-pill">
+                <i class="bi bi-sliders"></i><span>Catálogos</span>
+            </a>
+        </div>
     </nav>
 
     <div class="page-content">
@@ -1574,11 +1721,52 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // ─── NAV HAMBURGER MOBILE ─────────────────────────────────────────────────
+        const mainNav = document.getElementById('main-nav');
+        const navHamburger = document.getElementById('nav-hamburger');
+        const navMenu = document.getElementById('nav-menu');
+
+        function closeMobileNav() {
+            mainNav.classList.remove('menu-open');
+            navHamburger.setAttribute('aria-expanded', 'false');
+            navHamburger.innerHTML = '<i class="bi bi-list"></i>';
+        }
+
+        function toggleMobileNav(event) {
+            event?.preventDefault();
+            event?.stopPropagation();
+            if (window.innerWidth > 640) return;
+            const open = mainNav.classList.toggle('menu-open');
+            navHamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            navHamburger.innerHTML = open ? '<i class="bi bi-x-lg"></i>' : '<i class="bi bi-list"></i>';
+        }
+
+        navHamburger.addEventListener('click', (event) => toggleMobileNav(event));
+        navMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 640) closeMobileNav();
+            });
+        });
+
+        document.addEventListener('click', (event) => {
+            if (window.innerWidth > 640) return;
+            const clickedInsideNav = event.target.closest('#main-nav');
+            if (!clickedInsideNav) closeMobileNav();
+        });
+
         // On resize, reset display if going back to desktop
+        let wasMobileViewport = window.innerWidth <= 640;
         window.addEventListener('resize', () => {
             if (window.innerWidth > 640) {
                 document.getElementById('panel-form').classList.add('tab-active');
                 document.getElementById('panel-dashboard').classList.add('tab-active');
+                closeMobileNav();
+            }
+
+            const isMobileViewport = window.innerWidth <= 640;
+            if (isMobileViewport !== wasMobileViewport) {
+                wasMobileViewport = isMobileViewport;
+                updateDashboard();
             }
         });
 
@@ -2081,6 +2269,8 @@
         function renderChart(chartData) {
             const ctx = document.getElementById('chartProyectos').getContext('2d');
             const empty = document.getElementById('chart-empty');
+            const chartWrapper = document.querySelector('.chart-wrapper');
+            const isMobileViewport = window.innerWidth <= 640;
 
             if (!chartData || !chartData.labels || chartData.labels.length === 0) {
                 if (myChart) { myChart.destroy(); myChart = null; }
@@ -2095,6 +2285,15 @@
                 'rgba(14,165,233,0.75)', 'rgba(234,179,8,0.75)'
             ];
             const colors = chartData.labels.map((_, i) => palette[i % palette.length]);
+
+            if (chartWrapper) {
+                if (isMobileViewport) {
+                    const dynamicHeight = Math.max(220, Math.min(440, chartData.labels.length * 40));
+                    chartWrapper.style.height = `${dynamicHeight}px`;
+                } else {
+                    chartWrapper.style.height = '260px';
+                }
+            }
 
             if (myChart) myChart.destroy();
             myChart = new Chart(ctx, {
@@ -2114,27 +2313,60 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    indexAxis: isMobileViewport ? 'y' : 'x',
                     plugins: {
                         legend: { display: false },
                         tooltip: {
                             backgroundColor: '#1e293b',
                             padding: 10,
                             cornerRadius: 10,
-                            callbacks: { label: ctx => ` ${ctx.parsed.y.toFixed(1)} hrs` },
+                            callbacks: {
+                                label: ctx => {
+                                    const val = isMobileViewport ? ctx.parsed.x : ctx.parsed.y;
+                                    return ` ${val.toFixed(1)} hrs`;
+                                }
+                            },
                             titleFont: { family: 'DM Sans', size: 11, weight: '600' },
                             bodyFont: { family: 'DM Mono', size: 12 }
                         }
                     },
                     scales: {
-                        x: {
-                            grid: { display: false },
-                            ticks: { font: { family: 'DM Sans', size: 10 }, color: '#94a3b8', maxRotation: 30, maxTicksLimit: 8 }
-                        },
-                        y: {
-                            grid: { color: '#f1f5f9' },
-                            ticks: { font: { family: 'DM Mono', size: 10 }, color: '#94a3b8', callback: v => v + 'h' },
-                            beginAtZero: true
-                        }
+                        x: isMobileViewport
+                            ? {
+                                grid: { color: '#f1f5f9' },
+                                ticks: {
+                                    font: { family: 'DM Mono', size: 10 },
+                                    color: '#94a3b8',
+                                    callback: v => v + 'h'
+                                },
+                                beginAtZero: true
+                            }
+                            : {
+                                grid: { display: false },
+                                ticks: {
+                                    font: { family: 'DM Sans', size: 10 },
+                                    color: '#94a3b8',
+                                    maxRotation: 30,
+                                    maxTicksLimit: 8
+                                }
+                            },
+                        y: isMobileViewport
+                            ? {
+                                grid: { display: false },
+                                ticks: {
+                                    font: { family: 'DM Sans', size: 10 },
+                                    color: '#64748b'
+                                }
+                            }
+                            : {
+                                grid: { color: '#f1f5f9' },
+                                ticks: {
+                                    font: { family: 'DM Mono', size: 10 },
+                                    color: '#94a3b8',
+                                    callback: v => v + 'h'
+                                },
+                                beginAtZero: true
+                            }
                     }
                 }
             });

@@ -37,6 +37,69 @@
             min-height: 100vh;
         }
 
+        .top-nav {
+            background: #fff;
+            border-bottom: 1px solid #e8edf5;
+            padding: 0 28px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 56px;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            box-shadow: 0 1px 8px rgba(15,23,42,.05);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: .95rem;
+            color: #1e293b;
+            text-decoration: none;
+            margin-right: 16px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 99px;
+            font-size: .82rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all .2s;
+            color: #64748b;
+        }
+
+        .nav-link:hover { background: var(--primary-light); color: var(--primary); }
+        .nav-link.active { background: var(--primary); color: #fff; }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .nav-hamburger {
+            display: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            color: var(--text-secondary);
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+            font-size: 1.05rem;
+            cursor: pointer;
+        }
+
         .page {
             max-width: 1100px;
             margin: 0 auto;
@@ -203,7 +266,7 @@
         .btn-add:hover { background: #1d4ed8; transform: translateY(-1px); }
 
         /* ── TABLE ── */
-        table { width: 100%; border-collapse: collapse; }
+        table { width: 100%; border-collapse: collapse; min-width: 720px; }
 
         thead tr { background: var(--surface-alt); border-bottom: 2px solid var(--border); }
 
@@ -320,31 +383,82 @@
         .empty-state { text-align: center; padding: 56px 32px; color: var(--text-muted); }
         .empty-state i { font-size: 2rem; display: block; margin-bottom: 10px; }
         .empty-state p { font-size: .88rem; }
+
+        @media (max-width: 768px) {
+            body { overflow-x: hidden; }
+
+            .top-nav {
+                padding: 0 14px;
+                gap: 8px;
+                overflow: visible;
+            }
+
+            .nav-brand {
+                margin-right: 0;
+                min-width: 0;
+                flex: 1;
+            }
+
+            .nav-brand-text {
+                display: block;
+                flex: 1;
+                text-align: center;
+                padding-right: 10px;
+                font-size: .78rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .nav-hamburger {
+                display: inline-flex;
+                margin-left: 0;
+            }
+
+            .nav-menu {
+                position: absolute;
+                top: calc(100% + 8px);
+                left: 12px;
+                right: 12px;
+                display: none;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 8px;
+                box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+                z-index: 210;
+            }
+
+            .top-nav.menu-open .nav-menu { display: flex; }
+            .nav-menu .nav-link { width: 100%; justify-content: flex-start; }
+
+            .page { padding: 24px 14px; }
+            .cat-tabs { overflow-x: auto; }
+            .cat-card { overflow-x: auto; }
+            .add-bar { min-width: 720px; }
+        }
     </style>
 </head>
 
 <body>
 
     <!-- NAV -->
-    <nav style="background:#fff;border-bottom:1px solid #e8edf5;padding:0 28px;display:flex;align-items:center;gap:8px;height:56px;position:sticky;top:0;z-index:200;box-shadow:0 1px 8px rgba(15,23,42,.05);">
-        <a href="/" style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:.95rem;color:#1e293b;text-decoration:none;margin-right:16px;font-family:'DM Sans',sans-serif;">
-            <i class="bi bi-layers-half" style="color:#2563eb;font-size:1.2rem;"></i>Dream Team Daily Tracker
+    <nav class="top-nav" id="top-nav">
+        <a href="/" class="nav-brand">
+            <i class="bi bi-layers-half" style="color:#2563eb;font-size:1.2rem;"></i><span class="nav-brand-text">Dream Team Daily Tracker</span>
         </a>
-        <a href="/" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;font-size:.82rem;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;transition:all .2s;color:#64748b;" onmouseover="this.style.background='#dbeafe';this.style.color='#2563eb'" onmouseout="this.style.background='transparent';this.style.color='#64748b'">
-            <i class="bi bi-house"></i>Inicio
-        </a>
-        <a href="/actividades" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;font-size:.82rem;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;transition:all .2s;color:#64748b;" onmouseover="this.style.background='#dbeafe';this.style.color='#2563eb'" onmouseout="this.style.background='transparent';this.style.color='#64748b'">
-            <i class="bi bi-kanban"></i>Actividades
-        </a>
-        <a href="/registros" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;font-size:.82rem;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;transition:all .2s;color:#64748b;" onmouseover="this.style.background='#dbeafe';this.style.color='#2563eb'" onmouseout="this.style.background='transparent';this.style.color='#64748b'">
-            <i class="bi bi-clock-history"></i>Registros
-        </a>
-        <a href="/calendario" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;font-size:.82rem;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;transition:all .2s;color:#64748b;" onmouseover="this.style.background='#dbeafe';this.style.color='#2563eb'" onmouseout="this.style.background='transparent';this.style.color='#64748b'">
-            <i class="bi bi-calendar3"></i>Calendario
-        </a>
-        <a href="/catalogos" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;font-size:.82rem;font-weight:600;text-decoration:none;font-family:'DM Sans',sans-serif;transition:all .2s;background:#2563eb;color:#fff;">
-            <i class="bi bi-sliders"></i>Catálogos
-        </a>
+        <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="nav-menu">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="nav-menu" id="nav-menu">
+            <a href="/" class="nav-link"><i class="bi bi-house"></i>Inicio</a>
+            <a href="/actividades" class="nav-link"><i class="bi bi-kanban"></i>Actividades</a>
+            <a href="/registros" class="nav-link"><i class="bi bi-clock-history"></i>Registros</a>
+            <a href="/calendario" class="nav-link"><i class="bi bi-calendar3"></i>Calendario</a>
+            <a href="/catalogos" class="nav-link active"><i class="bi bi-sliders"></i>Catálogos</a>
+        </div>
     </nav>
 
     <div class="page">
@@ -551,6 +665,42 @@
     </div>
 
     <script>
+        const topNav = document.getElementById('top-nav');
+        const navHamburger = document.getElementById('nav-hamburger');
+        const navMenu = document.getElementById('nav-menu');
+
+        function closeMobileNav() {
+            topNav.classList.remove('menu-open');
+            navHamburger.setAttribute('aria-expanded', 'false');
+            navHamburger.innerHTML = '<i class="bi bi-list"></i>';
+        }
+
+        function toggleMobileNav(event) {
+            event?.preventDefault();
+            event?.stopPropagation();
+            if (window.innerWidth > 768) return;
+            const open = topNav.classList.toggle('menu-open');
+            navHamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            navHamburger.innerHTML = open ? '<i class="bi bi-x-lg"></i>' : '<i class="bi bi-list"></i>';
+        }
+
+        navHamburger?.addEventListener('click', (event) => toggleMobileNav(event));
+        navMenu?.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) closeMobileNav();
+            });
+        });
+
+        document.addEventListener('click', (event) => {
+            if (window.innerWidth > 768) return;
+            const clickedInsideNav = event.target.closest('#top-nav');
+            if (!clickedInsideNav) closeMobileNav();
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) closeMobileNav();
+        });
+
         function switchTab(name, btn) {
             document.querySelectorAll('.cat-panel').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));

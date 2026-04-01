@@ -90,6 +90,28 @@
             color: #2563eb;
         }
 
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .nav-hamburger {
+            display: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            color: var(--text-secondary);
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+            font-size: 1.05rem;
+            cursor: pointer;
+        }
+
         /* ── Layout ── */
         .page-wrap { max-width: 1300px; margin: 0 auto; padding: 28px 20px; }
         .page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
@@ -349,6 +371,55 @@
         }
 
         @media (max-width: 640px) {
+            body { overflow-x: hidden; }
+
+            .main-nav {
+                padding: 0 12px;
+                gap: 8px;
+                overflow: visible;
+            }
+
+            .nav-brand {
+                margin-right: 0;
+                min-width: 0;
+                flex: 1;
+            }
+
+            .nav-brand-text {
+                display: block;
+                flex: 1;
+                text-align: center;
+                padding-right: 10px;
+                font-size: .78rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .nav-hamburger {
+                display: inline-flex;
+                margin-left: 0;
+            }
+
+            .nav-menu {
+                position: absolute;
+                top: calc(100% + 8px);
+                left: 12px;
+                right: 12px;
+                display: none;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 8px;
+                box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+                z-index: 210;
+            }
+
+            .main-nav.menu-open .nav-menu { display: flex; }
+            .nav-menu .nav-link-pill { width: 100%; justify-content: flex-start; }
+
             .page-wrap { padding: 22px 14px; }
             .card { padding: 16px; }
             .grid-2 { grid-template-columns: 1fr; }
@@ -357,19 +428,25 @@
             .filter-actions { grid-column: span 12; }
             .tab-btn { width: 100%; text-align: left; }
             .cal-header-actions { width: 100%; justify-content: space-between; }
+            .cal-grid { min-width: 620px; }
         }
     </style>
 </head>
 <body>
 
 <!-- ── Navbar ── -->
-<nav class="main-nav">
-    <a href="/" class="nav-brand"><i class="bi bi-layers-half" style="color:#2563eb;font-size:1.2rem;flex-shrink:0;"></i> Dream Team Daily Tracker</a>
-    <a href="/" class="nav-link-pill"><i class="bi bi-house"></i> Inicio</a>
-    <a href="/actividades" class="nav-link-pill"><i class="bi bi-kanban"></i> Actividades</a>
-    <a href="/registros" class="nav-link-pill"><i class="bi bi-journal-text"></i> Registros</a>
-    <a href="/calendario" class="nav-link-pill active"><i class="bi bi-calendar3"></i> Calendario</a>
-    <a href="/catalogos" class="nav-link-pill"><i class="bi bi-sliders"></i> Catálogos</a>
+<nav class="main-nav" id="main-nav">
+    <a href="/" class="nav-brand"><i class="bi bi-layers-half" style="color:#2563eb;font-size:1.2rem;flex-shrink:0;"></i> <span class="nav-brand-text">Dream Team Daily Tracker</span></a>
+    <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="nav-menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div class="nav-menu" id="nav-menu">
+        <a href="/" class="nav-link-pill"><i class="bi bi-house"></i> Inicio</a>
+        <a href="/actividades" class="nav-link-pill"><i class="bi bi-kanban"></i> Actividades</a>
+        <a href="/registros" class="nav-link-pill"><i class="bi bi-journal-text"></i> Registros</a>
+        <a href="/calendario" class="nav-link-pill active"><i class="bi bi-calendar3"></i> Calendario</a>
+        <a href="/catalogos" class="nav-link-pill"><i class="bi bi-sliders"></i> Catálogos</a>
+    </div>
 </nav>
 
 <div class="page-wrap">
@@ -607,6 +684,42 @@
 
 
 <script>
+const mainNav = document.getElementById('main-nav');
+const navHamburger = document.getElementById('nav-hamburger');
+const navMenu = document.getElementById('nav-menu');
+
+function closeMobileNav() {
+    mainNav.classList.remove('menu-open');
+    navHamburger.setAttribute('aria-expanded', 'false');
+    navHamburger.innerHTML = '<i class="bi bi-list"></i>';
+}
+
+function toggleMobileNav(event) {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (window.innerWidth > 640) return;
+    const open = mainNav.classList.toggle('menu-open');
+    navHamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    navHamburger.innerHTML = open ? '<i class="bi bi-x-lg"></i>' : '<i class="bi bi-list"></i>';
+}
+
+navHamburger?.addEventListener('click', (event) => toggleMobileNav(event));
+navMenu?.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+        if (window.innerWidth <= 640) closeMobileNav();
+    });
+});
+
+document.addEventListener('click', (event) => {
+    if (window.innerWidth > 640) return;
+    const clickedInsideNav = event.target.closest('#main-nav');
+    if (!clickedInsideNav) closeMobileNav();
+});
+
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 640) closeMobileNav();
+});
+
 // ─── State ──────────────────────────────────────────────────────────────────
 const HOY = new Date();
 let calAnio = {{ anio }};
