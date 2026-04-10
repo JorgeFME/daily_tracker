@@ -485,6 +485,10 @@
                 <i class="bi bi-people"></i> Recursos
                 <span class="tab-badge">{{ recursos|length }}</span>
             </button>
+            <button class="cat-tab" onclick="switchTab('proyectos', this)">
+                <i class="bi bi-briefcase"></i> Proyectos
+                <span class="tab-badge">{{ proyectos|length }}</span>
+            </button>
         </div>
 
         <!-- ══ ESTATUS ══ -->
@@ -662,6 +666,63 @@
                 </table>
             </div>
         </div>
+
+        <!-- ══ PROYECTOS ══ -->
+        <div class="cat-panel" id="panel-proyectos">
+            <div class="cat-card">
+                <div class="card-head">
+                    <span class="card-head-title">Proyectos <span class="count-badge">{{ proyectos|length }}</span></span>
+                </div>
+                <div class="add-bar">
+                    <div class="field-wrap">
+                        <label>Nombre del proyecto *</label>
+                        <input type="text" id="new-proy-nombre" placeholder="Ej: Plataforma RRHH">
+                    </div>
+                    <div class="field-wrap">
+                        <label>Cliente</label>
+                        <input type="text" id="new-proy-cliente" placeholder="Ej: Cliente Interno">
+                    </div>
+                    <div class="field-wrap">
+                        <label>Descripción</label>
+                        <input type="text" id="new-proy-desc" placeholder="Descripción breve del proyecto">
+                    </div>
+                    <button class="btn-add" onclick="agregarProyecto()"><i class="bi bi-plus-lg"></i> Agregar</button>
+                </div>
+                <table>
+                    <thead><tr><th>Nombre</th><th>Cliente</th><th>Descripción</th><th>Estado</th><th style="width:130px;">Acciones</th></tr></thead>
+                    <tbody id="tbody-proyectos">
+                    {% for p in proyectos %}
+                    <tr id="proy-row-{{ p.ID }}">
+                        <td>
+                            <span class="view-mode" style="font-weight:500;">{{ p.NOMBRE_PROYECTO }}</span>
+                            <input class="edit-input edit-mode" style="display:none;" value="{{ p.NOMBRE_PROYECTO }}" data-field="nombre_proyecto">
+                        </td>
+                        <td>
+                            <span class="view-mode">{{ p.CLIENTE or '—' }}</span>
+                            <input class="edit-input edit-mode" style="display:none;" value="{{ p.CLIENTE or '' }}" data-field="cliente">
+                        </td>
+                        <td>
+                            <span class="view-mode">{{ p.DESCRIPCION or '—' }}</span>
+                            <input class="edit-input edit-mode" style="display:none;" value="{{ p.DESCRIPCION or '' }}" data-field="descripcion">
+                        </td>
+                        <td>{% if p.ACTIVO %}<span class="badge-active">Activo</span>{% else %}<span class="badge-inactive">Inactivo</span>{% endif %}</td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="btn-action edit view-mode" title="Editar" onclick="startEdit('proy-row-{{ p.ID }}')"><i class="bi bi-pencil"></i></button>
+                                <button class="btn-action save edit-mode" style="display:none;" title="Guardar" onclick="saveProyecto('{{ p.ID }}')"><i class="bi bi-check-lg"></i></button>
+                                <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar" onclick="cancelEdit('proy-row-{{ p.ID }}')"><i class="bi bi-x-lg"></i></button>
+                                <button class="btn-action toggle view-mode" title="{{ 'Desactivar' if p.ACTIVO else 'Activar' }}" onclick="toggleCatalogo('proyectos','{{ p.ID }}',{{ p.ACTIVO }},this)"><i class="bi bi-{{ 'toggle-on' if p.ACTIVO else 'toggle-off' }}"></i></button>
+                                <button class="btn-action del view-mode" title="Eliminar" onclick="eliminarCatalogo('proyectos','{{ p.ID }}','proy-row-{{ p.ID }}')"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5"><div class="empty-state"><i class="bi bi-briefcase"></i><p>Sin proyectos registrados.</p></div></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -806,6 +867,28 @@
             else Swal.fire({ icon: 'error', title: res.message });
         }
 
+        async function agregarProyecto() {
+            const nombre = document.getElementById('new-proy-nombre').value.trim();
+            const cliente = document.getElementById('new-proy-cliente').value.trim();
+            const descripcion = document.getElementById('new-proy-desc').value.trim();
+            if (!nombre) { _toast('warning', 'El nombre del proyecto es obligatorio'); return; }
+            const res = await _apiCall('/api/catalogos/proyectos', 'POST', {
+                nombre_proyecto: nombre,
+                cliente,
+                descripcion,
+            });
+            if (res.status === 'success') { _toast('success', 'Proyecto agregado'); location.reload(); }
+            else Swal.fire({ icon: 'error', title: res.message });
+        }
+
+        async function saveProyecto(id) {
+            const data = _getEditValues(`proy-row-${id}`);
+            if (!data.nombre_proyecto) { _toast('warning', 'El nombre del proyecto es obligatorio'); return; }
+            const res = await _apiCall(`/api/catalogos/proyectos/${id}`, 'PUT', data);
+            if (res.status === 'success') { _toast('success', 'Guardado'); location.reload(); }
+            else Swal.fire({ icon: 'error', title: res.message });
+        }
+
         async function toggleCatalogo(cat, id, activo, btn) {
             const nuevoEstado = activo ? 0 : 1;
             const accion = activo ? 'desactivar' : 'activar';
@@ -837,7 +920,7 @@
             } else Swal.fire({ icon: 'error', title: 'No se puede eliminar', text: res.message });
         }
 
-        ['new-est-desc','new-tipo-desc','new-ev-desc','new-rec-nombre'].forEach(id => {
+        ['new-est-desc','new-tipo-desc','new-ev-desc','new-rec-nombre','new-proy-nombre','new-proy-cliente','new-proy-desc'].forEach(id => {
             document.getElementById(id)?.addEventListener('keydown', e => {
                 if (e.key === 'Enter') e.target.closest('.add-bar').querySelector('.btn-add').click();
             });

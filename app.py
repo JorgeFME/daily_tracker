@@ -227,9 +227,10 @@ def api_daily_hours():
 @app.route("/api/actividades_proyecto")
 def api_actividades_proyecto():
     proyecto_id = request.args.get("proyecto")
+    usuario_id = request.args.get("usuario")
     if not proyecto_id:
         return jsonify([])
-    acts = obtener_actividades_por_proyecto(proyecto_id)
+    acts = obtener_actividades_por_proyecto(proyecto_id, usuario_id)
     return jsonify(
         [
             {
@@ -237,6 +238,8 @@ def api_actividades_proyecto():
                 "nombre": a["NOMBRE_ACTIVIDAD"],
                 "horas": float(a["HORAS_INVERTIDAS"]),
                 "estatus": a["ESTATUS"],
+                "grupo": a.get("GRUPO", "otra"),
+                "grupo_orden": int(a.get("GRUPO_ORDEN", 3)),
             }
             for a in acts
         ]
@@ -680,6 +683,8 @@ from db import (
     toggle_tipo_evidencia, eliminar_tipo_evidencia,
     obtener_recursos_todos, crear_recurso, actualizar_recurso,
     toggle_recurso, eliminar_recurso,
+    obtener_proyectos_todos, crear_proyecto, actualizar_proyecto,
+    toggle_proyecto, eliminar_proyecto,
 )
 
 
@@ -691,6 +696,7 @@ def vista_catalogos():
         tipos     = obtener_tipos_actividad_todos(),
         tipos_ev  = obtener_tipos_evidencia_todos(),
         recursos  = obtener_recursos_todos(),
+        proyectos = obtener_proyectos_todos(),
     )
 
 
@@ -767,6 +773,30 @@ def api_cat_rec_toggle(id):
 @app.route("/api/catalogos/recursos/<id>", methods=["DELETE"])
 def api_cat_rec_eliminar(id):
     ok, msg = eliminar_recurso(id)
+    return _json_ok() if ok else _json_err(msg, 400)
+
+
+@app.route("/api/catalogos/proyectos", methods=["POST"])
+def api_cat_proyectos_crear():
+    data = request.get_json() or {}
+    if not (data.get("nombre_proyecto") or "").strip():
+        return _json_err("El nombre del proyecto es obligatorio.", 400)
+    return _json_ok() if crear_proyecto(data) else _json_err("Error al crear proyecto.")
+
+@app.route("/api/catalogos/proyectos/<id>", methods=["PUT"])
+def api_cat_proyectos_editar(id):
+    data = request.get_json() or {}
+    if not (data.get("nombre_proyecto") or "").strip():
+        return _json_err("El nombre del proyecto es obligatorio.", 400)
+    return _json_ok() if actualizar_proyecto(id, data) else _json_err("Error al actualizar.")
+
+@app.route("/api/catalogos/proyectos/<id>/toggle", methods=["POST"])
+def api_cat_proyectos_toggle(id):
+    return _json_ok() if toggle_proyecto(id, request.get_json().get("activo", 1)) else _json_err("Error.")
+
+@app.route("/api/catalogos/proyectos/<id>", methods=["DELETE"])
+def api_cat_proyectos_eliminar(id):
+    ok, msg = eliminar_proyecto(id)
     return _json_ok() if ok else _json_err(msg, 400)
 
 # ── CALENDARIO ─────────────────────────────────────────────────────────────

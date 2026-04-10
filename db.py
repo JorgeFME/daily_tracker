@@ -1018,21 +1018,104 @@ def obtener_recursos():
 #  ACTIVIDADES POR PROYECTO
 # ══════════════════════════════════════════════════════════════════════════════
 
-def obtener_actividades_por_proyecto(proyecto_id):
-    """Solo devuelve actividades que aceptan nuevos registros de horas
-    (excluye Completado y Cancelado)."""
-    sql = """
-        SELECT A."ID", A."NOMBRE_ACTIVIDAD",
-               E."DESCRIPCION" as "ESTATUS",
-               COALESCE((SELECT SUM(R."HORAS") FROM "REGISTRO_ACTIVIDADES" R
-                          WHERE R."ID_ACTIVIDAD"=A."ID"), 0) as "HORAS_INVERTIDAS"
-        FROM "ACTIVIDADES" A
-        JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS" = E."ID"
-        WHERE A."ID_PROYECTO" = ?
-          AND UPPER(E."DESCRIPCION") NOT IN ('COMPLETADO', 'CANCELADO', 'ESPERANDO APROBACIÓN')
-        ORDER BY A."NOMBRE_ACTIVIDAD"
-    """
-    return ejecutar_query(sql, (proyecto_id,))
+def obtener_actividades_por_proyecto(proyecto_id, usuario_id=None):
+        """Devuelve actividades activas del proyecto para carga de horas.
+
+        Clasificacion por grupo cuando hay usuario:
+            1) propia: actividad asignada al usuario (ASIGNADO_A) o unico responsable
+            2) compartida: usuario responsable junto a otros responsables
+            3) otra: resto
+        """
+        if usuario_id:
+                sql = """
+                        SELECT A."ID", A."NOMBRE_ACTIVIDAD",
+                                     E."DESCRIPCION" as "ESTATUS",
+                                     COALESCE((SELECT SUM(R."HORAS") FROM "REGISTRO_ACTIVIDADES" R
+                                                            WHERE R."ID_ACTIVIDAD"=A."ID"), 0) as "HORAS_INVERTIDAS",
+                                     CASE
+                                         WHEN A."ASIGNADO_A" = ? THEN 1
+                                         WHEN EXISTS (
+                                             SELECT 1
+                                             FROM "ACTIVIDAD_RESPONSABLES" AR
+                                             WHERE AR."ID_ACTIVIDAD" = A."ID"
+                                                 AND AR."ID_USUARIO" = ?
+                                         ) THEN CASE
+                                                     WHEN (
+                                                             SELECT COUNT(*)
+                                                             FROM "ACTIVIDAD_RESPONSABLES" AR2
+                                                             WHERE AR2."ID_ACTIVIDAD" = A."ID"
+                                                     ) = 1 THEN 1
+                                                     ELSE 2
+                                                 END
+                                         ELSE 3
+                                     END as "GRUPO_ORDEN",
+                                     CASE
+                                         WHEN A."ASIGNADO_A" = ? THEN 'propia'
+                                         WHEN EXISTS (
+                                             SELECT 1
+                                             FROM "ACTIVIDAD_RESPONSABLES" AR
+                                             WHERE AR."ID_ACTIVIDAD" = A."ID"
+                                                 AND AR."ID_USUARIO" = ?
+                                         ) THEN CASE
+                                                     WHEN (
+                                                             SELECT COUNT(*)
+                                                             FROM "ACTIVIDAD_RESPONSABLES" AR2
+                                                             WHERE AR2."ID_ACTIVIDAD" = A."ID"
+                                                     ) = 1 THEN 'propia'
+                                                     ELSE 'compartida'
+                                                 END
+                                         ELSE 'otra'
+                                     END as "GRUPO"
+                        FROM "ACTIVIDADES" A
+                        JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS" = E."ID"
+                        WHERE A."ID_PROYECTO" = ?
+                            AND UPPER(E."DESCRIPCION") NOT IN ('COMPLETADO', 'CANCELADO', 'ESPERANDO APROBACIÓN')
+                        ORDER BY
+                            CASE
+                                WHEN A."ASIGNADO_A" = ? THEN 1
+                                WHEN EXISTS (
+                                    SELECT 1
+                                    FROM "ACTIVIDAD_RESPONSABLES" AR
+                                    WHERE AR."ID_ACTIVIDAD" = A."ID"
+                                        AND AR."ID_USUARIO" = ?
+                                ) THEN CASE
+                                            WHEN (
+                                                    SELECT COUNT(*)
+                                                    FROM "ACTIVIDAD_RESPONSABLES" AR2
+                                                    WHERE AR2."ID_ACTIVIDAD" = A."ID"
+                                            ) = 1 THEN 1
+                                            ELSE 2
+                                        END
+                                ELSE 3
+                            END,
+                            A."PRIORIDAD" ASC,
+                            A."NOMBRE_ACTIVIDAD" ASC
+                """
+                params = (
+                        usuario_id,
+                        usuario_id,
+                        usuario_id,
+                        usuario_id,
+                        proyecto_id,
+                        usuario_id,
+                        usuario_id,
+                )
+                return ejecutar_query(sql, params)
+
+        sql = """
+                SELECT A."ID", A."NOMBRE_ACTIVIDAD",
+                             E."DESCRIPCION" as "ESTATUS",
+                             COALESCE((SELECT SUM(R."HORAS") FROM "REGISTRO_ACTIVIDADES" R
+                                                    WHERE R."ID_ACTIVIDAD"=A."ID"), 0) as "HORAS_INVERTIDAS",
+                             3 as "GRUPO_ORDEN",
+                             'otra' as "GRUPO"
+                FROM "ACTIVIDADES" A
+                JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS" = E."ID"
+                WHERE A."ID_PROYECTO" = ?
+                    AND UPPER(E."DESCRIPCION") NOT IN ('COMPLETADO', 'CANCELADO', 'ESPERANDO APROBACIÓN')
+                ORDER BY A."PRIORIDAD" ASC, A."NOMBRE_ACTIVIDAD" ASC
+        """
+        return ejecutar_query(sql, (proyecto_id,))
 
 
 def recalcular_avance_actividad(actividad_id):
@@ -1514,6 +1597,55 @@ def eliminar_recurso(id_val: str):
         return False, "Este recurso está asignado a actividades y no puede eliminarse."
     ok = _cat_delete("CAT_RECURSOS", id_val)
     if ok: invalidar_cache("cat_recursos")
+    return ok, "" if ok else "Error al eliminar."
+
+
+# ── PROYECTOS ─────────────────────────────────────────────────────────────────
+
+def obtener_proyectos_todos():
+    return ejecutar_query(
+        'SELECT "ID","NOMBRE_PROYECTO","DESCRIPCION","CLIENTE","ACTIVO" '
+        'FROM "PROYECTOS" ORDER BY "NOMBRE_PROYECTO"'
+    )
+
+def crear_proyecto(datos: dict) -> bool:
+    nombre = (datos.get("nombre_proyecto") or "").strip()
+    descripcion = (datos.get("descripcion") or "").strip() or None
+    cliente = (datos.get("cliente") or "").strip() or None
+    if not nombre:
+        return False
+
+    sql = (
+        'INSERT INTO "PROYECTOS" '
+        '("ID","NOMBRE_PROYECTO","DESCRIPCION","CLIENTE","ACTIVO","CREADO_EN") '
+        'VALUES (SYSUUID,?,?,?,1,CURRENT_TIMESTAMP)'
+    )
+    return ejecutar_dml(sql, (nombre, descripcion, cliente))
+
+def actualizar_proyecto(id_val: str, datos: dict) -> bool:
+    nombre = (datos.get("nombre_proyecto") or "").strip()
+    descripcion = (datos.get("descripcion") or "").strip() or None
+    cliente = (datos.get("cliente") or "").strip() or None
+    if not nombre:
+        return False
+
+    sql = (
+        'UPDATE "PROYECTOS" '
+        'SET "NOMBRE_PROYECTO"=?, "DESCRIPCION"=?, "CLIENTE"=?, "ACTUALIZADO_EN"=CURRENT_TIMESTAMP '
+        'WHERE "ID"=?'
+    )
+    return ejecutar_dml(sql, (nombre, descripcion, cliente, id_val))
+
+def toggle_proyecto(id_val: str, activo: int) -> bool:
+    return _cat_toggle("PROYECTOS", id_val, activo)
+
+def eliminar_proyecto(id_val: str):
+    if _cat_in_use("ACTIVIDADES", "ID_PROYECTO", id_val):
+        return False, "Este proyecto está asignado a actividades y no puede eliminarse."
+    if _cat_in_use("REGISTRO_ACTIVIDADES", "ID_PROYECTO", id_val):
+        return False, "Este proyecto tiene registros de horas y no puede eliminarse."
+
+    ok = _cat_delete("PROYECTOS", id_val)
     return ok, "" if ok else "Error al eliminar."
 
 

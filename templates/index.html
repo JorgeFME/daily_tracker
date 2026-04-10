@@ -474,6 +474,15 @@
             color: white !important;
         }
 
+        .ts-dropdown .ts-optgroup-header {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.9px;
+            color: var(--text-secondary);
+            padding: 8px 8px 6px;
+        }
+
         /* Native inputs */
         .field-input {
             flex: 1;
@@ -1773,17 +1782,24 @@
         // ─── 1. INICIALIZACIÓN ────────────────────────────────────────────────────
         const tomCfg = { create: false, sortField: { field: "text", direction: "asc" } };
 
-        function makeTomSelect(selector) {
+        const baseTomRender = {
+            option: (d, e) => d.value === ''
+                ? `<div class="option" style="color:var(--text-muted);font-style:italic;">${e(d.text)}</div>`
+                : `<div class="option">${e(d.text)}</div>`,
+            item: (d, e) => d.value === ''
+                ? `<div class="item" style="color:var(--text-muted);font-style:italic;">${e(d.text)}</div>`
+                : `<div class="item">${e(d.text)}</div>`,
+        };
+
+        function makeTomSelect(selector, extraCfg = {}) {
+            const mergedRender = {
+                ...baseTomRender,
+                ...(extraCfg.render || {})
+            };
             const ts = new TomSelect(selector, {
                 ...tomCfg,
-                render: {
-                    option: (d, e) => d.value === ''
-                        ? `<div class="option" style="color:var(--text-muted);font-style:italic;">${e(d.text)}</div>`
-                        : `<div class="option">${e(d.text)}</div>`,
-                    item: (d, e) => d.value === ''
-                        ? `<div class="item" style="color:var(--text-muted);font-style:italic;">${e(d.text)}</div>`
-                        : `<div class="item">${e(d.text)}</div>`,
-                }
+                ...extraCfg,
+                render: mergedRender,
             });
             ts.setValue('');
             return ts;
@@ -1791,8 +1807,26 @@
 
         const userSelect = makeTomSelect("#select-user");
         const projectSelect = makeTomSelect("#select-project");
-        const activitySelect = makeTomSelect("#select-activity");
+        const activitySelect = makeTomSelect("#select-activity", {
+            sortField: [{ field: '$order' }],
+            lockOptgroupOrder: true,
+            optgroupField: 'group',
+            optgroups: [
+                { value: 'propia', text: 'Mis actividades' },
+                { value: 'compartida', text: 'Compartidas conmigo' },
+                { value: 'otra', text: 'Otras actividades' },
+                { value: 'rapida', text: 'Acciones rápidas' },
+            ],
+            render: {
+                optgroup_header: (data, escape) => {
+                    return `<div class="ts-optgroup-header">${escape(data.text)}</div>`;
+                },
+            },
+        });
         const tipoSelect = makeTomSelect("#select-tipo");
+
+        let activityFetchController = null;
+        let activityFetchSeq = 0;
 
         const btnSubmit = document.getElementById('btn-submit');
         const hoursInput = document.querySelector('input[name="hours"]');
@@ -1839,6 +1873,72 @@
             btnSubmit.disabled = !ok;
         }
 
+        function normalizeActivityGroup(raw) {
+            if (raw === 'propia' || raw === 'compartida' || raw === 'otra') return raw;
+            return 'otra';
+        }
+
+        async function loadActivitiesForProject(projectId) {
+            activitySelect.clear();
+            activitySelect.clearOptions();
+            if (!projectId) {
+                activitySelect.disable();
+                validateForm();
+                return;
+            }
+
+            const uid = userSelect.getValue();
+            const requestSeq = ++activityFetchSeq;
+            if (activityFetchController) activityFetchController.abort();
+            activityFetchController = new AbortController();
+
+            activitySelect.disable();
+            activitySelect.addOption({ value: '', text: 'Cargando...' });
+
+            try {
+                const qs = new URLSearchParams({ proyecto: projectId });
+                if (uid) qs.append('usuario', uid);
+
+                const res = await fetch(`/api/actividades_proyecto?${qs.toString()}`, {
+                    signal: activityFetchController.signal,
+                });
+                const acts = await res.json();
+                if (requestSeq !== activityFetchSeq) return;
+
+                const orderedActs = (Array.isArray(acts) ? acts : [])
+                    .sort((a, b) => {
+                        const ga = Number(a?.grupo_orden ?? 3);
+                        const gb = Number(b?.grupo_orden ?? 3);
+                        if (ga !== gb) return ga - gb;
+                        return String(a?.nombre || '').localeCompare(String(b?.nombre || ''), 'es', { sensitivity: 'base' });
+                    });
+
+                activitySelect.clearOptions();
+
+                orderedActs.forEach(a => {
+                    activitySelect.addOption({
+                        value: a.id,
+                        text: `${a.nombre} · ${a.estatus}`,
+                        group: normalizeActivityGroup(a.grupo),
+                    });
+                });
+
+                // Siempre agregar la opción para actividades fugaces (juntas, etc.) al final
+                activitySelect.addOption({ value: 'ad_hoc', text: '⚡ Actividad Rápida / Junta', group: 'rapida' });
+
+                activitySelect.enable();
+                activitySelect.refreshOptions(false);
+            } catch (e) {
+                if (e?.name === 'AbortError') return;
+                activitySelect.clearOptions();
+                activitySelect.addOption({ value: '', text: 'Error al cargar' });
+            } finally {
+                if (requestSeq === activityFetchSeq) {
+                    validateForm();
+                }
+            }
+        }
+
         // ─── 4. CASCADA ───────────────────────────────────────────────────────────
         userSelect.on('change', val => {
             const widget = document.getElementById('weekly-widget-box');
@@ -1846,6 +1946,9 @@
                 projectSelect.enable();
                 fetchWeeklyHours();
                 widget.classList.add('visible');
+                if (projectSelect.getValue()) {
+                    loadActivitiesForProject(projectSelect.getValue());
+                }
             } else {
                 projectSelect.clear();
                 projectSelect.disable();
@@ -1862,32 +1965,16 @@
         });
 
         projectSelect.on('change', async val => {
-            activitySelect.clear();
-            activitySelect.clearOptions();
             if (val) {
                 fp.input.disabled = false; fp.altInput.disabled = false;
                 hoursInput.disabled = false;
-                activitySelect.disable();
-                activitySelect.addOption({ value: '', text: 'Cargando...' });
-                try {
-                    const res = await fetch(`/api/actividades_proyecto?proyecto=${val}`);
-                    const acts = await res.json();
-                    activitySelect.clearOptions();
-                    
-                    // Siempre agregar la opción para actividades fugaces (juntas, etc.)
-                    activitySelect.addOption({ value: 'ad_hoc', text: '⚡ Actividad Rápida / Junta' });
-                    
-                    if (acts.length > 0) {
-                        acts.forEach(a => activitySelect.addOption({ value: a.id, text: `${a.nombre} · ${a.estatus}` }));
-                    }
-                    activitySelect.enable();
-                } catch (e) {
-                    activitySelect.clearOptions();
-                    activitySelect.addOption({ value: '', text: 'Error al cargar' });
-                }
+                await loadActivitiesForProject(val);
             } else {
                 fp.input.disabled = true; fp.altInput.disabled = true;
-                hoursInput.disabled = true; activitySelect.disable();
+                hoursInput.disabled = true;
+                activitySelect.clear();
+                activitySelect.clearOptions();
+                activitySelect.disable();
             }
             validateForm();
         });
