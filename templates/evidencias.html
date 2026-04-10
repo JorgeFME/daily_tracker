@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evidencias · Daily Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #dbeafe;
+            --primary-soft: rgba(37, 99, 235, 0.08);
+            --surface: #ffffff;
+            --surface-alt: #f8fafc;
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #94a3b8;
+            --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 10px 30px rgba(15, 23, 42, 0.06);
+            --shadow-lg: 0 18px 46px rgba(15, 23, 42, 0.16);
+            --radius: 18px;
+            --radius-sm: 10px;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #16a34a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 24%, #f1f5f9 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 28px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 56px;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            box-shadow: 0 1px 8px rgba(15, 23, 42, 0.05);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            text-decoration: none;
+            margin-right: 16px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            color: #64748b;
+        }
+
+        .nav-link:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .nav-link.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-hamburger {
+            display: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            color: var(--text-secondary);
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+            font-size: 1.05rem;
+            cursor: pointer;
+        }
+
+        .page {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 28px;
+        }
+
+        .hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .hero-title {
+            font-size: 1.9rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .hero-sub {
+            margin-top: 6px;
+            font-size: 0.92rem;
+            color: var(--text-secondary);
+            max-width: 760px;
+        }
+
+        .hero-stat {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 18px;
+            min-width: 220px;
+            box-shadow: var(--shadow);
+        }
+
+        .hero-stat-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .hero-stat-value {
+            margin-top: 8px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            font-family: 'DM Mono', monospace;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 320px minmax(0, 1fr);
+            gap: 22px;
+            align-items: start;
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 76px;
+            padding: 18px;
+            overflow: visible;
+        }
+
+        .panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .panel-title {
+            font-size: 0.98rem;
+            font-weight: 800;
+        }
+
+        .panel-sub {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .filter-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .filter-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+            z-index: 0;
+        }
+
+        .filter-field:focus-within {
+            z-index: 30;
+        }
+
+        .filter-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+
+        .filter-field input,
+        .filter-field textarea,
+        .filter-field select,
+        .ts-control {
+            width: 100%;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface-alt);
+            padding: 10px 12px;
+            font-size: 0.88rem;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-main);
+            outline: none;
+        }
+
+        .ts-wrapper.focus .ts-control,
+        .filter-field input:focus,
+        .filter-field textarea:focus,
+        .filter-field select:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+            background: #fff;
+        }
+
+        /* Evita que el select nativo quede visible bajo TomSelect */
+        .ts-hidden-accessible {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            margin: -1px !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            border: 0 !important;
+            white-space: nowrap !important;
+        }
+
+        .ts-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+
+        .ts-wrapper .ts-control {
+            min-height: 44px;
+            line-height: 1.25;
+            background: var(--surface-alt);
+            border: 1.5px solid var(--border);
+            box-shadow: none;
+        }
+
+        .ts-wrapper.single .ts-control .item,
+        .ts-wrapper.single .ts-control input {
+            line-height: 1.3;
+        }
+
+        .ts-wrapper .ts-dropdown {
+            margin-top: 6px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+            z-index: 35;
+        }
+
+        .ts-dropdown .option,
+        .ts-dropdown .optgroup-header,
+        .ts-dropdown .no-results,
+        .ts-dropdown .create {
+            padding: 10px 12px;
+            line-height: 1.35;
+            white-space: normal;
+        }
+
+        .date-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 0.86rem;
+            font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .btn-soft {
+            background: var(--surface-alt);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-soft:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: #fff;
+        }
+
+        .btn-danger {
+            background: #fff1f2;
+            color: var(--danger);
+            border: 1px solid #fecdd3;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .main {
+            padding: 18px;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar-left,
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .view-switch {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px;
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+        }
+
+        .view-btn {
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .view-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .results-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: var(--primary-soft);
+            color: var(--primary);
+            font-size: 0.8rem;
+            font-weight: 800;
+        }
+
+        .grid-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .evidence-card {
+            background: linear-gradient(180deg, #fff 0%, #fbfdff 100%);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+            cursor: pointer;
+        }
+
+        .evidence-card:hover {
+            transform: translateY(-2px);
+            border-color: #bfd5ff;
+            box-shadow: var(--shadow);
+        }
+
+        .card-preview {
+            position: relative;
+            height: 160px;
+            background: linear-gradient(135deg, #eff6ff, #f8fafc);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .card-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .preview-icon {
+            width: 58px;
+            height: 58px;
+            border-radius: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .card-body {
+            padding: 14px;
+        }
+
+        .card-meta-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            align-items: flex-start;
+        }
+
+        .type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: var(--primary-soft);
+            color: var(--primary);
+            font-size: 0.72rem;
+            font-weight: 800;
+        }
+
+        .file-size {
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .card-title {
+            margin-top: 10px;
+            font-size: 0.96rem;
+            font-weight: 800;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-sub {
+            margin-top: 8px;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            min-height: 36px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-foot {
+            display: grid;
+            gap: 6px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            font-size: 0.77rem;
+            color: var(--text-secondary);
+        }
+
+        .card-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .card-actions .btn {
+            flex: 1;
+            padding: 9px 10px;
+            font-size: 0.78rem;
+        }
+
+        .table-wrap {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+            background: var(--surface);
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1020px;
+        }
+
+        thead tr {
+            background: var(--surface-alt);
+            border-bottom: 1px solid var(--border);
+        }
+
+        th,
+        td {
+            padding: 14px 16px;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            font-weight: 800;
+        }
+
+        td {
+            font-size: 0.84rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr:hover {
+            background: #fbfdff;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .td-title {
+            font-weight: 700;
+        }
+
+        .mini-preview {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #edf3ff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            flex-shrink: 0;
+            color: var(--primary);
+        }
+
+        .mini-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .title-row {
+            display: flex;
+            align-items: center;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 34px;
+            height: 34px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: white;
+            color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .empty-state,
+        .loading-state {
+            padding: 48px 20px;
+            text-align: center;
+            border: 1px dashed var(--border);
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.95));
+        }
+
+        .empty-state i,
+        .loading-state i {
+            font-size: 2rem;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            display: inline-block;
+        }
+
+        .empty-title,
+        .loading-title {
+            font-size: 1.03rem;
+            font-weight: 800;
+        }
+
+        .empty-sub,
+        .loading-sub {
+            margin-top: 8px;
+            color: var(--text-secondary);
+            max-width: 560px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .modal-shell {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 22px;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(10px);
+            z-index: 500;
+        }
+
+        .modal-shell.open {
+            display: flex;
+        }
+
+        .modal-card {
+            width: min(1120px, 100%);
+            max-height: calc(100vh - 44px);
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+        }
+
+        .modal-head,
+        .modal-foot {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .modal-foot {
+            border-bottom: none;
+            border-top: 1px solid var(--border);
+        }
+
+        .modal-title-wrap {
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .modal-kicker {
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 6px;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+
+        .modal-body {
+            overflow: auto;
+            padding: 22px;
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+            gap: 20px;
+        }
+
+        .modal-preview {
+            min-height: 380px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: linear-gradient(135deg, #eff6ff, #f8fafc);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .modal-preview img,
+        .modal-preview iframe {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border: none;
+        }
+
+        .zoom-hint {
+            position: absolute;
+            left: 16px;
+            bottom: 16px;
+            background: rgba(15, 23, 42, 0.72);
+            color: white;
+            font-size: 0.78rem;
+            padding: 7px 10px;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .meta-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .meta-card {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: var(--surface-alt);
+            padding: 16px;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .meta-item-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            font-weight: 800;
+        }
+
+        .meta-item-value {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            word-break: break-word;
+        }
+
+        .text-note {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(2, 6, 23, 0.88);
+            z-index: 700;
+        }
+
+        .lightbox.open {
+            display: flex;
+        }
+
+        .lightbox-stage {
+            width: min(1120px, 100%);
+            position: relative;
+        }
+
+        .lightbox-stage img {
+            width: 100%;
+            max-height: calc(100vh - 140px);
+            object-fit: contain;
+            border-radius: 20px;
+            display: block;
+        }
+
+        .lightbox-caption {
+            margin-top: 14px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .lightbox-nav,
+        .lightbox-close {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 46px;
+            height: 46px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(15, 23, 42, 0.65);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.15rem;
+        }
+
+        .lightbox-nav.prev {
+            left: -12px;
+        }
+
+        .lightbox-nav.next {
+            right: -12px;
+        }
+
+        .lightbox-close {
+            top: -58px;
+            right: 0;
+            transform: none;
+        }
+
+        @media (max-width: 1100px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+        }
+
+        @media (max-width: 820px) {
+            .modal-body {
+                grid-template-columns: 1fr;
+            }
+
+            .meta-grid,
+            .date-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-nav {
+                padding: 0 14px;
+                gap: 8px;
+            }
+
+            .nav-hamburger {
+                display: inline-flex;
+            }
+
+            .nav-menu {
+                position: absolute;
+                top: calc(100% + 8px);
+                left: 12px;
+                right: 12px;
+                display: none;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+                background: white;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 8px;
+                box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+            }
+
+            .top-nav.menu-open .nav-menu {
+                display: flex;
+            }
+
+            .nav-menu .nav-link {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .page {
+                padding: 20px 16px;
+            }
+
+            .grid-view {
+                grid-template-columns: 1fr;
+            }
+
+            .lightbox-nav.prev {
+                left: 8px;
+            }
+
+            .lightbox-nav.next {
+                right: 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="top-nav" id="main-nav">
+        <a class="nav-brand" href="/">
+            <i class="bi bi-lightning-charge-fill"></i>
+            <span>Dream Team - EE</span>
+        </a>
+        <button class="nav-hamburger" id="nav-hamburger" aria-label="Abrir navegación" aria-expanded="false">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="nav-menu" id="nav-menu">
+            <a href="/" class="nav-link"><i class="bi bi-house"></i>Inicio</a>
+            <a href="/actividades" class="nav-link"><i class="bi bi-kanban"></i>Actividades</a>
+            <a href="/registros" class="nav-link"><i class="bi bi-journal-text"></i>Registros</a>
+            <a href="/evidencias" class="nav-link active"><i class="bi bi-images"></i>Evidencias</a>
+            <a href="/calendario" class="nav-link"><i class="bi bi-calendar3"></i>Calendario</a>
+            <a href="/catalogos" class="nav-link"><i class="bi bi-sliders"></i>Catálogos</a>
+        </div>
+    </nav>
+
+    <main class="page">
+        <section class="hero">
+            <div>
+                <h1 class="hero-title">Administración de evidencias</h1>
+                <p class="hero-sub">Explora, filtra y administra las evidencias aterrizadas por proyecto y actividad. Las imágenes pueden visualizarse sin salir de la app y cada registro conserva su vínculo operativo con la actividad origen.</p>
+            </div>
+            <div class="hero-stat">
+                <div class="hero-stat-label">Resultados actuales</div>
+                <div class="hero-stat-value" id="hero-count">0</div>
+            </div>
+        </section>
+
+        <section class="layout">
+            <aside class="panel sidebar">
+                <div class="panel-head">
+                    <div>
+                        <div class="panel-title">Filtros</div>
+                        <div class="panel-sub">Jerarquía proyecto → actividad.</div>
+                    </div>
+                </div>
+                <div class="filter-stack">
+                    <div class="filter-field">
+                        <label class="filter-label" for="filter-project">Proyecto</label>
+                        <select id="filter-project">
+                            <option value="">Todos los proyectos</option>
+                            {% for project in projects %}
+                            <option value="{{ project.ID }}">{{ project.NOMBRE_PROYECTO }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label" for="filter-activity">Actividad</label>
+                        <select id="filter-activity">
+                            <option value="">Todas las actividades</option>
+                            {% for actividad in actividades_con_evidencia %}
+                            <option value="{{ actividad.ID }}" data-project="{{ actividad.ID_PROYECTO }}">{{ actividad.NOMBRE_ACTIVIDAD }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label" for="filter-type">Tipo de evidencia</label>
+                        <select id="filter-type">
+                            <option value="">Todos los tipos</option>
+                            {% for tipo in tipos_evidencia %}
+                            <option value="{{ tipo.ID }}">{{ tipo.DESCRIPCION }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label" for="filter-user">Usuario que subió</label>
+                        <select id="filter-user">
+                            <option value="">Todos los usuarios</option>
+                            {% for user in users %}
+                            <option value="{{ user.ID }}">{{ user.NOMBRE_COMPLETO }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label">Rango de fechas</label>
+                        <div class="date-grid">
+                            <input type="text" id="filter-date-from" placeholder="Desde">
+                            <input type="text" id="filter-date-to" placeholder="Hasta">
+                        </div>
+                    </div>
+
+                    <div class="filter-field">
+                        <label class="filter-label" for="filter-query">Busqueda</label>
+                        <input type="text" id="filter-query" placeholder="Titulo, contenido, actividad o proyecto">
+                    </div>
+
+                    <button type="button" class="btn btn-soft btn-block" id="btn-clear-filters">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        Limpiar filtros
+                    </button>
+                </div>
+            </aside>
+
+            <section class="panel main">
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <div class="view-switch">
+                            <button type="button" class="view-btn active" data-view="grid">Grid</button>
+                            <button type="button" class="view-btn" data-view="table">Tabla</button>
+                        </div>
+                        <div class="results-pill" id="results-pill"><i class="bi bi-collection"></i> 0 evidencias</div>
+                    </div>
+                    <div class="toolbar-right">
+                        <button type="button" class="btn btn-soft" id="btn-refresh">
+                            <i class="bi bi-arrow-repeat"></i>
+                            Actualizar
+                        </button>
+                    </div>
+                </div>
+
+                <div id="loading-state" class="loading-state hidden">
+                    <i class="bi bi-hourglass-split"></i>
+                    <div class="loading-title">Cargando evidencias</div>
+                    <div class="loading-sub">Estamos consultando la información de evidencias, actividades y metadatos asociados.</div>
+                </div>
+
+                <div id="empty-state" class="empty-state hidden">
+                    <i class="bi bi-image-alt"></i>
+                    <div class="empty-title">No hay evidencias para mostrar</div>
+                    <div class="empty-sub">Ajusta los filtros o registra nuevas evidencias desde el detalle de una actividad o desde el formulario de horas.</div>
+                </div>
+
+                <div id="grid-view" class="grid-view"></div>
+
+                <div id="table-view" class="table-wrap hidden">
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Archivo</th>
+                                    <th>Tipo</th>
+                                    <th>Actividad</th>
+                                    <th>Proyecto</th>
+                                    <th>Usuario</th>
+                                    <th>Fecha</th>
+                                    <th>Tamano</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <div class="modal-shell" id="detail-modal">
+        <div class="modal-card">
+            <div class="modal-head">
+                <div class="modal-title-wrap">
+                    <div class="modal-kicker">Detalle de evidencia</div>
+                    <div class="modal-title" id="modal-title-label">Sin selección</div>
+                </div>
+                <button type="button" class="icon-btn" id="btn-close-modal" aria-label="Cerrar modal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="modal-preview" id="modal-preview"></div>
+
+                <div class="meta-panel">
+                    <div class="meta-card">
+                        <div class="filter-stack">
+                            <div class="filter-field">
+                                <label class="filter-label" for="modal-title-input">Titulo</label>
+                                <input type="text" id="modal-title-input" maxlength="255">
+                            </div>
+                            <div class="filter-field">
+                                <label class="filter-label" for="modal-type-select">Tipo de evidencia</label>
+                                <select id="modal-type-select">
+                                    {% for tipo in tipos_evidencia %}
+                                    <option value="{{ tipo.ID }}">{{ tipo.DESCRIPCION }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="filter-field">
+                                <label class="filter-label" for="modal-content-input">Contenido</label>
+                                <textarea id="modal-content-input" rows="8" maxlength="10000" placeholder="Resumen o nota asociada a la evidencia"></textarea>
+                                <div class="text-note" id="modal-content-counter">0 / 10000</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="meta-card">
+                        <div class="meta-grid">
+                            <div class="meta-item">
+                                <div class="meta-item-label">Proyecto</div>
+                                <div class="meta-item-value" id="meta-project">-</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-item-label">Actividad</div>
+                                <div class="meta-item-value" id="meta-activity">-</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-item-label">Usuario</div>
+                                <div class="meta-item-value" id="meta-user">-</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-item-label">Fecha</div>
+                                <div class="meta-item-value" id="meta-date">-</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-item-label">Archivo</div>
+                                <div class="meta-item-value" id="meta-file">-</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-item-label">Tamano</div>
+                                <div class="meta-item-value" id="meta-size">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="meta-card">
+                        <div class="filter-stack">
+                            <a href="#" class="btn btn-soft btn-block" id="btn-download-file" target="_blank" rel="noopener noreferrer">
+                                <i class="bi bi-download"></i>
+                                Descargar archivo
+                            </a>
+                            <a href="#" class="btn btn-soft btn-block" id="btn-open-activity">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                                Ir a la actividad
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-foot">
+                <button type="button" class="btn btn-danger" id="btn-delete-evidence">
+                    <i class="bi bi-trash3"></i>
+                    Eliminar evidencia
+                </button>
+                <div class="toolbar-right">
+                    <button type="button" class="btn btn-soft" id="btn-cancel-modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="btn-save-evidence">
+                        <i class="bi bi-floppy"></i>
+                        Guardar cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="lightbox" id="lightbox">
+        <div class="lightbox-stage">
+            <button type="button" class="lightbox-close" id="lightbox-close" aria-label="Cerrar visor">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <button type="button" class="lightbox-nav prev" id="lightbox-prev" aria-label="Imagen anterior">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <button type="button" class="lightbox-nav next" id="lightbox-next" aria-label="Imagen siguiente">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+            <img id="lightbox-image" alt="Vista ampliada de evidencia">
+            <div class="lightbox-caption">
+                <div id="lightbox-title"></div>
+                <div id="lightbox-meta"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        const initialActivities = {{ actividades_con_evidencia | tojson }};
+        const state = {
+            view: 'grid',
+            evidencias: [],
+            actividades: initialActivities,
+            selectedId: null,
+            loading: false,
+            lightboxImages: [],
+            lightboxIndex: 0,
+        };
+
+        const mainNav = document.getElementById('main-nav');
+        const navHamburger = document.getElementById('nav-hamburger');
+        navHamburger.addEventListener('click', () => {
+            const open = mainNav.classList.toggle('menu-open');
+            navHamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            navHamburger.innerHTML = open ? '<i class="bi bi-x-lg"></i>' : '<i class="bi bi-list"></i>';
+        });
+        document.addEventListener('click', (event) => {
+            if (window.innerWidth > 768) return;
+            if (!event.target.closest('#main-nav')) {
+                mainNav.classList.remove('menu-open');
+                navHamburger.setAttribute('aria-expanded', 'false');
+                navHamburger.innerHTML = '<i class="bi bi-list"></i>';
+            }
+        });
+
+        const filterDateFromEl = document.getElementById('filter-date-from');
+        const filterDateToEl = document.getElementById('filter-date-to');
+        const filterQueryEl = document.getElementById('filter-query');
+        const heroCountEl = document.getElementById('hero-count');
+        const resultsPillEl = document.getElementById('results-pill');
+        const gridViewEl = document.getElementById('grid-view');
+        const tableViewEl = document.getElementById('table-view');
+        const tableBodyEl = document.getElementById('table-body');
+        const loadingStateEl = document.getElementById('loading-state');
+        const emptyStateEl = document.getElementById('empty-state');
+        const detailModalEl = document.getElementById('detail-modal');
+        const modalTitleLabelEl = document.getElementById('modal-title-label');
+        const modalPreviewEl = document.getElementById('modal-preview');
+        const modalTitleInputEl = document.getElementById('modal-title-input');
+        const modalContentInputEl = document.getElementById('modal-content-input');
+        const modalContentCounterEl = document.getElementById('modal-content-counter');
+        const metaProjectEl = document.getElementById('meta-project');
+        const metaActivityEl = document.getElementById('meta-activity');
+        const metaUserEl = document.getElementById('meta-user');
+        const metaDateEl = document.getElementById('meta-date');
+        const metaFileEl = document.getElementById('meta-file');
+        const metaSizeEl = document.getElementById('meta-size');
+        const btnDownloadFileEl = document.getElementById('btn-download-file');
+        const btnOpenActivityEl = document.getElementById('btn-open-activity');
+        const btnSaveEvidenceEl = document.getElementById('btn-save-evidence');
+        const btnDeleteEvidenceEl = document.getElementById('btn-delete-evidence');
+        const lightboxEl = document.getElementById('lightbox');
+        const lightboxImageEl = document.getElementById('lightbox-image');
+        const lightboxTitleEl = document.getElementById('lightbox-title');
+        const lightboxMetaEl = document.getElementById('lightbox-meta');
+
+        const selects = {
+            project: new TomSelect('#filter-project', { create: false }),
+            activity: new TomSelect('#filter-activity', { create: false }),
+            type: new TomSelect('#filter-type', { create: false }),
+            user: new TomSelect('#filter-user', { create: false }),
+            modalType: new TomSelect('#modal-type-select', { create: false }),
+        };
+
+        flatpickr('#filter-date-from', { dateFormat: 'Y-m-d', allowInput: true });
+        flatpickr('#filter-date-to', { dateFormat: 'Y-m-d', allowInput: true });
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function iconByMime(mimeType = '', tipo = '') {
+            if (mimeType.startsWith('image/')) return 'bi-image';
+            if (mimeType.includes('pdf')) return 'bi-file-earmark-pdf';
+            if (mimeType.includes('sheet') || mimeType.includes('excel')) return 'bi-file-earmark-excel';
+            if (mimeType.includes('word') || mimeType.includes('document')) return 'bi-file-earmark-word';
+            if ((tipo || '').toLowerCase().includes('correo')) return 'bi-envelope-paper';
+            return 'bi-paperclip';
+        }
+
+        function formatBytes(bytes) {
+            const size = Number(bytes || 0);
+            if (size < 1024) return `${size} B`;
+            if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+            if (size < 1024 * 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`;
+            return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`;
+        }
+
+        function formatDate(value) {
+            if (!value) return 'Sin fecha';
+            const parsed = new Date(value);
+            if (Number.isNaN(parsed.getTime())) return String(value);
+            return parsed.toLocaleString('es-MX', {
+                year: 'numeric',
+                month: 'short',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+        }
+
+        function syncCounters() {
+            const count = state.evidencias.length;
+            heroCountEl.textContent = String(count);
+            resultsPillEl.innerHTML = `<i class="bi bi-collection"></i> ${count} evidencia${count === 1 ? '' : 's'}`;
+        }
+
+        function setLoading(loading) {
+            state.loading = loading;
+            loadingStateEl.classList.toggle('hidden', !loading);
+            if (loading) {
+                gridViewEl.classList.add('hidden');
+                tableViewEl.classList.add('hidden');
+                emptyStateEl.classList.add('hidden');
+            }
+        }
+
+        function getCurrentFilters() {
+            return {
+                proyecto_id: selects.project.getValue(),
+                actividad_id: selects.activity.getValue(),
+                tipo_id: selects.type.getValue(),
+                usuario_id: selects.user.getValue(),
+                fecha_desde: filterDateFromEl.value.trim(),
+                fecha_hasta: filterDateToEl.value.trim(),
+                q: filterQueryEl.value.trim(),
+            };
+        }
+
+        function updateActivitySelect(activities) {
+            const currentValue = selects.activity.getValue();
+            const proyectoId = selects.project.getValue();
+            const filtered = (activities || []).filter((activity) => {
+                const activityProject = activity.ID_PROYECTO || activity.proyecto_id;
+                return !proyectoId || activityProject === proyectoId;
+            });
+            selects.activity.clearOptions();
+            selects.activity.addOption({ value: '', text: 'Todas las actividades' });
+            filtered.forEach((activity) => {
+                const id = activity.ID || activity.id;
+                const name = activity.NOMBRE_ACTIVIDAD || activity.nombre;
+                selects.activity.addOption({ value: id, text: name });
+            });
+            selects.activity.refreshOptions(false);
+            if (currentValue && filtered.some((activity) => String(activity.ID || activity.id) === String(currentValue))) {
+                selects.activity.setValue(currentValue, true);
+            } else {
+                selects.activity.setValue('', true);
+            }
+        }
+
+        async function fetchEvidencias() {
+            const filters = getCurrentFilters();
+            const params = new URLSearchParams();
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value) params.append(key, value);
+            });
+
+            setLoading(true);
+            try {
+                const response = await fetch(`/api/evidencias/explore?${params.toString()}`);
+                const payload = await response.json();
+                state.evidencias = Array.isArray(payload.evidencias) ? payload.evidencias : [];
+                state.actividades = Array.isArray(payload.actividades) ? payload.actividades : [];
+                updateActivitySelect(state.actividades);
+                render();
+            } catch (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'No se pudo cargar el modulo', text: 'Revisa la conectividad y vuelve a intentar.' });
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function render() {
+            syncCounters();
+            const hasRows = state.evidencias.length > 0;
+            emptyStateEl.classList.toggle('hidden', hasRows);
+            gridViewEl.classList.toggle('hidden', state.view !== 'grid' || !hasRows);
+            tableViewEl.classList.toggle('hidden', state.view !== 'table' || !hasRows);
+            if (!hasRows) {
+                gridViewEl.innerHTML = '';
+                tableBodyEl.innerHTML = '';
+                return;
+            }
+            renderGrid();
+            renderTable();
+        }
+
+        function renderGrid() {
+            gridViewEl.innerHTML = state.evidencias.map((evidencia) => {
+                const preview = evidencia.es_imagen && evidencia.url_archivo
+                    ? `<img src="${escapeHtml(evidencia.url_archivo)}" alt="${escapeHtml(evidencia.titulo)}" loading="lazy">`
+                    : `<span class="preview-icon"><i class="bi ${iconByMime(evidencia.mime_type, evidencia.tipo)}"></i></span>`;
+                return `
+                    <article class="evidence-card" data-evidence-id="${escapeHtml(evidencia.id)}">
+                        <div class="card-preview">${preview}</div>
+                        <div class="card-body">
+                            <div class="card-meta-top">
+                                <span class="type-badge"><i class="bi ${iconByMime(evidencia.mime_type, evidencia.tipo)}"></i>${escapeHtml(evidencia.tipo)}</span>
+                                <span class="file-size">${escapeHtml(formatBytes(evidencia.tamano_bytes))}</span>
+                            </div>
+                            <div class="card-title">${escapeHtml(evidencia.titulo)}</div>
+                            <div class="card-sub">${escapeHtml(evidencia.contenido_texto || evidencia.nombre_archivo || 'Sin contenido adicional')}</div>
+                            <div class="card-foot">
+                                <div><strong>Actividad:</strong> ${escapeHtml(evidencia.actividad_nombre)}</div>
+                                <div><strong>Proyecto:</strong> ${escapeHtml(evidencia.proyecto_nombre)}</div>
+                                <div><strong>Subió:</strong> ${escapeHtml(evidencia.subido_por_nombre)}</div>
+                                <div><strong>Fecha:</strong> ${escapeHtml(formatDate(evidencia.creado_en))}</div>
+                            </div>
+                            <div class="card-actions">
+                                <button type="button" class="btn btn-soft js-open" data-id="${escapeHtml(evidencia.id)}"><i class="bi bi-eye"></i>Ver</button>
+                                <button type="button" class="btn btn-danger js-delete" data-id="${escapeHtml(evidencia.id)}"><i class="bi bi-trash3"></i>Eliminar</button>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        function renderTable() {
+            tableBodyEl.innerHTML = state.evidencias.map((evidencia) => {
+                const preview = evidencia.es_imagen && evidencia.url_archivo
+                    ? `<img src="${escapeHtml(evidencia.url_archivo)}" alt="${escapeHtml(evidencia.titulo)}" loading="lazy">`
+                    : `<i class="bi ${iconByMime(evidencia.mime_type, evidencia.tipo)}"></i>`;
+                return `
+                    <tr data-row-id="${escapeHtml(evidencia.id)}">
+                        <td>
+                            <div class="title-row">
+                                <span class="mini-preview">${preview}</span>
+                                <div>
+                                    <div class="td-title">${escapeHtml(evidencia.titulo)}</div>
+                                    <div>${escapeHtml(evidencia.nombre_archivo || 'Sin archivo')}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge"><i class="bi ${iconByMime(evidencia.mime_type, evidencia.tipo)}"></i>${escapeHtml(evidencia.tipo)}</span></td>
+                        <td>${escapeHtml(evidencia.actividad_nombre)}</td>
+                        <td>${escapeHtml(evidencia.proyecto_nombre)}</td>
+                        <td>${escapeHtml(evidencia.subido_por_nombre)}</td>
+                        <td>${escapeHtml(formatDate(evidencia.creado_en))}</td>
+                        <td>${escapeHtml(formatBytes(evidencia.tamano_bytes))}</td>
+                        <td>
+                            <div class="table-actions">
+                                <button type="button" class="icon-btn js-open" data-id="${escapeHtml(evidencia.id)}" aria-label="Ver detalle"><i class="bi bi-eye"></i></button>
+                                <a class="icon-btn" href="${escapeHtml(evidencia.url_archivo || '#')}" target="_blank" rel="noopener noreferrer" aria-label="Descargar archivo"><i class="bi bi-download"></i></a>
+                                <button type="button" class="icon-btn js-delete" data-id="${escapeHtml(evidencia.id)}" aria-label="Eliminar evidencia"><i class="bi bi-trash3"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function findEvidence(evidenceId) {
+            return state.evidencias.find((item) => String(item.id) === String(evidenceId)) || null;
+        }
+
+        function renderModalPreview(evidencia) {
+            if (!evidencia) return;
+            if (evidencia.es_imagen && evidencia.url_archivo) {
+                modalPreviewEl.innerHTML = `
+                    <img src="${escapeHtml(evidencia.url_archivo)}" alt="${escapeHtml(evidencia.titulo)}" id="modal-preview-image">
+                    <button type="button" class="zoom-hint" id="btn-open-lightbox"><i class="bi bi-arrows-fullscreen"></i> Ampliar imagen</button>
+                `;
+                document.getElementById('btn-open-lightbox').addEventListener('click', () => openLightbox(evidencia.id));
+                return;
+            }
+            if ((evidencia.mime_type || '').includes('pdf') && evidencia.url_archivo) {
+                modalPreviewEl.innerHTML = `<iframe src="${escapeHtml(evidencia.url_archivo)}"></iframe>`;
+                return;
+            }
+            modalPreviewEl.innerHTML = `
+                <div style="text-align:center;padding:24px;max-width:320px;">
+                    <div class="preview-icon" style="margin:0 auto 16px;"><i class="bi ${iconByMime(evidencia.mime_type, evidencia.tipo)}"></i></div>
+                    <div style="font-weight:800;font-size:1rem;">Vista previa no embebible</div>
+                    <div class="text-note">Descarga el archivo para revisarlo. La evidencia sigue vinculada a la actividad y conserva sus metadatos editables.</div>
+                </div>
+            `;
+        }
+
+        function openModal(evidenceId) {
+            const evidencia = findEvidence(evidenceId);
+            if (!evidencia) return;
+            state.selectedId = evidencia.id;
+            modalTitleLabelEl.textContent = evidencia.titulo;
+            modalTitleInputEl.value = evidencia.titulo || '';
+            modalContentInputEl.value = evidencia.contenido_texto || '';
+            modalContentCounterEl.textContent = `${modalContentInputEl.value.length} / 10000`;
+            selects.modalType.setValue(evidencia.tipo_id || '', true);
+            metaProjectEl.textContent = evidencia.proyecto_nombre;
+            metaActivityEl.textContent = evidencia.actividad_nombre;
+            metaUserEl.textContent = evidencia.subido_por_nombre;
+            metaDateEl.textContent = formatDate(evidencia.creado_en);
+            metaFileEl.textContent = evidencia.nombre_archivo || 'Sin archivo';
+            metaSizeEl.textContent = formatBytes(evidencia.tamano_bytes);
+            btnDownloadFileEl.href = evidencia.url_archivo || '#';
+            btnOpenActivityEl.href = `/actividades/${encodeURIComponent(evidencia.actividad_id)}`;
+            renderModalPreview(evidencia);
+            detailModalEl.classList.add('open');
+        }
+
+        function closeModal() {
+            detailModalEl.classList.remove('open');
+            state.selectedId = null;
+        }
+
+        async function saveEvidence() {
+            const evidencia = findEvidence(state.selectedId);
+            if (!evidencia) return;
+
+            const payload = {
+                titulo: modalTitleInputEl.value.trim(),
+                contenido_texto: modalContentInputEl.value.trim(),
+                id_tipo: selects.modalType.getValue(),
+            };
+
+            if (!payload.id_tipo) {
+                Swal.fire({ icon: 'warning', title: 'Tipo requerido', text: 'Selecciona un tipo de evidencia antes de guardar.' });
+                return;
+            }
+
+            btnSaveEvidenceEl.disabled = true;
+            try {
+                const response = await fetch(`/evidencia/${encodeURIComponent(evidencia.id)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const result = await response.json();
+                if (!response.ok || result.status !== 'success') {
+                    throw new Error(result.message || 'No se pudo actualizar la evidencia.');
+                }
+                const index = state.evidencias.findIndex((item) => String(item.id) === String(evidencia.id));
+                if (index >= 0) state.evidencias[index] = result.evidencia;
+                render();
+                openModal(evidencia.id);
+                Swal.fire({ icon: 'success', title: 'Evidencia actualizada', timer: 1400, showConfirmButton: false });
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'No se guardaron los cambios', text: error.message || 'Intenta de nuevo.' });
+            } finally {
+                btnSaveEvidenceEl.disabled = false;
+            }
+        }
+
+        async function deleteEvidence(evidenceId) {
+            const evidencia = findEvidence(evidenceId);
+            if (!evidencia) return;
+
+            const decision = await Swal.fire({
+                icon: 'warning',
+                title: 'Eliminar evidencia',
+                text: `Se eliminará la evidencia "${evidencia.titulo}". Esta acción no se puede deshacer.`,
+                showCancelButton: true,
+                confirmButtonText: 'Eliminar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#ef4444',
+            });
+            if (!decision.isConfirmed) return;
+
+            try {
+                const response = await fetch(`/evidencia/${encodeURIComponent(evidenceId)}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (!response.ok || result.status !== 'success') {
+                    throw new Error(result.message || 'No se pudo eliminar la evidencia.');
+                }
+                state.evidencias = state.evidencias.filter((item) => String(item.id) !== String(evidenceId));
+                if (String(state.selectedId) === String(evidenceId)) closeModal();
+                render();
+                Swal.fire({ icon: 'success', title: 'Evidencia eliminada', timer: 1300, showConfirmButton: false });
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'No se pudo eliminar', text: error.message || 'Intenta de nuevo.' });
+            }
+        }
+
+        function openLightbox(evidenceId) {
+            const evidencia = findEvidence(evidenceId);
+            if (!evidencia || !evidencia.es_imagen) return;
+            state.lightboxImages = state.evidencias.filter((item) => item.es_imagen && String(item.actividad_id) === String(evidencia.actividad_id));
+            state.lightboxIndex = Math.max(0, state.lightboxImages.findIndex((item) => String(item.id) === String(evidenceId)));
+            renderLightbox();
+            lightboxEl.classList.add('open');
+        }
+
+        function renderLightbox() {
+            const current = state.lightboxImages[state.lightboxIndex];
+            if (!current) return;
+            lightboxImageEl.src = current.url_archivo;
+            lightboxImageEl.alt = current.titulo;
+            lightboxTitleEl.textContent = current.titulo;
+            lightboxMetaEl.textContent = `${current.actividad_nombre} · ${current.subido_por_nombre} · ${formatDate(current.creado_en)}`;
+        }
+
+        function closeLightbox() {
+            lightboxEl.classList.remove('open');
+            lightboxImageEl.src = '';
+        }
+
+        function stepLightbox(direction) {
+            if (!state.lightboxImages.length) return;
+            state.lightboxIndex = (state.lightboxIndex + direction + state.lightboxImages.length) % state.lightboxImages.length;
+            renderLightbox();
+        }
+
+        let queryTimer = null;
+        function scheduleFetch() {
+            clearTimeout(queryTimer);
+            queryTimer = window.setTimeout(fetchEvidencias, 260);
+        }
+
+        document.querySelectorAll('.view-btn').forEach((button) => {
+            button.addEventListener('click', () => {
+                state.view = button.dataset.view;
+                document.querySelectorAll('.view-btn').forEach((item) => item.classList.toggle('active', item === button));
+                render();
+            });
+        });
+
+        selects.project.on('change', () => {
+            updateActivitySelect(state.actividades);
+            fetchEvidencias();
+        });
+        selects.activity.on('change', fetchEvidencias);
+        selects.type.on('change', fetchEvidencias);
+        selects.user.on('change', fetchEvidencias);
+        filterDateFromEl.addEventListener('change', fetchEvidencias);
+        filterDateToEl.addEventListener('change', fetchEvidencias);
+        filterQueryEl.addEventListener('input', scheduleFetch);
+        document.getElementById('btn-refresh').addEventListener('click', fetchEvidencias);
+
+        document.getElementById('btn-clear-filters').addEventListener('click', () => {
+            selects.project.setValue('', true);
+            selects.activity.setValue('', true);
+            selects.type.setValue('', true);
+            selects.user.setValue('', true);
+            filterDateFromEl.value = '';
+            filterDateToEl.value = '';
+            filterQueryEl.value = '';
+            state.actividades = initialActivities;
+            updateActivitySelect(initialActivities);
+            fetchEvidencias();
+        });
+
+        gridViewEl.addEventListener('click', (event) => {
+            const openBtn = event.target.closest('.js-open');
+            const deleteBtn = event.target.closest('.js-delete');
+            const card = event.target.closest('.evidence-card');
+            if (deleteBtn) {
+                event.stopPropagation();
+                deleteEvidence(deleteBtn.dataset.id);
+                return;
+            }
+            if (openBtn) {
+                event.stopPropagation();
+                openModal(openBtn.dataset.id);
+                return;
+            }
+            if (card?.dataset.evidenceId) openModal(card.dataset.evidenceId);
+        });
+
+        tableBodyEl.addEventListener('click', (event) => {
+            const openBtn = event.target.closest('.js-open');
+            const deleteBtn = event.target.closest('.js-delete');
+            if (openBtn) {
+                openModal(openBtn.dataset.id);
+                return;
+            }
+            if (deleteBtn) {
+                deleteEvidence(deleteBtn.dataset.id);
+                return;
+            }
+            const row = event.target.closest('tr[data-row-id]');
+            if (row) openModal(row.dataset.rowId);
+        });
+
+        document.getElementById('btn-close-modal').addEventListener('click', closeModal);
+        document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
+        detailModalEl.addEventListener('click', (event) => {
+            if (event.target === detailModalEl) closeModal();
+        });
+        btnSaveEvidenceEl.addEventListener('click', saveEvidence);
+        btnDeleteEvidenceEl.addEventListener('click', () => deleteEvidence(state.selectedId));
+        modalContentInputEl.addEventListener('input', () => {
+            modalContentCounterEl.textContent = `${modalContentInputEl.value.length} / 10000`;
+        });
+
+        document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+        document.getElementById('lightbox-prev').addEventListener('click', () => stepLightbox(-1));
+        document.getElementById('lightbox-next').addEventListener('click', () => stepLightbox(1));
+        lightboxEl.addEventListener('click', (event) => {
+            if (event.target === lightboxEl) closeLightbox();
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeLightbox();
+                closeModal();
+            }
+            if (!lightboxEl.classList.contains('open')) return;
+            if (event.key === 'ArrowLeft') stepLightbox(-1);
+            if (event.key === 'ArrowRight') stepLightbox(1);
+        });
+
+        updateActivitySelect(initialActivities);
+        fetchEvidencias();
+    </script>
+</body>
+
+</html>

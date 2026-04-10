@@ -42,7 +42,11 @@ from db import (
     eliminar_detalle_actividad,
     # Evidencia
     obtener_evidencias_actividad,
+    obtener_evidencia_por_id,
+    obtener_evidencias_filtradas,
+    obtener_actividades_con_evidencia,
     crear_evidencia,
+    actualizar_evidencia,
     eliminar_evidencia,
     # Catálogos
     obtener_estatus_actividad,
@@ -178,6 +182,46 @@ def _local_today() -> date:
         return date.today()
 
 
+def _delete_evidence_file(file_url: str | None):
+    if not file_url:
+        return
+    disk_path = os.path.join(app.root_path, "static", file_url.lstrip("/"))
+    if not os.path.isfile(disk_path):
+        return
+    try:
+        os.remove(disk_path)
+        act_folder = os.path.dirname(disk_path)
+        if os.path.isdir(act_folder) and not os.listdir(act_folder):
+            os.rmdir(act_folder)
+        project_folder = os.path.dirname(act_folder)
+        if os.path.isdir(project_folder) and not os.listdir(project_folder):
+            os.rmdir(project_folder)
+    except Exception as e:
+        print(f"[_delete_evidence_file] no se pudo eliminar archivo: {e}")
+
+
+def _serialize_evidencia(row):
+    return {
+        "id": row["ID"],
+        "actividad_id": row["ID_ACTIVIDAD"],
+        "tipo_id": row["ID_TIPO"],
+        "titulo": row.get("TITULO") or row.get("NOMBRE_ARCHIVO") or row.get("TIPO") or "Sin título",
+        "contenido_texto": row.get("CONTENIDO_TEXTO") or "",
+        "nombre_archivo": row.get("NOMBRE_ARCHIVO") or "",
+        "url_archivo": row.get("URL_ARCHIVO") or "",
+        "mime_type": row.get("MIME_TYPE") or "",
+        "tamano_bytes": int(row.get("TAMANO_BYTES") or 0),
+        "subido_por": row.get("SUBIDO_POR") or "",
+        "subido_por_nombre": row.get("USUARIO_NOMBRE") or row.get("SUBIDO_POR") or "Sin usuario",
+        "creado_en": str(row.get("CREADO_EN") or ""),
+        "tipo": row.get("TIPO") or "Sin tipo",
+        "actividad_nombre": row.get("ACTIVIDAD_NOMBRE") or "Sin actividad",
+        "proyecto_id": row.get("PROYECTO_ID") or "",
+        "proyecto_nombre": row.get("PROYECTO_NOMBRE") or "Sin proyecto",
+        "es_imagen": (row.get("MIME_TYPE") or "").startswith("image/"),
+    }
+
+
 # ── DAILY TRACKER ─────────────────────────────────────────────────────────
 
 
@@ -192,6 +236,33 @@ def index():
         if ok:
             if datos.get("actividad_id"):
                 recalcular_avance_actividad(datos.get("actividad_id"))
+            
+            # Manejar evidencia si está incluida
+            if datos.get("incluir_evidencia") == "on" and datos.get("actividad_id"):
+                actividad_id = datos.get("actividad_id")
+                actividad = obtener_actividad_por_id(actividad_id)
+                proyecto_id = actividad["ID_PROYECTO"] if actividad else "sin_proyecto"
+                
+                archivo = request.files.get("archivo_evidencia")
+                if archivo and archivo.filename:
+                    if _allowed(archivo.filename):
+                        try:
+                            meta = _save_upload(archivo, proyecto_id, actividad_id)
+                            datos["url_archivo"] = meta["url"]
+                            datos["nombre_archivo"] = meta["nombre"]
+                            datos["mime_type"] = meta["mime"]
+                            datos["tamano_bytes"] = str(meta["size"])
+                        except ValueError:
+                            pass  # Ignorar error de cuota en evidencia
+                
+                # Guardar evidencia con datos obligatorios
+                if datos.get("id_tipo_evidencia"):
+                    datos["id_tipo"] = datos.get("id_tipo_evidencia")
+                    datos["titulo"] = datos.get("titulo_evidencia") or None
+                    datos["contenido_texto"] = datos.get("contenido_evidencia") or None
+                    datos["subido_por"] = datos.get("user")
+                    crear_evidencia(actividad_id, datos)
+            
             return jsonify({"status": "success", "message": "¡Registro guardado correctamente!"})
         return jsonify({"status": "error", "message": "Hubo un fallo al conectar con SAP HANA."}), 500
 
@@ -201,6 +272,7 @@ def index():
         users=base["users"],
         projects=base["projects"],
         tipos_actividad=obtener_tipos_actividad(),
+        tipos_evidencia=obtener_tipos_evidencia(),
     )
 
 
@@ -576,23 +648,22 @@ def agregar_evidencia(actividad_id):
     return jsonify({"status": "error", "message": "Error al guardar la evidencia."}), 500
 
 
-@app.route("/evidencia/<evidencia_id>", methods=["DELETE"])
-def borrar_evidencia(evidencia_id):
-    # Obtener URL antes de borrar para eliminar el archivo del disco
+@app.route("/evidencia/<evidencia_id>", methods=["PUT", "DELETE"])
+def api_evidencia(evidencia_id):
+    if request.method == "PUT":
+        datos = request.get_json(silent=True) or {}
+        if not (datos.get("id_tipo") or "").strip():
+            return jsonify({"status": "error", "message": "El tipo de evidencia es obligatorio."}), 400
+        if not actualizar_evidencia(evidencia_id, datos):
+            return jsonify({"status": "error", "message": "No se pudo actualizar la evidencia."}), 500
+        evidencia = obtener_evidencia_por_id(evidencia_id)
+        if not evidencia:
+            return jsonify({"status": "error", "message": "Evidencia no encontrada."}), 404
+        return jsonify({"status": "success", "evidencia": _serialize_evidencia(evidencia)})
+
     rows = ejecutar_query('SELECT "URL_ARCHIVO" FROM "EVIDENCIA_ACTIVIDAD" WHERE "ID"=?', (evidencia_id,))
-    if rows and rows[0].get("URL_ARCHIVO"):
-        # URL: /uploads/evidencias/<proyecto_id>/<actividad_id>/<file>
-        # En disco: static/uploads/evidencias/<proyecto_id>/<actividad_id>/<file>
-        disk_path = os.path.join(app.root_path, "static", rows[0]["URL_ARCHIVO"].lstrip("/"))
-        if os.path.isfile(disk_path):
-            try:
-                os.remove(disk_path)
-                # Limpiar carpeta de actividad si quedó vacía
-                act_folder = os.path.dirname(disk_path)
-                if os.path.isdir(act_folder) and not os.listdir(act_folder):
-                    os.rmdir(act_folder)
-            except Exception as e:
-                print(f"[borrar_evidencia] no se pudo eliminar archivo: {e}")
+    if rows:
+        _delete_evidence_file(rows[0].get("URL_ARCHIVO"))
 
     if eliminar_evidencia(evidencia_id):
         return jsonify({"status": "success"})
@@ -621,6 +692,53 @@ def vista_registros():
         tipos_actividad=obtener_tipos_actividad(),
         filtros=filtros,
     )
+
+
+@app.route("/evidencias")
+def vista_evidencias():
+    base = _catalogo_base()
+    return render_template(
+        "evidencias.html",
+        projects=base["projects"],
+        users=base["users"],
+        tipos_evidencia=obtener_tipos_evidencia(),
+        actividades_con_evidencia=obtener_actividades_con_evidencia(),
+    )
+
+
+@app.route("/api/evidencias/explore")
+def api_evidencias_explore():
+    proyecto_id = request.args.get("proyecto_id") or None
+    actividad_id = request.args.get("actividad_id") or None
+    tipo_id = request.args.get("tipo_id") or None
+    usuario_id = request.args.get("usuario_id") or None
+    fecha_desde = request.args.get("fecha_desde") or None
+    fecha_hasta = request.args.get("fecha_hasta") or None
+    q = (request.args.get("q") or "").strip() or None
+
+    evidencias = obtener_evidencias_filtradas(
+        proyecto_id=proyecto_id,
+        actividad_id=actividad_id,
+        tipo_id=tipo_id,
+        usuario_id=usuario_id,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        q=q,
+    )
+    actividades = obtener_actividades_con_evidencia(proyecto_id=proyecto_id)
+
+    return jsonify({
+        "evidencias": [_serialize_evidencia(row) for row in evidencias],
+        "actividades": [
+            {
+                "id": row["ID"],
+                "proyecto_id": row["ID_PROYECTO"],
+                "nombre": row["NOMBRE_ACTIVIDAD"],
+                "proyecto_nombre": row["NOMBRE_PROYECTO"],
+            }
+            for row in actividades
+        ],
+    })
 
 
 @app.route("/registros/<registro_id>", methods=["GET"])

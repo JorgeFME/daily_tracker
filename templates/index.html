@@ -148,9 +148,9 @@
         /* ─── LAYOUT ──────────────────────────────────────────── */
         .tracker-layout {
             display: grid;
-            grid-template-columns: 380px 1fr;
+            grid-template-columns: minmax(440px, 500px) minmax(0, 1fr);
             gap: 24px;
-            max-width: 1300px;
+            max-width: 1480px;
             margin: 0 auto;
             align-items: start;
         }
@@ -344,7 +344,7 @@
 
         /* ─── FORM ────────────────────────────────────────────── */
         .form-body {
-            padding: 20px 20px;
+            padding: 24px 24px;
         }
 
         .field-group {
@@ -361,6 +361,15 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 4px 10px;
+        }
+
+        .field-label>span {
+            margin-left: auto;
+            max-width: 62%;
+            text-align: right;
+            white-space: normal;
         }
 
         .input-wrap {
@@ -593,6 +602,210 @@
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
+        }
+
+        /* ─── EVIDENCIA PANEL ──────────────────────────────────── */
+        .evidencia-panel {
+            background: var(--surface-alt);
+            border: 1.5px solid #e5e7eb;
+            border-radius: var(--radius-input);
+            padding: 16px 20px;
+            margin-top: 12px;
+            margin-bottom: 12px;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .evidencia-panel.visible {
+            display: flex;
+        }
+
+        .evidencia-header {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .evidencia-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .evidencia-field {
+            margin-bottom: 0;
+        }
+
+        .evidencia-field select.field-input {
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-input);
+            background-color: var(--surface);
+            padding: 10px 40px 10px 12px;
+            min-height: 44px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+            cursor: pointer;
+        }
+
+        .evidencia-field select.field-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+            background-color: #fff;
+        }
+
+        .evidencia-field .ts-wrapper {
+            width: 100%;
+            position: relative;
+        }
+
+        .evidencia-field .ts-wrapper .ts-control {
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--radius-input) !important;
+            background: var(--surface) !important;
+            min-height: 44px !important;
+            padding: 8px 12px !important;
+            box-shadow: none !important;
+        }
+
+        .evidencia-field .ts-wrapper.focus .ts-control {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px var(--primary-glow) !important;
+        }
+
+        .evidencia-field .ts-wrapper .ts-control .item,
+        .evidencia-field .ts-wrapper .ts-control .placeholder,
+        .evidencia-field .ts-wrapper .ts-control input {
+            padding-left: 0 !important;
+            font-size: 0.9rem !important;
+        }
+
+        .evidencia-field .ts-wrapper .ts-dropdown {
+            z-index: 220 !important;
+        }
+
+        .evidencia-field.full {
+            grid-column: 1 / -1;
+        }
+
+        .evidence-file-drop {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-input);
+            background: var(--surface);
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .evidence-file-drop:hover,
+        .evidence-file-drop.dragover {
+            border-color: var(--primary);
+            background: var(--primary-glow);
+        }
+
+        .evidence-file-input-hidden {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .evidence-file-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 16px;
+            gap: 4px;
+            pointer-events: none;
+        }
+
+        .evidence-file-icon {
+            font-size: 1.8rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .evidence-file-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .evidence-file-link {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .evidence-file-hint {
+            font-size: 0.73rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .evidence-preview {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--surface);
+            border-radius: var(--radius-input);
+        }
+
+        .evidence-preview-icon {
+            font-size: 1.4rem;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .evidence-preview-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .evidence-preview-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+            word-break: break-all;
+        }
+
+        .evidence-preview-size {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .evidence-preview-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 6px;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+
+        .evidence-preview-remove:hover {
+            background: #fee2e2;
+            color: #dc2626;
         }
 
         /* ─── DASHBOARD PANEL ─────────────────────────────────── */
@@ -1378,6 +1591,9 @@
             <a href="/registros" class="nav-link-pill">
                 <i class="bi bi-clock-history"></i><span>Registros</span>
             </a>
+            <a href="/evidencias" class="nav-link-pill">
+                <i class="bi bi-images"></i><span>Evidencias</span>
+            </a>
             <a href="/calendario" class="nav-link-pill">
                 <i class="bi bi-calendar3"></i><span>Calendario</span>
             </a>
@@ -1532,6 +1748,68 @@
                                         class="bi bi-card-text"></i></span>
                                 <textarea class="field-input" name="details" rows="3"
                                     placeholder="Descripción detallada..." required disabled></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Checkbox: Incluir evidencia -->
+                        <div class="form-check mb-2" style="display: flex; align-items: center; gap: 8px;">
+                            <input class="form-check-input" type="checkbox" id="incluir_evidencia"
+                                name="incluir_evidencia" value="on">
+                            <label class="form-check-label text-secondary" for="incluir_evidencia"
+                                style="font-weight: 500; margin: 0;">
+                                <i class="bi bi-paperclip me-1"></i> Incluir evidencia
+                            </label>
+                        </div>
+
+                        <!-- Panel de Evidencia (oculto por defecto) -->
+                        <div class="evidencia-panel" id="evidencia-panel">
+                            <div class="evidencia-header">
+                                <i class="bi bi-cloud-upload"></i>Agregar evidencia
+                            </div>
+                            <div class="evidencia-fields">
+                                <div class="evidencia-field">
+                                    <label class="field-label">Tipo *</label>
+                                    <select class="field-input" id="id_tipo_evidencia" name="id_tipo_evidencia">
+                                        <option value="">Selecciona tipo...</option>
+                                        {% for t in tipos_evidencia %}
+                                        <option value="{{ t.ID }}">{{ t.DESCRIPCION }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="evidencia-field">
+                                    <label class="field-label">Título</label>
+                                    <input type="text" class="field-input" id="titulo_evidencia"
+                                        name="titulo_evidencia" placeholder="Asunto o referencia...">
+                                </div>
+                            </div>
+                            <div class="evidencia-field full">
+                                <label class="field-label">Contenido de texto</label>
+                                <textarea class="field-input" id="contenido_evidencia" name="contenido_evidencia"
+                                    rows="3" placeholder="Pega aquí correo, nota, etc..."></textarea>
+                            </div>
+                            <div class="evidencia-field full">
+                                <label class="field-label">Archivo</label>
+                                <div class="evidence-file-drop" id="evidence-file-drop">
+                                    <input type="file" id="archivo_evidencia" name="archivo_evidencia"
+                                        class="evidence-file-input-hidden">
+                                    <div class="evidence-file-content" id="evidence-file-content">
+                                        <i class="bi bi-cloud-upload evidence-file-icon"></i>
+                                        <p class="evidence-file-label">Arrastra o <span
+                                                class="evidence-file-link">haz clic para cargar</span></p>
+                                        <p class="evidence-file-hint">Archivo único, máx. 10 MB</p>
+                                    </div>
+                                    <div class="evidence-preview" id="evidence-preview" style="display:none;">
+                                        <i class="bi bi-file-earmark-check evidence-preview-icon"></i>
+                                        <div class="evidence-preview-info">
+                                            <span class="evidence-preview-name" id="evidence-preview-name"></span>
+                                            <span class="evidence-preview-size" id="evidence-preview-size"></span>
+                                        </div>
+                                        <button type="button" class="evidence-preview-remove"
+                                            id="evidence-preview-remove" title="Quitar archivo">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -1824,6 +2102,7 @@
             },
         });
         const tipoSelect = makeTomSelect("#select-tipo");
+        const evidenciaTipoSelect = makeTomSelect("#id_tipo_evidencia");
 
         let activityFetchController = null;
         let activityFetchSeq = 0;
@@ -2033,6 +2312,85 @@
 
         setInitialState();
 
+        // ─── EVIDENCIA: Toggle panel ───────────────────────────────────────────────
+        const checkIncluirEvidencia = document.getElementById('incluir_evidencia');
+        const evidenciaPanel = document.getElementById('evidencia-panel');
+        const evidenciaFileInput = document.getElementById('archivo_evidencia');
+        const evidenciaFileDrop = document.getElementById('evidence-file-drop');
+        const evidenciaPreview = document.getElementById('evidence-preview');
+        const evidenciaPreviewName = document.getElementById('evidence-preview-name');
+        const evidenciaPreviewSize = document.getElementById('evidence-preview-size');
+        const evidenciaPreviewRemove = document.getElementById('evidence-preview-remove');
+        const evidenciaTituloInput = document.getElementById('titulo_evidencia');
+        const evidenciaContenidoInput = document.getElementById('contenido_evidencia');
+
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+        function resetEvidenceFields({ collapsePanel = false } = {}) {
+            evidenciaTipoSelect.clear(true);
+            evidenciaTituloInput.value = '';
+            evidenciaContenidoInput.value = '';
+            evidenciaFileInput.value = '';
+            evidenciaPreviewName.textContent = '';
+            evidenciaPreviewSize.textContent = '';
+            evidenciaPreview.style.display = 'none';
+
+            if (collapsePanel) {
+                checkIncluirEvidencia.checked = false;
+                evidenciaPanel.classList.remove('visible');
+            }
+        }
+
+        checkIncluirEvidencia.addEventListener('change', () => {
+            if (checkIncluirEvidencia.checked) {
+                evidenciaPanel.classList.add('visible');
+            } else {
+                resetEvidenceFields({ collapsePanel: true });
+            }
+        });
+
+        // File drop handlers
+        evidenciaFileDrop.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            evidenciaFileDrop.classList.add('dragover');
+        });
+
+        evidenciaFileDrop.addEventListener('dragleave', () => {
+            evidenciaFileDrop.classList.remove('dragover');
+        });
+
+        evidenciaFileDrop.addEventListener('drop', (e) => {
+            e.preventDefault();
+            evidenciaFileDrop.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFileSelect(files[0]);
+        });
+
+        evidenciaFileInput.addEventListener('change', () => {
+            if (evidenciaFileInput.files.length > 0) {
+                handleFileSelect(evidenciaFileInput.files[0]);
+            }
+        });
+
+        evidenciaPreviewRemove.addEventListener('click', () => {
+            evidenciaFileInput.value = '';
+            evidenciaPreview.style.display = 'none';
+        });
+
+        function handleFileSelect(file) {
+            if (file.size > MAX_FILE_SIZE) {
+                Swal.fire({
+                    icon: 'warning', title: 'Archivo muy grande',
+                    text: `Máximo 10 MB. Tu archivo ocupa ${(file.size / 1024 / 1024).toFixed(2)} MB.`
+                });
+                evidenciaFileInput.value = '';
+                return;
+            }
+            evidenciaPreviewName.textContent = file.name;
+            evidenciaPreviewSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
+            evidenciaPreview.style.display = 'flex';
+        }
+
         document.querySelector('form').addEventListener('submit', function () {
             this.querySelectorAll('[disabled]').forEach(el => el.disabled = false);
         });
@@ -2129,6 +2487,7 @@
                     Swal.fire({ icon: 'success', title: '¡Logrado!', text: res.message, timer: 2000, showConfirmButton: false });
                     this.reset(); setInitialState();
                     userSelect.clear(); projectSelect.clear(); activitySelect.clear(); tipoSelect.clear(); tipoSelect.disable();
+                    resetEvidenceFields({ collapsePanel: true });
                     fetchWeeklyHours();
                 } else throw new Error(res.message);
             } catch (err) {
