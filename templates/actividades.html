@@ -1444,10 +1444,31 @@
         };
         const searchInput = document.getElementById('filter-q');
         if (searchInput) {
+            let searchDebounceTimer = null;
+            let lastSubmittedSearch = (searchInput.value || '').trim();
+
+            const triggerSearchSubmit = ({ force = false } = {}) => {
+                const currentSearch = (searchInput.value || '').trim();
+                if (!force) {
+                    if (currentSearch.length === 1) return;
+                    if (currentSearch === lastSubmittedSearch) return;
+                }
+                lastSubmittedSearch = currentSearch;
+                submitFiltros(true);
+            };
+
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchDebounceTimer);
+                const nextSearch = (searchInput.value || '').trim();
+                if (nextSearch.length === 1) return;
+                searchDebounceTimer = setTimeout(() => triggerSearchSubmit(), 300);
+            });
+
             searchInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    submitFiltros(true);
+                    clearTimeout(searchDebounceTimer);
+                    triggerSearchSubmit({ force: true });
                 }
             });
         }

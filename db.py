@@ -1813,8 +1813,8 @@ def obtener_ausencias_mes(anio: int, mes: int):
 def guardar_ausencia(datos: dict) -> bool:
     sql = """
         INSERT INTO "AUSENCIAS_USUARIO"
-            ("ID","ID_USUARIO","FECHA_INICIO","FECHA_FIN","TIPO","HORAS_DIA","DESCRIPCION","CREADO_POR")
-        VALUES (SYSUUID,?,?,?,?,?,?,?)
+            ("ID","ID_USUARIO","FECHA_INICIO","FECHA_FIN","TIPO","HORAS_DIA","DESCRIPCION","CREADO_EN","CREADO_POR")
+        VALUES (SYSUUID,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)
     """
     return ejecutar_dml(sql, (
         datos.get("id_usuario"),

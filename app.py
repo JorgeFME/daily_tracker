@@ -973,7 +973,30 @@ def api_ausencias():
 
 @app.route("/api/ausencias", methods=["POST"])
 def api_ausencia_crear():
-    datos = request.get_json()
+    datos = request.get_json(silent=True) or {}
+
+    required_fields = ("id_usuario", "fecha_inicio", "fecha_fin", "tipo")
+    if any(not str(datos.get(field) or "").strip() for field in required_fields):
+        return _json_err("Completa los campos obligatorios: usuario, fechas y tipo.")
+
+    try:
+        fecha_inicio = datetime.strptime(str(datos.get("fecha_inicio")), "%Y-%m-%d").date()
+        fecha_fin = datetime.strptime(str(datos.get("fecha_fin")), "%Y-%m-%d").date()
+    except ValueError:
+        return _json_err("Formato de fecha inválido. Usa YYYY-MM-DD.")
+
+    if fecha_fin < fecha_inicio:
+        return _json_err("La fecha fin no puede ser menor que la fecha inicio.")
+
+    try:
+        horas_dia = float(datos.get("horas_dia", 8))
+    except (TypeError, ValueError):
+        return _json_err("Horas por día inválidas.")
+
+    if horas_dia < 0.25 or horas_dia > 8:
+        return _json_err("Horas por día fuera de rango permitido (0.25 a 8).")
+
+    datos["horas_dia"] = horas_dia
     return _json_ok() if guardar_ausencia(datos) else _json_err("Error al guardar la ausencia.")
 
 

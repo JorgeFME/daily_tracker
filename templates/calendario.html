@@ -734,6 +734,55 @@ const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
 const TIPOS_ES = { VACACIONES:'Vacaciones', INCAPACIDAD:'Incapacidad',
                    DIA_LIBRE:'Día libre', PERMISO:'Permiso', OTRO:'Otro' };
 
+function toBool(value) {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        return normalized === '1' || normalized === 'true' || normalized === 't' || normalized === 'y' || normalized === 'yes';
+    }
+    return false;
+}
+
+function normalizeYMD(raw) {
+    if (!raw) return '';
+    if (raw instanceof Date && !Number.isNaN(raw.getTime())) return toYMD(raw);
+
+    const text = String(raw);
+    const dateMatch = text.match(/\d{4}-\d{2}-\d{2}/);
+    if (dateMatch) return dateMatch[0];
+
+    const parsed = new Date(text);
+    if (!Number.isNaN(parsed.getTime())) return toYMD(parsed);
+    return '';
+}
+
+function normalizeAusencias(rows) {
+    return (rows || []).map(a => ({
+        ...a,
+        fecha_inicio: normalizeYMD(a.FECHA_INICIO || a.fecha_inicio),
+        fecha_fin: normalizeYMD(a.FECHA_FIN || a.fecha_fin),
+        id: a.ID || a.id,
+        id_usuario: String(a.ID_USUARIO || a.id_usuario || ''),
+        usuario: a.USUARIO || a.usuario || '',
+        tipo: a.TIPO || a.tipo || 'DIA_LIBRE',
+        horas_dia: a.HORAS_DIA ?? a.horas_dia ?? 8,
+        descripcion: a.DESCRIPCION || a.descripcion || '',
+    }));
+}
+
+function normalizeFestivos(rows) {
+    return (rows || []).map(f => ({
+        ...f,
+        id: f.ID || f.id,
+        fecha: normalizeYMD(f.FECHA || f.fecha),
+        nombre: f.NOMBRE || f.nombre || '',
+        tipo: f.TIPO || f.tipo || 'OFICIAL',
+        aplica_todos: toBool(f.APLICA_TODOS != null ? f.APLICA_TODOS : f.aplica_todos),
+        activo: toBool(f.ACTIVO != null ? f.ACTIVO : f.activo),
+    }));
+}
+
 // ─── Calendar ───────────────────────────────────────────────────────────────
 function buildCalendar() {
     document.getElementById('cal-month-label').textContent = `${MESES[calMes-1]} ${calAnio}`;
@@ -824,16 +873,19 @@ function goToday() {
 }
 
 async function loadMes() {
-    const res  = await fetch(`/api/ausencias?anio=${calAnio}`);
-    const resF = await fetch(`/api/festivos?anio=${calAnio}`);
-    ausencias  = await res.json();
-    festivos   = await resF.json();
+    const [resAusencias, resFestivos] = await Promise.all([
+        fetch(`/api/ausencias?anio=${calAnio}`),
+        fetch(`/api/festivos?anio=${calAnio}`),
+    ]);
+    ausencias = normalizeAusencias(await resAusencias.json());
+    festivos = normalizeFestivos(await resFestivos.json());
     const festivosYear = document.getElementById('flt-anio-festivos');
     if (festivosYear && Array.from(festivosYear.options).some(opt => opt.value === String(calAnio))) {
         festivosYear.value = String(calAnio);
     }
     buildCalendar();
     renderTabla();
+    renderFestivos();
 }
 
 function toYMD(d) {
@@ -955,8 +1007,9 @@ function renderFestivos() {
 async function loadFestivos() {
     const anio = document.getElementById('flt-anio-festivos').value;
     const res  = await fetch(`/api/festivos?anio=${anio}`);
-    festivos   = await res.json();
+    festivos   = normalizeFestivos(await res.json());
     renderFestivos();
+    if (Number(anio) === calAnio) buildCalendar();
 }
 
 function abrirModalFestivo(data = null) {
@@ -1017,31 +1070,9 @@ document.getElementById('modal-ausencia').addEventListener('click', e => { if (e
 document.getElementById('modal-festivo').addEventListener('click',  e => { if (e.target === e.currentTarget) cerrarModalFestivo(); });
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
-// Normalize dates from Jinja (could be date objects stringified as "2026-03-31")
-ausencias = ausencias.map(a => ({
-    ...a,
-    fecha_inicio: String(a.FECHA_INICIO || a.fecha_inicio || '').slice(0,10),
-    fecha_fin:    String(a.FECHA_FIN    || a.fecha_fin    || '').slice(0,10),
-    id:           a.ID        || a.id,
-    id_usuario:   a.ID_USUARIO|| a.id_usuario,
-    usuario:      a.USUARIO   || a.usuario,
-    tipo:         a.TIPO      || a.tipo,
-    horas_dia:    a.HORAS_DIA ?? a.horas_dia,
-    descripcion:  a.DESCRIPCION || a.descripcion || '',
-}));
-festivos = festivos.map(f => ({
-    ...f,
-    id:          f.ID     || f.id,
-    fecha:       String(f.FECHA  || f.fecha  || '').slice(0,10),
-    nombre:      f.NOMBRE || f.nombre,
-    tipo:        f.TIPO   || f.tipo,
-    aplica_todos: f.APLICA_TODOS != null ? Boolean(f.APLICA_TODOS) : f.aplica_todos,
-    activo:      f.ACTIVO != null ? Boolean(f.ACTIVO) : f.activo,
-}));
-
-buildCalendar();
-renderTabla();
-renderFestivos();
+ausencias = normalizeAusencias(ausencias);
+festivos = normalizeFestivos(festivos);
+loadMes();
 </script>
 </body>
 </html>
