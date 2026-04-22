@@ -441,6 +441,18 @@ def actividades():
     elif scope == "canceled" and not estatus_id:
         estatus_id = _estatus_id_por_desc("CANCELADO")
 
+    has_filters = bool(
+        proyecto_id or estatus_id or usuario_id or fecha_desde or fecha_hasta or q
+        or (scope and scope != "all")
+    )
+    scope_label = "Todas las actividades"
+    if scope == "active":
+        scope_label = "Actividades activas"
+    elif scope == "completed":
+        scope_label = "Actividades completadas"
+    elif scope == "canceled":
+        scope_label = "Actividades canceladas"
+
     actividades_data = None
     if sin_filtros:
         today = _local_today()
@@ -488,27 +500,35 @@ def actividades():
         )
 
     base = _catalogo_base()
+    template_context = {
+        "actividades": actividades_data,
+        "estatus_list": estatus_list,
+        "projects": base["projects"],
+        "users": base["users"],
+        "filtro_proyecto": proyecto_id,
+        "filtro_estatus": estatus_id,
+        "filtro_usuario": usuario_id,
+        "filtro_fecha_desde": fecha_desde,
+        "filtro_fecha_hasta": fecha_hasta,
+        "filtro_q": q,
+        "filtro_sort": sort_by,
+        "page": page,
+        "total_paginas": total_paginas,
+        "total_actividades": total_actividades,
+        "page_size": page_size,
+        "default_scope": default_scope,
+        "filtro_scope": scope,
+        "has_filters": has_filters,
+        "scope_label": scope_label,
+    }
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return render_template("partials/actividades_resultados.html", **template_context)
+
     return render_template(
         "actividades.html",
-        actividades=actividades_data,
         todas_actividades=obtener_actividades(),
-        estatus_list=estatus_list,
-        projects=base["projects"],
-        users=base["users"],
         recursos=obtener_recursos(),
-        filtro_proyecto=proyecto_id,
-        filtro_estatus=estatus_id,
-        filtro_usuario=usuario_id,
-        filtro_fecha_desde=fecha_desde,
-        filtro_fecha_hasta=fecha_hasta,
-        filtro_q=q,
-        filtro_sort=sort_by,
-        page=page,
-        total_paginas=total_paginas,
-        total_actividades=total_actividades,
-        page_size=page_size,
-        default_scope=default_scope,
-        filtro_scope=scope,
+        **template_context,
     )
 
 

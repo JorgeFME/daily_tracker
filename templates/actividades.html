@@ -983,17 +983,6 @@
             </button>
         </div>
 
-        {% set has_filters = filtro_proyecto or filtro_estatus or filtro_usuario or filtro_fecha_desde or filtro_fecha_hasta or filtro_q or (filtro_scope and filtro_scope != 'all') %}
-
-        {% set scope_label = 'Todas las actividades' %}
-        {% if filtro_scope == 'active' %}
-            {% set scope_label = 'Actividades activas' %}
-        {% elif filtro_scope == 'completed' %}
-            {% set scope_label = 'Actividades completadas' %}
-        {% elif filtro_scope == 'canceled' %}
-            {% set scope_label = 'Actividades canceladas' %}
-        {% endif %}
-
         <div class="scope-chips" role="tablist" aria-label="Filtro rapido por estado">
             <button type="button" class="scope-chip {% if filtro_scope == 'all' %}active{% endif %}" data-scope="all">Todas</button>
             <button type="button" class="scope-chip {% if filtro_scope == 'active' %}active{% endif %}" data-scope="active">Activas</button>
@@ -1080,138 +1069,19 @@
                         </div>
                     </div>
 
-                    {% if has_filters %}
-                    <div class="filter-actions">
-                        <a href="/actividades" class="filter-clear">
+                    <div class="filter-actions" id="filter-actions" {% if not has_filters %}hidden{% endif %}>
+                        <a href="/actividades" class="filter-clear" id="filter-clear-link">
                             <i class="bi bi-x-circle"></i> Limpiar filtros
                         </a>
                     </div>
-                    {% endif %}
                 </div>
             </form>
             </div>
         </div>
 
-        <div class="results-toolbar">
-            <div class="results-meta">
-                <strong>{{ total_actividades }}</strong> actividades encontradas
-                <span class="pagination-text">Pagina {{ page }} de {{ total_paginas }}</span>
-                {% if default_scope %}
-                <span class="scope-pill">{{ default_scope }}</span>
-                {% endif %}
-            </div>
-            <div class="view-switch" aria-label="Cambiar vista">
-                <button type="button" class="view-btn" data-view-btn="cards"><i class="bi bi-grid-3x3-gap"></i>Cards</button>
-                <button type="button" class="view-btn" data-view-btn="table"><i class="bi bi-table"></i>Tabla</button>
-            </div>
+        <div id="actividades-results">
+            {% include 'partials/actividades_resultados.html' %}
         </div>
-
-        {% if actividades %}
-        <div data-view-target="cards" class="active">
-            <div class="actividades-grid">
-                {% for a in actividades %}
-                <div class="act-card-wrap" style="position:relative;">
-                    <button class="btn-delete-act"
-                        onclick="eliminarActividad(event,'{{ a.ID }}','{{ a.NOMBRE_ACTIVIDAD }}')"
-                        title="Eliminar actividad">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                    <a href="/actividades/{{ a.ID }}" class="act-card">
-                        <div class="act-card-top">
-                            <div class="act-card-badges">
-                                <span class="badge-estatus"
-                                    style="background:{{ a.ESTATUS_COLOR }}22; color:{{ a.ESTATUS_COLOR }}; border:1px solid {{ a.ESTATUS_COLOR }}44;">
-                                    {{ a.ESTATUS }}
-                                </span>
-                                <span class="badge-prioridad prio-{{ a.PRIORIDAD }}">
-                                    {% if a.PRIORIDAD == 1 %}Alta{% elif a.PRIORIDAD == 2 %}Media{% else %}Baja{% endif %}
-                                </span>
-                            </div>
-                            <p class="act-nombre">{{ a.NOMBRE_ACTIVIDAD }}</p>
-                            <p class="act-proyecto"><i class="bi bi-briefcase"></i>{{ a.NOMBRE_PROYECTO }}</p>
-                        </div>
-                        <div class="act-card-body">
-                            <div class="act-meta">
-                                <div class="act-meta-item">
-                                    <span class="act-meta-label">Responsable(s)</span>
-                                    <span class="act-meta-val">{{ a.RESPONSABLES or '—' }}</span>
-                                </div>
-                                <div class="act-meta-item">
-                                    <span class="act-meta-label">Solicitud</span>
-                                    <span class="act-meta-val">{{ a.FECHA_SOLICITUD or '—' }}</span>
-                                </div>
-                                <div class="act-meta-item">
-                                    <span class="act-meta-label">Inicio</span>
-                                    <span class="act-meta-val">{{ a.FECHA_INICIO or '—' }}</span>
-                                </div>
-                                <div class="act-meta-item">
-                                    <span class="act-meta-label">Fin real</span>
-                                    <span class="act-meta-val">{{ a.FECHA_FIN_REAL or '—' }}</span>
-                                </div>
-                            </div>
-                            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
-                                <i class="bi bi-clock" style="color:var(--primary);font-size:.8rem;"></i>
-                                <span style="font-size:.8rem;font-weight:700;font-family:'DM Mono',monospace;color:var(--text-main);">{{ a.HORAS_INVERTIDAS }}h</span>
-                                <span style="font-size:.75rem;color:var(--text-muted);">invertidas</span>
-                            </div>
-                            {% if a.RECURSOS %}
-                            <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">
-                                {% for rec in a.RECURSOS.split(', ') %}
-                                <span
-                                    style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.67rem;font-weight:700;padding:2px 7px;border-radius:6px;">{{ rec }}</span>
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </a>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <div data-view-target="table">
-            <div class="table-shell">
-                <table class="actividades-table">
-                    <thead>
-                        <tr>
-                            <th>Actividad</th>
-                            <th>Proyecto</th>
-                            <th>Estatus</th>
-                            <th>Responsables</th>
-                            <th>Solicitud</th>
-                            <th>Horas</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for a in actividades %}
-                        <tr>
-                            <td>
-                                <a class="table-title-link" href="/actividades/{{ a.ID }}">{{ a.NOMBRE_ACTIVIDAD }}</a>
-                            </td>
-                            <td>{{ a.NOMBRE_PROYECTO }}</td>
-                            <td>{{ a.ESTATUS }}</td>
-                            <td>{{ a.RESPONSABLES or '—' }}</td>
-                            <td>{{ a.FECHA_SOLICITUD or '—' }}</td>
-                            <td>{{ a.HORAS_INVERTIDAS }}h</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="pagination-wrap">
-            <button class="pagination-btn" type="button" onclick="goToPage({{ page - 1 }})" {% if page <= 1 %}disabled{% endif %}>Anterior</button>
-            <span class="pagination-text">Mostrando hasta {{ page_size }} por pagina</span>
-            <button class="pagination-btn" type="button" onclick="goToPage({{ page + 1 }})" {% if page >= total_paginas %}disabled{% endif %}>Siguiente</button>
-        </div>
-
-        {% else %}
-        <div class="empty-page">
-            <i class="bi bi-kanban"></i>
-            <p>No hay actividades{% if has_filters %} con los filtros seleccionados{% endif %}.</p>
-        </div>
-        {% endif %}
     </div>
 
     <!-- MODAL NUEVA ACTIVIDAD -->
@@ -1260,9 +1130,9 @@
                                     placeholder="Nombre o email...">
                             </div>
                             <div class="field-group">
-                                <label class="field-label">Fecha de solicitud</label>
+                                <label class="field-label">Fecha de solicitud *</label>
                                 <input type="text" class="field-input" id="new-fecha-solicitud" name="fecha_solicitud"
-                                    placeholder="Selecciona fecha" autocomplete="off">
+                                    placeholder="Selecciona fecha" autocomplete="off" required aria-required="true">
                             </div>
                         </div>
                         <div class="row-2">
@@ -1362,12 +1232,33 @@
         const pageInput = document.getElementById('filter-page');
         const scopeInput = document.getElementById('filter-scope');
         const scopeHint = document.getElementById('scope-hint');
+        const resultsContainer = document.getElementById('actividades-results');
+        const filterActions = document.getElementById('filter-actions');
+        const searchInput = document.getElementById('filter-q');
+        let filtersRequestController = null;
 
         function getScopeLabel(scope) {
             if (scope === 'active') return 'Actividades activas';
             if (scope === 'completed') return 'Actividades completadas';
             if (scope === 'canceled') return 'Actividades canceladas';
             return 'Todas las actividades';
+        }
+
+        function setActiveScopeChip(scope) {
+            document.querySelectorAll('[data-scope]').forEach((btn) => {
+                btn.classList.toggle('active', btn.dataset.scope === scope);
+            });
+        }
+
+        function updateFilterActionsVisibility() {
+            if (!filterActions || !filtrosForm) return;
+            const formData = new FormData(filtrosForm);
+            const hasActiveFilters = Array.from(formData.entries()).some(([key, value]) => {
+                if (key === 'page') return false;
+                if (key === 'scope') return value && value !== 'all';
+                return String(value || '').trim() !== '';
+            });
+            filterActions.hidden = !hasActiveFilters;
         }
 
         function updateScopeHint(scope, hasManualStatus = false) {
@@ -1388,18 +1279,60 @@
             }
             const statusHasValue = !!window.filterEstatusTs?.getValue();
             updateScopeHint(scopeInput ? scopeInput.value : 'all', statusHasValue);
+            setActiveScopeChip(scopeInput ? scopeInput.value : 'all');
+            updateFilterActionsVisibility();
         }
 
-        function submitFiltros(resetPage = false) {
-            if (!filtrosForm) return;
+        function bindViewControls() {
+            const currentView = sessionStorage.getItem('actividades_view') || 'cards';
+            document.querySelectorAll('[data-view-btn]').forEach((btn) => {
+                btn.onclick = () => applyView(btn.dataset.viewBtn);
+            });
+            applyView(currentView);
+        }
+
+        async function submitFiltros(resetPage = false) {
+            if (!filtrosForm || !resultsContainer) return;
             if (resetPage && pageInput) pageInput.value = '1';
-            filtrosForm.submit();
+
+            const params = new URLSearchParams(new FormData(filtrosForm));
+            const requestUrl = `/actividades?${params.toString()}`;
+
+            if (filtersRequestController) {
+                filtersRequestController.abort();
+            }
+            const controller = new AbortController();
+            filtersRequestController = controller;
+            resultsContainer.setAttribute('aria-busy', 'true');
+
+            try {
+                const response = await fetch(requestUrl, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    signal: controller.signal,
+                });
+                if (!response.ok) {
+                    throw new Error(`No se pudo actualizar la vista (${response.status})`);
+                }
+                resultsContainer.innerHTML = await response.text();
+                history.replaceState({}, '', requestUrl);
+                bindViewControls();
+                updateFilterActionsVisibility();
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    window.location.assign(requestUrl);
+                }
+            } finally {
+                if (filtersRequestController === controller) {
+                    filtersRequestController = null;
+                    resultsContainer.removeAttribute('aria-busy');
+                }
+            }
         }
 
         function goToPage(page) {
             if (!pageInput || page < 1) return;
             pageInput.value = String(page);
-            filtrosForm.submit();
+            submitFiltros();
         }
 
         const scopeButtons = document.querySelectorAll('[data-scope]');
@@ -1442,7 +1375,6 @@
             dropdownParent: 'body',
             onChange: () => submitFiltros(true)
         };
-        const searchInput = document.getElementById('filter-q');
         if (searchInput) {
             let searchDebounceTimer = null;
             let lastSubmittedSearch = (searchInput.value || '').trim();
@@ -1501,20 +1433,21 @@
         flatpickr("#filter-fecha-desde", fpFiltro);
         flatpickr("#filter-fecha-hasta", fpFiltro);
 
-        const viewButtons = document.querySelectorAll('[data-view-btn]');
-        const viewTargets = document.querySelectorAll('[data-view-target]');
-
         function applyView(view) {
-            viewButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.viewBtn === view));
-            viewTargets.forEach((target) => target.classList.toggle('active', target.dataset.viewTarget === view));
+            document.querySelectorAll('[data-view-btn]').forEach((btn) => {
+                btn.classList.toggle('active', btn.dataset.viewBtn === view);
+            });
+            document.querySelectorAll('[data-view-target]').forEach((target) => {
+                target.classList.toggle('active', target.dataset.viewTarget === view);
+            });
             sessionStorage.setItem('actividades_view', view);
         }
 
-        const savedView = sessionStorage.getItem('actividades_view') || 'cards';
-        applyView(savedView);
-        viewButtons.forEach((btn) => {
-            btn.addEventListener('click', () => applyView(btn.dataset.viewBtn));
+        filtrosForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            submitFiltros();
         });
+        bindViewControls();
 
         new TomSelect('#sel-proyecto', tsCfg);
         new TomSelect('#sel-estatus', tsCfg);
@@ -1524,6 +1457,16 @@
 
         document.getElementById('form-nueva-actividad').addEventListener('submit', async function (e) {
             e.preventDefault();
+            const fechaSolicitudField = document.getElementById('new-fecha-solicitud');
+            if (!fechaSolicitudField?.value?.trim()) {
+                const visibleDateInput = fechaSolicitudField?._flatpickr?.altInput || fechaSolicitudField;
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Fecha requerida',
+                    text: 'La fecha de solicitud es obligatoria por el momento.',
+                }).then(() => visibleDateInput?.focus());
+                return;
+            }
             Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             const fd = new FormData(this);
             try {
