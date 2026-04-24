@@ -372,6 +372,130 @@
             white-space: normal;
         }
 
+        .activity-actions {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-inline-soft {
+            border: 1px dashed #bfdbfe;
+            background: #eff6ff;
+            color: var(--primary);
+            border-radius: 999px;
+            padding: 8px 14px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-inline-soft:hover:not(:disabled) {
+            background: #dbeafe;
+            border-color: #93c5fd;
+        }
+
+        .btn-inline-soft:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .inline-helper {
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+        }
+
+        .subactivity-modal .modal-content {
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+            overflow: visible;
+        }
+
+        .subactivity-modal .modal-header {
+            border-bottom: 1px solid var(--border);
+            padding: 20px 22px 16px;
+            background: linear-gradient(180deg, #fafbff 0%, #ffffff 100%);
+        }
+
+        .subactivity-modal .modal-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        .subactivity-modal .modal-subtitle {
+            margin: 4px 0 0;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+
+        .subactivity-modal .modal-body {
+            padding: 20px 22px 8px;
+            background: var(--surface);
+            overflow: visible;
+        }
+
+        .subactivity-modal .modal-footer {
+            border-top: 1px solid var(--border);
+            padding: 16px 22px 20px;
+            background: #fcfdff;
+        }
+
+        .subactivity-summary {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .subactivity-summary-item {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            background: var(--surface-alt);
+        }
+
+        .subactivity-summary-label {
+            display: block;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .subactivity-summary-value {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-main);
+            word-break: break-word;
+        }
+
+        .subactivity-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 12px;
+            padding: 10px 12px;
+            color: #1d4ed8;
+            font-size: 0.8rem;
+            margin-bottom: 16px;
+        }
+
+        .subactivity-note i {
+            margin-top: 1px;
+        }
+
         .input-wrap {
             display: flex;
             align-items: stretch;
@@ -1625,7 +1749,7 @@
                 </div>
 
                 <div class="form-body">
-                    <form method="POST">
+                    <form method="POST" id="tracker-form">
                         <!-- Desarrollador -->
                         <div class="field-group">
                             <label class="field-label">Desarrollador</label>
@@ -1708,6 +1832,15 @@
                                 <select id="select-activity" name="actividad_id" disabled required>
                                     <option value="">Selecciona primero un proyecto...</option>
                                 </select>
+                            </div>
+                            <div class="activity-actions">
+                                <button type="button" class="btn-inline-soft" id="btn-open-subactivity" disabled>
+                                    <i class="bi bi-diagram-3"></i>
+                                    Crear subactividad desde esta actividad
+                                </button>
+                                <span class="inline-helper" id="subactivity-helper">
+                                    Selecciona una actividad base para desprender una nueva.
+                                </span>
                             </div>
                         </div>
 
@@ -1977,6 +2110,111 @@
         </div>
     </div>
 
+    <div class="modal fade subactivity-modal" id="subactivityModal" tabindex="-1" aria-labelledby="subactivityModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title" id="subactivityModalLabel">Nueva subactividad</h5>
+                        <p class="modal-subtitle">Créala aquí y úsala de inmediato en este mismo registro.</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="form-create-subactivity">
+                    <div class="modal-body">
+                        <input type="hidden" name="id_proyecto" id="subactivity-project-id">
+                        <input type="hidden" name="id_actividad_padre" id="subactivity-parent-id">
+                        <input type="hidden" name="responsables" id="subactivity-responsable-id">
+                        <input type="hidden" name="prioridad" value="2">
+
+                        <div class="subactivity-summary">
+                            <div class="subactivity-summary-item">
+                                <span class="subactivity-summary-label">Proyecto</span>
+                                <span class="subactivity-summary-value" id="subactivity-project-name">Sin proyecto</span>
+                            </div>
+                            <div class="subactivity-summary-item">
+                                <span class="subactivity-summary-label">Actividad padre</span>
+                                <span class="subactivity-summary-value" id="subactivity-parent-name">Sin actividad base</span>
+                            </div>
+                        </div>
+
+                        <div class="subactivity-note">
+                            <i class="bi bi-lightning-charge-fill"></i>
+                            <span>La subactividad quedará asignada inicialmente a <strong id="subactivity-user-name">tu selección actual</strong> y se autoseleccionará para seguir registrando horas.</span>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Nombre de la subactividad</label>
+                            <div class="input-wrap">
+                                <span class="input-icon"><i class="bi bi-kanban"></i></span>
+                                <input type="text" class="field-input" id="subactivity-name" name="nombre_actividad"
+                                    placeholder="Ej: Ajustes finales del entregable..." required>
+                            </div>
+                        </div>
+
+                        <div class="field-group row-fields">
+                            <div>
+                                <label class="field-label">Fecha de solicitud</label>
+                                <div class="input-wrap">
+                                    <span class="input-icon"><i class="bi bi-calendar-event"></i></span>
+                                    <input type="text" class="field-input" id="subactivity-date" name="fecha_solicitud"
+                                        placeholder="Selecciona fecha" required autocomplete="off">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="field-label">Estatus inicial</label>
+                                <div class="input-wrap">
+                                    <span class="input-icon"><i class="bi bi-flag"></i></span>
+                                    <select id="subactivity-status" name="id_estatus" required>
+                                        {% for e in estatus_list %}
+                                        <option value="{{ e.ID }}">{{ e.DESCRIPCION }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Solicitante</label>
+                            <div class="input-wrap">
+                                <span class="input-icon"><i class="bi bi-person-badge"></i></span>
+                                <input type="text" class="field-input" name="solicitante"
+                                    placeholder="Nombre o contacto del solicitante...">
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Descripción</label>
+                            <div class="input-wrap" style="align-items:flex-start;">
+                                <span class="input-icon" style="padding-top:14px;"><i class="bi bi-card-text"></i></span>
+                                <textarea class="field-input" name="descripcion" rows="3"
+                                    placeholder="Contexto rápido, alcance o entregable esperado..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Recursos utilizados</label>
+                            <div class="input-wrap">
+                                <span class="input-icon"><i class="bi bi-box-seam"></i></span>
+                                <select id="subactivity-resources" name="recursos" multiple>
+                                    {% for r in recursos %}
+                                    <option value="{{ r.ID }}">{{ r.NOMBRE }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check2-circle me-1"></i>Crear y usar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
@@ -2103,6 +2341,25 @@
         });
         const tipoSelect = makeTomSelect("#select-tipo");
         const evidenciaTipoSelect = makeTomSelect("#id_tipo_evidencia");
+        const subactivityStatusField = document.getElementById('subactivity-status');
+        const subactivityStatusSelect = makeTomSelect("#subactivity-status");
+        const subactivityResourcesSelect = makeTomSelect("#subactivity-resources", {
+            plugins: ['remove_button'],
+            placeholder: 'Selecciona recursos...',
+        });
+        const trackerForm = document.getElementById('tracker-form');
+        const btnOpenSubactivity = document.getElementById('btn-open-subactivity');
+        const subactivityHelper = document.getElementById('subactivity-helper');
+        const subactivityModalEl = document.getElementById('subactivityModal');
+        const subactivityModal = subactivityModalEl ? new bootstrap.Modal(subactivityModalEl) : null;
+        const subactivityForm = document.getElementById('form-create-subactivity');
+        const subactivityNameInput = document.getElementById('subactivity-name');
+        const subactivityProjectId = document.getElementById('subactivity-project-id');
+        const subactivityParentId = document.getElementById('subactivity-parent-id');
+        const subactivityResponsableId = document.getElementById('subactivity-responsable-id');
+        const subactivityProjectName = document.getElementById('subactivity-project-name');
+        const subactivityParentName = document.getElementById('subactivity-parent-name');
+        const subactivityUserName = document.getElementById('subactivity-user-name');
 
         let activityFetchController = null;
         let activityFetchSeq = 0;
@@ -2111,6 +2368,14 @@
         const hoursInput = document.querySelector('input[name="hours"]');
         const actionInput = document.querySelector('input[name="activity_action"]');
         const detailsInput = document.querySelector('textarea[name="details"]');
+        const subactivityDatePicker = flatpickr("#subactivity-date", {
+            locale: "es",
+            altInput: true,
+            altFormat: "j F, Y",
+            dateFormat: "Y-m-d",
+            defaultDate: "today",
+            disableMobile: true,
+        });
 
         const fp = flatpickr("#date", {
             locale: "es",
@@ -2137,6 +2402,7 @@
             if (divFinalizar) divFinalizar.style.display = 'none';
             const checkFinalizar = document.getElementById('finalizar_actividad');
             if (checkFinalizar) checkFinalizar.checked = false;
+            updateSubactivityTrigger();
         }
 
         // ─── 3. VALIDACIÓN ────────────────────────────────────────────────────────
@@ -2157,11 +2423,90 @@
             return 'otra';
         }
 
+        function normalizeStatusLabel(raw) {
+            return String(raw || '').trim().toUpperCase();
+        }
+
+        function getTomSelectedText(selectInstance, value) {
+            if (!value || !selectInstance?.options?.[value]) return '';
+            return String(selectInstance.options[value].text || '').trim();
+        }
+
+        function getActivityDisplayName(value) {
+            const fullText = getTomSelectedText(activitySelect, value);
+            return fullText.replace(/\s+·\s+[^·]+$/, '').trim();
+        }
+
+        function pickDefaultSubactivityStatus() {
+            if (!subactivityStatusField) return;
+            const preferredStatuses = ['EN PROCESO', 'PENDIENTE', 'NUEVO', 'ABIERTO'];
+            const blockedStatuses = ['COMPLETADO', 'CANCELADO', 'ESPERANDO APROBACIÓN'];
+            const options = Array.from(subactivityStatusField.options);
+
+            let selected = options.find(opt => preferredStatuses.includes(normalizeStatusLabel(opt.textContent)));
+            if (!selected) {
+                selected = options.find(opt => !blockedStatuses.includes(normalizeStatusLabel(opt.textContent)));
+            }
+            if (selected) {
+                subactivityStatusSelect.setValue(selected.value, true);
+            }
+        }
+
+        function syncSubactivityContext({ syncDate = true, syncStatus = true } = {}) {
+            const projectId = projectSelect.getValue();
+            const activityId = activitySelect.getValue();
+            const userId = userSelect.getValue();
+            const selectedDate = fp?.input?.value || new Date().toISOString().slice(0, 10);
+
+            subactivityProjectId.value = projectId || '';
+            subactivityParentId.value = activityId && activityId !== 'ad_hoc' ? activityId : '';
+            subactivityResponsableId.value = userId || '';
+            subactivityProjectName.textContent = getTomSelectedText(projectSelect, projectId) || 'Sin proyecto';
+            subactivityParentName.textContent = getActivityDisplayName(activityId) || 'Sin actividad base';
+            subactivityUserName.textContent = getTomSelectedText(userSelect, userId) || 'tu selección actual';
+            if (syncDate) {
+                subactivityDatePicker.setDate(selectedDate, true);
+            }
+            if (syncStatus) {
+                pickDefaultSubactivityStatus();
+            }
+        }
+
+        function resetSubactivityForm() {
+            if (!subactivityForm) return;
+            subactivityForm.reset();
+            subactivityResourcesSelect.clear(true);
+            subactivityStatusSelect.clear(true);
+            syncSubactivityContext();
+        }
+
+        function updateSubactivityTrigger() {
+            const projectId = projectSelect.getValue();
+            const activityId = activitySelect.getValue();
+            const canCreateSubactivity = Boolean(projectId && activityId && activityId !== 'ad_hoc');
+
+            if (btnOpenSubactivity) {
+                btnOpenSubactivity.disabled = !canCreateSubactivity;
+            }
+            if (!subactivityHelper) return;
+
+            if (!projectId) {
+                subactivityHelper.textContent = 'Selecciona un proyecto para habilitar la creación rápida.';
+            } else if (!activityId) {
+                subactivityHelper.textContent = 'Selecciona una actividad base para desprender una nueva.';
+            } else if (activityId === 'ad_hoc') {
+                subactivityHelper.textContent = 'Las actividades rápidas no pueden tener subactividades.';
+            } else {
+                subactivityHelper.textContent = 'La nueva subactividad heredará proyecto y quedará lista para registrar horas.';
+            }
+        }
+
         async function loadActivitiesForProject(projectId) {
             activitySelect.clear();
             activitySelect.clearOptions();
             if (!projectId) {
                 activitySelect.disable();
+                updateSubactivityTrigger();
                 validateForm();
                 return;
             }
@@ -2213,6 +2558,7 @@
                 activitySelect.addOption({ value: '', text: 'Error al cargar' });
             } finally {
                 if (requestSeq === activityFetchSeq) {
+                    updateSubactivityTrigger();
                     validateForm();
                 }
             }
@@ -2240,6 +2586,8 @@
                 if (bar) { bar.style.width = '0%'; bar.classList.remove('danger'); }
             }
             updateDashboard();
+            syncSubactivityContext();
+            updateSubactivityTrigger();
             validateForm();
         });
 
@@ -2255,6 +2603,8 @@
                 activitySelect.clearOptions();
                 activitySelect.disable();
             }
+            syncSubactivityContext();
+            updateSubactivityTrigger();
             validateForm();
         });
 
@@ -2279,6 +2629,8 @@
                 if (divFinalizar) divFinalizar.style.display = 'none';
                 if (checkFinalizar) checkFinalizar.checked = false;
             }
+            syncSubactivityContext();
+            updateSubactivityTrigger();
             validateForm();
         });
 
@@ -2391,7 +2743,7 @@
             evidenciaPreview.style.display = 'flex';
         }
 
-        document.querySelector('form').addEventListener('submit', function () {
+        trackerForm.addEventListener('submit', function () {
             this.querySelectorAll('[disabled]').forEach(el => el.disabled = false);
         });
 
@@ -2475,7 +2827,73 @@
         }
 
         // ─── 6. FORM SUBMIT ───────────────────────────────────────────────────────
-        document.querySelector('form').addEventListener('submit', async function (e) {
+        btnOpenSubactivity?.addEventListener('click', () => {
+            if (btnOpenSubactivity.disabled) return;
+            syncSubactivityContext();
+            subactivityModal?.show();
+        });
+
+        subactivityModalEl?.addEventListener('shown.bs.modal', () => {
+            subactivityNameInput?.focus();
+        });
+
+        subactivityModalEl?.addEventListener('hidden.bs.modal', () => {
+            resetSubactivityForm();
+        });
+
+        subactivityForm?.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            syncSubactivityContext({ syncDate: false, syncStatus: false });
+
+            if (!subactivityProjectId.value || !subactivityParentId.value) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Falta contexto',
+                    text: 'Primero selecciona el proyecto y la actividad padre desde el index.',
+                });
+                return;
+            }
+
+            if (!subactivityNameInput.value.trim()) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Nombre requerido',
+                    text: 'Escribe el nombre de la subactividad.',
+                }).then(() => subactivityNameInput.focus());
+                return;
+            }
+
+            Swal.fire({ title: 'Creando subactividad...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            const fd = new FormData(this);
+            try {
+                const r = await fetch('/actividades/nueva', { method: 'POST', body: fd });
+                const res = await r.json();
+                if (res.status !== 'success' || !res.actividad?.id) {
+                    throw new Error(res.message || 'No se pudo crear la subactividad.');
+                }
+
+                await loadActivitiesForProject(subactivityProjectId.value);
+                activitySelect.setValue(res.actividad.id);
+                subactivityModal?.hide();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Subactividad lista',
+                    text: `${res.actividad.nombre} quedó seleccionada para continuar con tu registro.`,
+                    timer: 2200,
+                    showConfirmButton: false,
+                });
+            } catch (err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'No se pudo crear',
+                    text: err.message || 'Ocurrió un problema al crear la subactividad.',
+                });
+            }
+        });
+
+        trackerForm.addEventListener('submit', async function (e) {
             e.preventDefault();
             Swal.fire({ title: 'Guardando avance...', text: 'Conectando con BD', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
@@ -2488,6 +2906,7 @@
                     this.reset(); setInitialState();
                     userSelect.clear(); projectSelect.clear(); activitySelect.clear(); tipoSelect.clear(); tipoSelect.disable();
                     resetEvidenceFields({ collapsePanel: true });
+                    resetSubactivityForm();
                     fetchWeeklyHours();
                 } else throw new Error(res.message);
             } catch (err) {

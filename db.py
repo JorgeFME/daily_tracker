@@ -325,33 +325,48 @@ def guardar_registro_actividad(datos):
                     f"No se pueden registrar horas en una actividad con estatus '{rows[0]['DESCRIPCION']}'."
                 )
 
-    sql = """
-        INSERT INTO "REGISTRO_ACTIVIDADES"
-            ("ID","FECHA","ID_USUARIO","ID_PROYECTO","ID_ACTIVIDAD","ID_TIPO_ACT","ACCION","HORAS","DETALLES","CREADO_EN")
-        VALUES (SYSUUID,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
-    """
-    ok = ejecutar_dml(sql, (
-        datos.get('date'),
-        datos.get('user'),
-        datos.get('project'),
-        actividad_id,
-        datos.get('tipo_act') or None,
-        datos.get('activity_action'),
-        datos.get('hours'),
-        datos.get('details'),
-    ))
-
-    if ok and actividad_id and datos.get('finalizar_actividad') == '1':
-        rows_estatus = ejecutar_query('SELECT "ID" FROM "CAT_ESTATUS_ACTIVIDAD" WHERE UPPER("DESCRIPCION")=?', ('COMPLETADO',))
-        if rows_estatus:
-            id_completado = rows_estatus[0]["ID"]
-            fecha_termino = datos.get('date')
-            ejecutar_dml(
-                'UPDATE "ACTIVIDADES" SET "ID_ESTATUS"=?, "FECHA_FIN_REAL"=?, "ACTUALIZADO_EN"=CURRENT_TIMESTAMP WHERE "ID"=?',
-                (id_completado, fecha_termino, actividad_id)
+    with _pool.get_connection() as conn:
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                """
+                    INSERT INTO "REGISTRO_ACTIVIDADES"
+                        ("ID","FECHA","ID_USUARIO","ID_PROYECTO","ID_ACTIVIDAD","ID_TIPO_ACT","ACCION","HORAS","DETALLES","CREADO_EN")
+                    VALUES (SYSUUID,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+                """,
+                (
+                    datos.get('date'),
+                    datos.get('user'),
+                    datos.get('project'),
+                    actividad_id,
+                    datos.get('tipo_act') or None,
+                    datos.get('activity_action'),
+                    datos.get('hours'),
+                    datos.get('details'),
+                )
             )
 
-    return ok
+            if actividad_id and datos.get('finalizar_actividad') == '1':
+                cur.execute(
+                    'SELECT "ID" FROM "CAT_ESTATUS_ACTIVIDAD" WHERE TRIM(UPPER("DESCRIPCION"))=? AND "ACTIVO"=1 ORDER BY "ORDEN"',
+                    ('COMPLETADO',)
+                )
+                row_estatus = cur.fetchone()
+                if not row_estatus:
+                    raise ValueError('No se encontró el estatus activo "Completado" para finalizar la actividad.')
+
+                cur.execute(
+                    'UPDATE "ACTIVIDADES" SET "ID_ESTATUS"=?, "FECHA_FIN_REAL"=?, "ACTUALIZADO_EN"=CURRENT_TIMESTAMP WHERE "ID"=?',
+                    (row_estatus[0], datos.get('date'), actividad_id)
+                )
+
+            conn.commit()
+            return True
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            cur.close()
 
 
 def get_horas_semanales(user_id, fecha_str):

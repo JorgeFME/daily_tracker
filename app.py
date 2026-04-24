@@ -271,6 +271,8 @@ def index():
         "index.html",
         users=base["users"],
         projects=base["projects"],
+        estatus_list=obtener_estatus_actividad(),
+        recursos=obtener_recursos(),
         tipos_actividad=obtener_tipos_actividad(),
         tipos_evidencia=obtener_tipos_evidencia(),
     )
@@ -535,17 +537,74 @@ def actividades():
 @app.route("/actividades/nueva", methods=["POST"])
 def nueva_actividad():
     datos = request.form.to_dict()
+    datos["nombre_actividad"] = (datos.get("nombre_actividad") or "").strip()
+    datos["descripcion"] = (datos.get("descripcion") or "").strip() or None
+    datos["solicitante"] = (datos.get("solicitante") or "").strip() or None
+
+    missing_fields = []
+    if not datos.get("id_proyecto"):
+        missing_fields.append("proyecto")
+    if not datos.get("id_estatus"):
+        missing_fields.append("estatus")
+    if not datos.get("fecha_solicitud"):
+        missing_fields.append("fecha de solicitud")
+    if not datos.get("nombre_actividad"):
+        missing_fields.append("nombre de la actividad")
+    if missing_fields:
+        return (
+            jsonify({
+                "status": "error",
+                "message": f"Faltan campos requeridos: {', '.join(missing_fields)}.",
+            }),
+            400,
+        )
+
+    padre_id = datos.get("id_actividad_padre") or None
+    if padre_id:
+        actividad_padre = obtener_actividad_por_id(padre_id)
+        if not actividad_padre:
+            return (
+                jsonify({
+                    "status": "error",
+                    "message": "La actividad padre seleccionada ya no existe.",
+                }),
+                400,
+            )
+        if str(actividad_padre["ID_PROYECTO"]) != str(datos.get("id_proyecto")):
+            return (
+                jsonify({
+                    "status": "error",
+                    "message": "La actividad padre debe pertenecer al mismo proyecto.",
+                }),
+                400,
+            )
+
     if crear_actividad(datos):
+        actividad_payload = None
         rows = ejecutar_query(
-            'SELECT "ID" FROM "ACTIVIDADES" WHERE "NOMBRE_ACTIVIDAD"=? AND "ID_PROYECTO"=? ORDER BY "CREADO_EN" DESC',
-            (datos.get("nombre_actividad"), datos.get("id_proyecto")),
+            'SELECT "ID" FROM "ACTIVIDADES" WHERE "NOMBRE_ACTIVIDAD"=? AND "ID_PROYECTO"=? '
+            'AND COALESCE("ID_ACTIVIDAD_PADRE", \'\')=COALESCE(?, \'\') ORDER BY "CREADO_EN" DESC',
+            (datos.get("nombre_actividad"), datos.get("id_proyecto"), padre_id),
         )
         if rows:
             act_id = rows[0]["ID"]
             guardar_responsables_actividad(act_id, request.form.getlist("responsables"))
             guardar_recursos_actividad(act_id, request.form.getlist("recursos"))
+            actividad = obtener_actividad_por_id(act_id)
+            if actividad:
+                actividad_payload = {
+                    "id": actividad["ID"],
+                    "nombre": actividad["NOMBRE_ACTIVIDAD"],
+                    "estatus": actividad["ESTATUS"],
+                    "proyecto_id": actividad["ID_PROYECTO"],
+                    "actividad_padre_id": actividad.get("ID_ACTIVIDAD_PADRE"),
+                }
         return jsonify(
-            {"status": "success", "message": "Actividad creada correctamente."}
+            {
+                "status": "success",
+                "message": "Actividad creada correctamente.",
+                "actividad": actividad_payload,
+            }
         )
     return (
         jsonify({"status": "error", "message": "Error al guardar la actividad."}),
@@ -842,6 +901,67 @@ def _json_ok():              return jsonify({"status": "success"})
 def _json_err(msg, code=500): return jsonify({"status": "error", "message": msg}), code
 
 
+def _contar_dias_habiles(inicio: date, fin: date) -> int:
+    dias = 0
+    actual = inicio
+    while actual <= fin:
+        if actual.weekday() < 5:
+            dias += 1
+        actual += timedelta(days=1)
+    return dias
+
+
+def _normalizar_payload_ausencia(datos: dict):
+    required_fields = ("id_usuario", "fecha_inicio", "fecha_fin", "tipo")
+    if any(not str(datos.get(field) or "").strip() for field in required_fields):
+        return None, "Completa los campos obligatorios: usuario, fechas y tipo."
+
+    try:
+        fecha_inicio = datetime.strptime(str(datos.get("fecha_inicio")), "%Y-%m-%d").date()
+        fecha_fin = datetime.strptime(str(datos.get("fecha_fin")), "%Y-%m-%d").date()
+    except ValueError:
+        return None, "Formato de fecha inválido. Usa YYYY-MM-DD."
+
+    if fecha_fin < fecha_inicio:
+        return None, "La fecha fin no puede ser menor que la fecha inicio."
+
+    dias_habiles = _contar_dias_habiles(fecha_inicio, fecha_fin)
+    if dias_habiles <= 0:
+        return None, "Selecciona al menos un día hábil dentro del rango de ausencia."
+
+    horas_total_raw = datos.get("horas_total")
+    if horas_total_raw not in (None, ""):
+        try:
+            horas_total = float(horas_total_raw)
+        except (TypeError, ValueError):
+            return None, "Horas ausentes inválidas."
+
+        max_total = dias_habiles * 8
+        if horas_total < 0.25 or horas_total > max_total:
+            return None, f"Horas ausentes fuera de rango permitido (0.25 a {max_total})."
+
+        horas_dia = round(horas_total / dias_habiles, 2)
+    else:
+        try:
+            horas_dia = float(datos.get("horas_dia", 8))
+        except (TypeError, ValueError):
+            return None, "Horas por día inválidas."
+
+    if horas_dia < 0.25 or horas_dia > 8:
+        return None, "Horas por día fuera de rango permitido (0.25 a 8)."
+
+    tipo = str(datos.get("tipo") or "").strip().upper()
+    descripcion = str(datos.get("descripcion") or "").strip() if tipo == "OTRO" else ""
+
+    datos_normalizados = dict(datos)
+    datos_normalizados["fecha_inicio"] = fecha_inicio.isoformat()
+    datos_normalizados["fecha_fin"] = fecha_fin.isoformat()
+    datos_normalizados["tipo"] = tipo
+    datos_normalizados["horas_dia"] = horas_dia
+    datos_normalizados["descripcion"] = descripcion or None
+    return datos_normalizados, None
+
+
 @app.route("/api/catalogos/estatus", methods=["POST"])
 def api_cat_estatus_crear():
     return _json_ok() if crear_estatus(request.get_json()) else _json_err("Error al crear estatus.")
@@ -994,35 +1114,19 @@ def api_ausencias():
 @app.route("/api/ausencias", methods=["POST"])
 def api_ausencia_crear():
     datos = request.get_json(silent=True) or {}
-
-    required_fields = ("id_usuario", "fecha_inicio", "fecha_fin", "tipo")
-    if any(not str(datos.get(field) or "").strip() for field in required_fields):
-        return _json_err("Completa los campos obligatorios: usuario, fechas y tipo.")
-
-    try:
-        fecha_inicio = datetime.strptime(str(datos.get("fecha_inicio")), "%Y-%m-%d").date()
-        fecha_fin = datetime.strptime(str(datos.get("fecha_fin")), "%Y-%m-%d").date()
-    except ValueError:
-        return _json_err("Formato de fecha inválido. Usa YYYY-MM-DD.")
-
-    if fecha_fin < fecha_inicio:
-        return _json_err("La fecha fin no puede ser menor que la fecha inicio.")
-
-    try:
-        horas_dia = float(datos.get("horas_dia", 8))
-    except (TypeError, ValueError):
-        return _json_err("Horas por día inválidas.")
-
-    if horas_dia < 0.25 or horas_dia > 8:
-        return _json_err("Horas por día fuera de rango permitido (0.25 a 8).")
-
-    datos["horas_dia"] = horas_dia
-    return _json_ok() if guardar_ausencia(datos) else _json_err("Error al guardar la ausencia.")
+    datos_normalizados, error = _normalizar_payload_ausencia(datos)
+    if error:
+        return _json_err(error, 400)
+    return _json_ok() if guardar_ausencia(datos_normalizados) else _json_err("Error al guardar la ausencia.")
 
 
 @app.route("/api/ausencias/<ausencia_id>", methods=["PUT"])
 def api_ausencia_editar(ausencia_id):
-    return _json_ok() if actualizar_ausencia(ausencia_id, request.get_json()) else _json_err("Error al actualizar.")
+    datos = request.get_json(silent=True) or {}
+    datos_normalizados, error = _normalizar_payload_ausencia(datos)
+    if error:
+        return _json_err(error, 400)
+    return _json_ok() if actualizar_ausencia(ausencia_id, datos_normalizados) else _json_err("Error al actualizar.")
 
 
 @app.route("/api/ausencias/<ausencia_id>", methods=["DELETE"])
