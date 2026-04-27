@@ -207,6 +207,7 @@
         /* ── Buttons ── */
         .btn-primary-custom { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 8px 18px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: opacity .2s; }
         .btn-primary-custom:hover { opacity: .85; }
+        .btn-primary-custom:disabled { opacity: .55; cursor: not-allowed; }
         .btn-icon { background: none; border: 1px solid var(--border); border-radius: 7px; padding: 5px 9px; cursor: pointer; color: var(--text-secondary); font-size: 0.85rem; transition: all .2s; }
         .btn-icon:hover { border-color: var(--primary); color: var(--primary); }
         .btn-icon.danger:hover { border-color: var(--danger); color: var(--danger); }
@@ -637,10 +638,12 @@
         <div class="mb-3">
             <label class="form-label">Usuario *</label>
             <select id="aus-usuario">
+                <option value="">Selecciona un usuario</option>
                 {% for u in users %}
                 <option value="{{ u.ID }}">{{ u.NOMBRE_COMPLETO }}</option>
                 {% endfor %}
             </select>
+            <div class="form-help" id="aus-usuario-help">Selecciona un usuario para habilitar el resto del formulario.</div>
         </div>
         <div class="mb-3 grid-2">
             <div>
@@ -675,7 +678,7 @@
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
             <button class="btn-icon" onclick="cerrarModal()">Cancelar</button>
-            <button class="btn-primary-custom" onclick="guardarAusencia()"><i class="bi bi-check-lg"></i> Guardar</button>
+            <button class="btn-primary-custom" id="aus-guardar" onclick="guardarAusencia()"><i class="bi bi-check-lg"></i> Guardar</button>
         </div>
     </div>
 </div>
@@ -775,7 +778,11 @@ const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
 const TIPOS_ES = { VACACIONES:'Vacaciones', INCAPACIDAD:'Incapacidad',
                    DIA_LIBRE:'Día libre', PERMISO:'Permiso', OTRO:'Otro' };
 
-const ausUsuarioTs = new TomSelect('#aus-usuario', { create: false });
+const ausUsuarioTs = new TomSelect('#aus-usuario', {
+    create: false,
+    allowEmptyOption: true,
+    placeholder: 'Selecciona un usuario',
+});
 const ausTipoTs = new TomSelect('#aus-tipo', { create: false });
 const ausFechaInicioPicker = flatpickr('#aus-fecha-inicio', {
     locale: 'es',
@@ -784,7 +791,10 @@ const ausFechaInicioPicker = flatpickr('#aus-fecha-inicio', {
     dateFormat: 'Y-m-d',
     defaultDate: 'today',
     disableMobile: true,
-    onChange: () => recalcularHorasAusencia(),
+    onChange: () => {
+        syncFechaFinConstraints();
+        recalcularHorasAusencia();
+    },
 });
 const ausFechaFinPicker = flatpickr('#aus-fecha-fin', {
     locale: 'es',
@@ -793,6 +803,10 @@ const ausFechaFinPicker = flatpickr('#aus-fecha-fin', {
     dateFormat: 'Y-m-d',
     defaultDate: 'today',
     disableMobile: true,
+    onOpen: (_, __, instance) => {
+        const fechaBase = instance.selectedDates[0] || parseYmdLocal(document.getElementById('aus-fecha-inicio').value);
+        if (fechaBase) instance.jumpToDate(fechaBase, true);
+    },
     onChange: () => recalcularHorasAusencia(),
 });
 
@@ -820,17 +834,20 @@ function normalizeYMD(raw) {
 }
 
 function normalizeAusencias(rows) {
-    return (rows || []).map(a => ({
-        ...a,
-        fecha_inicio: normalizeYMD(a.FECHA_INICIO || a.fecha_inicio),
-        fecha_fin: normalizeYMD(a.FECHA_FIN || a.fecha_fin),
-        id: a.ID || a.id,
-        id_usuario: String(a.ID_USUARIO || a.id_usuario || ''),
-        usuario: a.USUARIO || a.usuario || '',
-        tipo: a.TIPO || a.tipo || 'DIA_LIBRE',
-        horas_dia: a.HORAS_DIA ?? a.horas_dia ?? 8,
-        descripcion: a.DESCRIPCION || a.descripcion || '',
-    }));
+    return (rows || []).map(a => {
+        const tipo = a.TIPO || a.tipo || 'DIA_LIBRE';
+        return {
+            ...a,
+            fecha_inicio: normalizeYMD(a.FECHA_INICIO || a.fecha_inicio),
+            fecha_fin: normalizeYMD(a.FECHA_FIN || a.fecha_fin),
+            id: a.ID || a.id,
+            id_usuario: String(a.ID_USUARIO || a.id_usuario || ''),
+            usuario: a.USUARIO || a.usuario || '',
+            tipo,
+            horas_dia: a.HORAS_DIA ?? a.horas_dia ?? 8,
+            descripcion: a.DESCRIPCION || a.descripcion || TIPOS_ES[tipo] || tipo,
+        };
+    });
 }
 
 function normalizeFestivos(rows) {
@@ -984,6 +1001,49 @@ function updateDescripcionAusenciaVisibility() {
     if (!isOtro) descripcion.value = '';
 }
 
+function togglePickerDisabled(picker, disabled) {
+    picker.input.disabled = disabled;
+    if (picker.altInput) picker.altInput.disabled = disabled;
+}
+
+function syncFechaFinConstraints() {
+    const fechaInicio = document.getElementById('aus-fecha-inicio').value;
+    const fechaFin = document.getElementById('aus-fecha-fin').value;
+
+    ausFechaFinPicker.set('minDate', fechaInicio || null);
+
+    if (!fechaInicio) return;
+    if (!fechaFin || fechaFin < fechaInicio) {
+        ausFechaFinPicker.setDate(fechaInicio, true);
+    }
+}
+
+function syncAusenciaFormState() {
+    const hasUsuario = Boolean(ausUsuarioTs.getValue());
+    const guardarBtn = document.getElementById('aus-guardar');
+    const descripcion = document.getElementById('aus-descripcion');
+
+    if (hasUsuario) {
+        ausTipoTs.enable();
+    } else {
+        ausTipoTs.disable();
+    }
+
+    togglePickerDisabled(ausFechaInicioPicker, !hasUsuario);
+    togglePickerDisabled(ausFechaFinPicker, !hasUsuario);
+    document.getElementById('aus-horas').disabled = !hasUsuario;
+    descripcion.disabled = !hasUsuario;
+    guardarBtn.disabled = !hasUsuario;
+
+    if (!hasUsuario) {
+        document.getElementById('aus-horas-help').textContent = 'Selecciona un usuario para capturar el rango y calcular las horas.';
+        return;
+    }
+
+    syncFechaFinConstraints();
+    recalcularHorasAusencia(document.getElementById('aus-horas').value);
+}
+
 function recalcularHorasAusencia(forceValue = null) {
     const fechaInicio = document.getElementById('aus-fecha-inicio').value;
     const fechaFin = document.getElementById('aus-fecha-fin').value;
@@ -1064,7 +1124,7 @@ function abrirModal(data = null) {
     document.getElementById('aus-horas').value = horasTotales ? horasTotales.toFixed(2).replace(/\.00$/, '') : '';
     document.getElementById('aus-descripcion').value  = data?.descripcion || '';
     updateDescripcionAusenciaVisibility();
-    recalcularHorasAusencia(document.getElementById('aus-horas').value);
+    syncAusenciaFormState();
     document.getElementById('modal-ausencia').classList.add('open');
 }
 
@@ -1193,13 +1253,14 @@ function switchTab(tab) {
 document.getElementById('modal-ausencia').addEventListener('click', e => { if (e.target === e.currentTarget) cerrarModal(); });
 document.getElementById('modal-festivo').addEventListener('click',  e => { if (e.target === e.currentTarget) cerrarModalFestivo(); });
 document.getElementById('aus-horas').addEventListener('input', () => recalcularHorasAusencia(document.getElementById('aus-horas').value));
+ausUsuarioTs.on('change', () => syncAusenciaFormState());
 ausTipoTs.on('change', () => updateDescripcionAusenciaVisibility());
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 ausencias = normalizeAusencias(ausencias);
 festivos = normalizeFestivos(festivos);
 updateDescripcionAusenciaVisibility();
-recalcularHorasAusencia(8);
+syncAusenciaFormState();
 loadMes();
 </script>
 </body>

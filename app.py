@@ -951,7 +951,7 @@ def _normalizar_payload_ausencia(datos: dict):
         return None, "Horas por día fuera de rango permitido (0.25 a 8)."
 
     tipo = str(datos.get("tipo") or "").strip().upper()
-    descripcion = str(datos.get("descripcion") or "").strip() if tipo == "OTRO" else ""
+    descripcion = str(datos.get("descripcion") or "").strip() if tipo == "OTRO" else _descripcion_respaldo_ausencia(tipo)
 
     datos_normalizados = dict(datos)
     datos_normalizados["fecha_inicio"] = fecha_inicio.isoformat()
@@ -960,6 +960,18 @@ def _normalizar_payload_ausencia(datos: dict):
     datos_normalizados["horas_dia"] = horas_dia
     datos_normalizados["descripcion"] = descripcion or None
     return datos_normalizados, None
+
+
+def _descripcion_respaldo_ausencia(tipo: str) -> str:
+    tipos = {
+        "VACACIONES": "Vacaciones",
+        "INCAPACIDAD": "Incapacidad",
+        "DIA_LIBRE": "Día libre",
+        "PERMISO": "Permiso",
+        "OTRO": "Otro",
+    }
+    tipo_normalizado = str(tipo or "").strip().upper()
+    return tipos.get(tipo_normalizado) or tipo_normalizado.replace("_", " ").title()
 
 
 @app.route("/api/catalogos/estatus", methods=["POST"])
@@ -1105,7 +1117,7 @@ def api_ausencias():
             "fecha_fin":    str(r["FECHA_FIN"]),
             "tipo":         r["TIPO"],
             "horas_dia":    float(r["HORAS_DIA"]),
-            "descripcion":  r.get("DESCRIPCION") or "",
+            "descripcion":  r.get("DESCRIPCION") or _descripcion_respaldo_ausencia(r.get("TIPO")),
         }
         for r in rows
     ])
