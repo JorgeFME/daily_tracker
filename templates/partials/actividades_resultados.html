@@ -17,6 +17,11 @@
     <div class="actividades-grid">
         {% for a in actividades %}
         <div class="act-card-wrap" style="position:relative;">
+            <button class="btn-edit-act"
+                onclick="abrirEdicionRapidaActividad(event,'{{ a.ID }}')"
+                title="Editar actividad">
+                <i class="bi bi-pencil-square"></i>
+            </button>
             <button class="btn-delete-act"
                 onclick="eliminarActividad(event,'{{ a.ID }}','{{ a.NOMBRE_ACTIVIDAD }}')"
                 title="Eliminar actividad">

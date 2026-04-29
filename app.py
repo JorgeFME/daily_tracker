@@ -1,5 +1,6 @@
 import os
 import uuid
+from calendar import monthrange
 from datetime import datetime, timedelta, date
 from zoneinfo import ZoneInfo
 from werkzeug.utils import secure_filename
@@ -53,6 +54,8 @@ from db import (
     obtener_tipos_evidencia,
     obtener_tipos_actividad,
     obtener_recursos,
+    obtener_solicitantes,
+    obtener_responsables_actividad,
     obtener_recursos_actividad,
     guardar_recursos_actividad,
     obtener_actividades_default_mes,
@@ -170,6 +173,7 @@ def _catalogo_base():
         "projects": ejecutar_query(
             'SELECT "ID","NOMBRE_PROYECTO" FROM "PROYECTOS" WHERE "ACTIVO"=1'
         ),
+        "solicitantes": obtener_solicitantes(),
     }
 
 
@@ -180,6 +184,83 @@ def _local_today() -> date:
         return datetime.now(ZoneInfo(tz_name)).date()
     except Exception:
         return date.today()
+
+
+def _mes_actual_limites() -> tuple[str, str]:
+    hoy = _local_today()
+    inicio = hoy.replace(day=1)
+    fin = hoy.replace(day=monthrange(hoy.year, hoy.month)[1])
+    return inicio.isoformat(), fin.isoformat()
+
+
+def _registros_filters_from_request(req_args, proyecto_id: str | None = None):
+    filtros = {
+        "user_id": (req_args.get("user_id") or "").strip() or None,
+        "proyecto_id": proyecto_id or (req_args.get("proyecto_id") or "").strip() or None,
+        "tipo_id": (req_args.get("tipo_id") or "").strip() or None,
+        "fecha_ini": (req_args.get("fecha_ini") or "").strip() or None,
+        "fecha_fin": (req_args.get("fecha_fin") or "").strip() or None,
+    }
+    tiene_filtros_explicitos = any(filtros.values())
+    usando_mes_actual_default = False
+
+    if not filtros["fecha_ini"] and not filtros["fecha_fin"]:
+        filtros["fecha_ini"], filtros["fecha_fin"] = _mes_actual_limites()
+        usando_mes_actual_default = True
+
+    return filtros, {
+        "tiene_filtros_explicitos": tiene_filtros_explicitos,
+        "usando_mes_actual_default": usando_mes_actual_default,
+    }
+
+
+def _catalog_label(items, selected_id, id_key, label_key, fallback="Todos"):
+    if not selected_id:
+        return fallback
+    for item in items:
+        if str(item.get(id_key)) == str(selected_id):
+            return item.get(label_key) or fallback
+    return fallback
+
+
+def _fmt_fecha_corta(value: str | None) -> str:
+    if not value:
+        return "—"
+    try:
+        return datetime.strptime(value[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
+    except ValueError:
+        return value
+
+
+def _build_registros_export_context(filtros, filtros_meta, base):
+    proyecto_nombre = _catalog_label(
+        base["projects"], filtros.get("proyecto_id"), "ID", "NOMBRE_PROYECTO", fallback="Sin proyecto"
+    )
+    desarrollador = _catalog_label(
+        base["users"], filtros.get("user_id"), "ID", "NOMBRE_COMPLETO"
+    )
+    tipos = obtener_tipos_actividad()
+    tipo = _catalog_label(tipos, filtros.get("tipo_id"), "ID", "DESCRIPCION")
+    fecha_ini = _fmt_fecha_corta(filtros.get("fecha_ini"))
+    fecha_fin = _fmt_fecha_corta(filtros.get("fecha_fin"))
+    origen_rango = "Mes actual por defecto" if filtros_meta.get("usando_mes_actual_default") else "Rango seleccionado"
+
+    return {
+        "proyecto": proyecto_nombre,
+        "desarrollador": desarrollador,
+        "tipo": tipo,
+        "fecha_ini": fecha_ini,
+        "fecha_fin": fecha_fin,
+        "origen_rango": origen_rango,
+        "scope_label": (
+            f"Proyecto: {proyecto_nombre} · Desarrollador: {desarrollador} · "
+            f"Tipo: {tipo} · Rango: {fecha_ini} a {fecha_fin} · {origen_rango}"
+        ),
+        "scope_label_short": (
+            f"Desarrollador: {desarrollador} · Tipo: {tipo} · "
+            f"Rango: {fecha_ini} a {fecha_fin}"
+        ),
+    }
 
 
 def _delete_evidence_file(file_url: str | None):
@@ -198,6 +279,22 @@ def _delete_evidence_file(file_url: str | None):
             os.rmdir(project_folder)
     except Exception as e:
         print(f"[_delete_evidence_file] no se pudo eliminar archivo: {e}")
+
+
+def _solicitantes_para_formulario(actual: str | None = None):
+    solicitantes = [dict(item) for item in obtener_solicitantes()]
+    actual_normalizado = (actual or "").strip()
+    if actual_normalizado and not any(
+        (item.get("NOMBRE") or "").strip().casefold() == actual_normalizado.casefold()
+        for item in solicitantes
+    ):
+        solicitantes.append({
+            "ID": f"legacy::{actual_normalizado}",
+            "NOMBRE": actual_normalizado,
+            "ACTIVO": 0,
+            "ES_LEGACY": 1,
+        })
+    return solicitantes
 
 
 def _serialize_evidencia(row):
@@ -229,12 +326,13 @@ def _serialize_evidencia(row):
 def index():
     if request.method == "POST":
         datos = request.form.to_dict()
+        datos["quick_recursos"] = request.form.getlist("quick_recursos")
         try:
             ok = guardar_registro_actividad(datos)
         except ValueError as e:
             return jsonify({"status": "error", "message": str(e)}), 400
         if ok:
-            if datos.get("actividad_id"):
+            if datos.get("actividad_id") and datos.get("actividad_rapida_creada") != "1":
                 recalcular_avance_actividad(datos.get("actividad_id"))
             
             # Manejar evidencia si está incluida
@@ -271,6 +369,7 @@ def index():
         "index.html",
         users=base["users"],
         projects=base["projects"],
+        solicitantes=base["solicitantes"],
         estatus_list=obtener_estatus_actividad(),
         recursos=obtener_recursos(),
         tipos_actividad=obtener_tipos_actividad(),
@@ -409,6 +508,7 @@ def actividades():
     proyecto_id  = request.args.get("proyecto")    or None
     estatus_id   = request.args.get("estatus")     or None
     usuario_id   = request.args.get("usuario")     or None
+    solicitante  = (request.args.get("solicitante") or "").strip() or None
     fecha_desde  = request.args.get("fecha_desde") or None
     fecha_hasta  = request.args.get("fecha_hasta") or None
     scope        = request.args.get("scope") or "all"
@@ -432,7 +532,7 @@ def actividades():
     # Default UX: mostrar actividades del mes actual y conservar abiertas anteriores al final.
     sin_filtros = (
         scope == "all"
-        and not any([proyecto_id, estatus_id, usuario_id, fecha_desde, fecha_hasta, q])
+        and not any([proyecto_id, estatus_id, usuario_id, solicitante, fecha_desde, fecha_hasta, q])
     )
     solo_activas = False
     default_scope = None
@@ -444,7 +544,7 @@ def actividades():
         estatus_id = _estatus_id_por_desc("CANCELADO")
 
     has_filters = bool(
-        proyecto_id or estatus_id or usuario_id or fecha_desde or fecha_hasta or q
+        proyecto_id or estatus_id or usuario_id or solicitante or fecha_desde or fecha_hasta or q
         or (scope and scope != "all")
     )
     scope_label = "Todas las actividades"
@@ -480,6 +580,7 @@ def actividades():
             proyecto_id=proyecto_id,
             estatus_id=estatus_id,
             usuario_id=usuario_id,
+            solicitante=solicitante,
             fecha_desde=fecha_desde,
             fecha_hasta=fecha_hasta,
             q=q,
@@ -492,6 +593,7 @@ def actividades():
             proyecto_id=proyecto_id,
             estatus_id=estatus_id,
             usuario_id=usuario_id,
+            solicitante=solicitante,
             fecha_desde=fecha_desde,
             fecha_hasta=fecha_hasta,
             q=q,
@@ -507,9 +609,11 @@ def actividades():
         "estatus_list": estatus_list,
         "projects": base["projects"],
         "users": base["users"],
+        "solicitantes": base["solicitantes"],
         "filtro_proyecto": proyecto_id,
         "filtro_estatus": estatus_id,
         "filtro_usuario": usuario_id,
+        "filtro_solicitante": solicitante,
         "filtro_fecha_desde": fecha_desde,
         "filtro_fecha_hasta": fecha_hasta,
         "filtro_q": q,
@@ -632,15 +736,45 @@ def detalle_actividad(actividad_id):
         tipos_evidencia=obtener_tipos_evidencia(),
         recursos=obtener_recursos(),
         recursos_actividad=obtener_recursos_actividad(actividad_id),
+        solicitantes=_solicitantes_para_formulario(actividad.get("SOLICITANTE")),
         users=base["users"],
         projects=base["projects"],
         todas_actividades=obtener_actividades(),
     )
 
 
+@app.route("/api/actividades/<actividad_id>")
+def api_actividad_detalle(actividad_id):
+    actividad = obtener_actividad_por_id(actividad_id)
+    if not actividad:
+        return jsonify({"status": "error", "message": "Actividad no encontrada."}), 404
+
+    responsables = obtener_responsables_actividad(actividad_id)
+    recursos = obtener_recursos_actividad(actividad_id)
+    return jsonify({
+        "status": "success",
+        "actividad": {
+            "id": actividad["ID"],
+            "id_proyecto": actividad["ID_PROYECTO"],
+            "nombre_actividad": actividad["NOMBRE_ACTIVIDAD"] or "",
+            "descripcion": actividad.get("DESCRIPCION") or "",
+            "solicitante": actividad.get("SOLICITANTE") or "",
+            "fecha_solicitud": str(actividad.get("FECHA_SOLICITUD") or ""),
+            "fecha_inicio": str(actividad.get("FECHA_INICIO") or ""),
+            "fecha_fin_real": str(actividad.get("FECHA_FIN_REAL") or ""),
+            "id_estatus": actividad["ID_ESTATUS"],
+            "prioridad": str(actividad.get("PRIORIDAD") or 2),
+            "id_actividad_padre": actividad.get("ID_ACTIVIDAD_PADRE") or "",
+            "responsables": [item["ID"] for item in responsables],
+            "recursos": [item["ID"] for item in recursos],
+        },
+    })
+
+
 @app.route("/actividades/<actividad_id>/editar", methods=["POST"])
 def editar_actividad(actividad_id):
     datos = request.form.to_dict()
+    datos["solicitante"] = (datos.get("solicitante") or "").strip() or None
 
     # Si cambió el proyecto, reasignar los registros de horas al nuevo proyecto
     actividad_actual = obtener_actividad_por_id(actividad_id)
@@ -755,13 +889,7 @@ def api_evidencia(evidencia_id):
 @app.route("/registros")
 def vista_registros():
     base = _catalogo_base()
-    filtros = {
-        "user_id": request.args.get("user_id"),
-        "proyecto_id": request.args.get("proyecto_id"),
-        "tipo_id": request.args.get("tipo_id"),
-        "fecha_ini": request.args.get("fecha_ini"),
-        "fecha_fin": request.args.get("fecha_fin"),
-    }
+    filtros, filtros_meta = _registros_filters_from_request(request.args)
     registros = obtener_registros(filtros)
     return render_template(
         "registros.html",
@@ -770,6 +898,7 @@ def vista_registros():
         projects=base["projects"],
         tipos_actividad=obtener_tipos_actividad(),
         filtros=filtros,
+        filtros_meta=filtros_meta,
     )
 
 
@@ -854,13 +983,23 @@ def exportar_reporte_excel(proyecto_id):
     import io
 
     base = _catalogo_base()
-    proyecto = next((p for p in base["projects"] if p["ID"] == proyecto_id), None)
+    filtros, filtros_meta = _registros_filters_from_request(request.args, proyecto_id=proyecto_id)
+    proyecto = next((p for p in base["projects"] if str(p["ID"]) == str(filtros["proyecto_id"])), None)
     if not proyecto:
         return jsonify({"error": "Proyecto no encontrado"}), 404
-    actividades, evidencias_por_actividad = obtener_datos_reporte_proyecto(proyecto_id)
+    actividades, evidencias_por_actividad = obtener_datos_reporte_proyecto(
+        filtros["proyecto_id"], filtros
+    )
     nombre = proyecto["NOMBRE_PROYECTO"]
     upload_base = os.path.join(app.root_path, "static", "uploads", "evidencias")
-    xlsx_bytes = generar_reporte(nombre, actividades, evidencias_por_actividad, upload_base)
+    export_context = _build_registros_export_context(filtros, filtros_meta, base)
+    xlsx_bytes = generar_reporte(
+        nombre,
+        actividades,
+        evidencias_por_actividad,
+        upload_base,
+        export_context=export_context,
+    )
     return send_file(
         io.BytesIO(xlsx_bytes),
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -880,6 +1019,8 @@ from db import (
     toggle_tipo_evidencia, eliminar_tipo_evidencia,
     obtener_recursos_todos, crear_recurso, actualizar_recurso,
     toggle_recurso, eliminar_recurso,
+    obtener_solicitantes_todos, crear_solicitante, actualizar_solicitante,
+    toggle_solicitante, eliminar_solicitante,
     obtener_proyectos_todos, crear_proyecto, actualizar_proyecto,
     toggle_proyecto, eliminar_proyecto,
 )
@@ -893,6 +1034,7 @@ def vista_catalogos():
         tipos     = obtener_tipos_actividad_todos(),
         tipos_ev  = obtener_tipos_evidencia_todos(),
         recursos  = obtener_recursos_todos(),
+        solicitantes = obtener_solicitantes_todos(),
         proyectos = obtener_proyectos_todos(),
     )
 
@@ -1043,6 +1185,30 @@ def api_cat_rec_toggle(id):
 @app.route("/api/catalogos/recursos/<id>", methods=["DELETE"])
 def api_cat_rec_eliminar(id):
     ok, msg = eliminar_recurso(id)
+    return _json_ok() if ok else _json_err(msg, 400)
+
+
+@app.route("/api/catalogos/solicitantes", methods=["POST"])
+def api_cat_solicitantes_crear():
+    data = request.get_json() or {}
+    if not (data.get("nombre") or "").strip():
+        return _json_err("El nombre del solicitante es obligatorio.", 400)
+    return _json_ok() if crear_solicitante(data) else _json_err("Error al crear solicitante. Verifica que no exista otro con el mismo nombre.")
+
+@app.route("/api/catalogos/solicitantes/<id>", methods=["PUT"])
+def api_cat_solicitantes_editar(id):
+    data = request.get_json() or {}
+    if not (data.get("nombre") or "").strip():
+        return _json_err("El nombre del solicitante es obligatorio.", 400)
+    return _json_ok() if actualizar_solicitante(id, data) else _json_err("Error al actualizar. Verifica que no exista otro con el mismo nombre.")
+
+@app.route("/api/catalogos/solicitantes/<id>/toggle", methods=["POST"])
+def api_cat_solicitantes_toggle(id):
+    return _json_ok() if toggle_solicitante(id, request.get_json().get("activo", 1)) else _json_err("Error.")
+
+@app.route("/api/catalogos/solicitantes/<id>", methods=["DELETE"])
+def api_cat_solicitantes_eliminar(id):
+    ok, msg = eliminar_solicitante(id)
     return _json_ok() if ok else _json_err(msg, 400)
 
 

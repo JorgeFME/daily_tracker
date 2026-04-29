@@ -410,6 +410,36 @@
             color: var(--text-secondary);
         }
 
+        .quick-activity-panel {
+            display: none;
+            margin: -2px 0 18px;
+            padding: 16px;
+            border: 1px solid #bfdbfe;
+            border-radius: 16px;
+            background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+        }
+
+        .quick-activity-panel.visible {
+            display: block;
+        }
+
+        .quick-activity-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 14px;
+            padding: 10px 12px;
+            border: 1px solid #dbeafe;
+            border-radius: 12px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-size: 0.8rem;
+        }
+
+        .quick-activity-note i {
+            margin-top: 1px;
+        }
+
         .subactivity-modal .modal-content {
             border: 1px solid var(--border);
             border-radius: 24px;
@@ -1844,6 +1874,53 @@
                             </div>
                         </div>
 
+                        <div class="quick-activity-panel" id="quick-activity-panel">
+                            <label class="field-label">
+                                Datos para Actividad Rápida
+                                <span style="font-size:0.68rem; font-weight:500; color:var(--text-muted);">Se guardará como actividad real para completar el reporte</span>
+                            </label>
+                            <div class="quick-activity-note">
+                                <i class="bi bi-lightning-charge-fill"></i>
+                                <span>El nombre saldrá del campo <strong>Acción</strong>, la descripción se tomará de <strong>Detalles Técnicos</strong> y el desarrollador seleccionado quedará como responsable.</span>
+                            </div>
+                            <div class="field-group row-fields">
+                                <div>
+                                    <label class="field-label">Solicitante</label>
+                                    <div class="input-wrap">
+                                        <span class="input-icon"><i class="bi bi-person-badge"></i></span>
+                                        <select class="field-input" id="quick-solicitante" name="quick_solicitante" disabled>
+                                            <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero registra solicitantes en Catálogos' }}</option>
+                                            {% for s in solicitantes %}
+                                            <option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="field-label">Prioridad</label>
+                                    <div class="input-wrap">
+                                        <span class="input-icon"><i class="bi bi-flag"></i></span>
+                                        <select class="field-input" id="quick-prioridad" name="quick_prioridad" disabled>
+                                            <option value="1">🔴 Alta</option>
+                                            <option value="2" selected>🟡 Media</option>
+                                            <option value="3">🟢 Baja</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="field-group" style="margin-bottom:0;">
+                                <label class="field-label">Recursos utilizados</label>
+                                <div class="input-wrap">
+                                    <span class="input-icon"><i class="bi bi-box-seam"></i></span>
+                                    <select id="quick-activity-resources" name="quick_recursos" multiple disabled>
+                                        {% for r in recursos %}
+                                        <option value="{{ r.ID }}">{{ r.NOMBRE }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Tipo de Actividad -->
                         <div class="field-group">
                             <label class="field-label">
@@ -1863,7 +1940,7 @@
 
                         <!-- Acción -->
                         <div class="field-group">
-                            <label class="field-label" style="color: var(--primary); opacity:0.9;">Acción de la
+                            <label class="field-label" id="activity-action-label" style="color: var(--primary); opacity:0.9;">Acción de la
                                 Actividad</label>
                             <div class="input-wrap">
                                 <span class="input-icon"><i class="bi bi-play-circle"
@@ -1875,7 +1952,7 @@
 
                         <!-- Detalles -->
                         <div class="field-group">
-                            <label class="field-label">Detalles Técnicos</label>
+                            <label class="field-label" id="details-label">Detalles Técnicos</label>
                             <div class="input-wrap" style="align-items: flex-start;">
                                 <span class="input-icon" style="padding-top:14px;"><i
                                         class="bi bi-card-text"></i></span>
@@ -2178,8 +2255,12 @@
                             <label class="field-label">Solicitante</label>
                             <div class="input-wrap">
                                 <span class="input-icon"><i class="bi bi-person-badge"></i></span>
-                                <input type="text" class="field-input" name="solicitante"
-                                    placeholder="Nombre o contacto del solicitante...">
+                                <select class="field-input" name="solicitante">
+                                    <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero registra solicitantes en Catálogos' }}</option>
+                                    {% for s in solicitantes %}
+                                    <option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
 
@@ -2347,6 +2428,15 @@
             plugins: ['remove_button'],
             placeholder: 'Selecciona recursos...',
         });
+        const quickSolicitanteSelect = makeTomSelect("#quick-solicitante", {
+            placeholder: 'Selecciona un solicitante...',
+        });
+        const quickPrioridadSelect = makeTomSelect("#quick-prioridad");
+        quickPrioridadSelect.setValue('2', true);
+        const quickActivityResourcesSelect = makeTomSelect("#quick-activity-resources", {
+            plugins: ['remove_button'],
+            placeholder: 'Selecciona recursos...',
+        });
         const trackerForm = document.getElementById('tracker-form');
         const btnOpenSubactivity = document.getElementById('btn-open-subactivity');
         const subactivityHelper = document.getElementById('subactivity-helper');
@@ -2368,6 +2458,11 @@
         const hoursInput = document.querySelector('input[name="hours"]');
         const actionInput = document.querySelector('input[name="activity_action"]');
         const detailsInput = document.querySelector('textarea[name="details"]');
+        const quickActivityPanel = document.getElementById('quick-activity-panel');
+        const quickSolicitanteInput = document.getElementById('quick-solicitante');
+        const quickPrioridadInput = document.getElementById('quick-prioridad');
+        const activityActionLabel = document.getElementById('activity-action-label');
+        const detailsLabel = document.getElementById('details-label');
         const subactivityDatePicker = flatpickr("#subactivity-date", {
             locale: "es",
             altInput: true,
@@ -2402,11 +2497,52 @@
             if (divFinalizar) divFinalizar.style.display = 'none';
             const checkFinalizar = document.getElementById('finalizar_actividad');
             if (checkFinalizar) checkFinalizar.checked = false;
+            updateQuickActivityPanel();
             updateSubactivityTrigger();
+        }
+
+        function isQuickActivitySelected() {
+            return activitySelect.getValue() === 'ad_hoc';
+        }
+
+        function updateQuickActivityPanel() {
+            const isQuickActivity = isQuickActivitySelected();
+
+            quickActivityPanel.classList.toggle('visible', isQuickActivity);
+            quickSolicitanteInput.required = isQuickActivity;
+            quickPrioridadInput.required = isQuickActivity;
+
+            if (isQuickActivity) {
+                quickSolicitanteSelect.enable();
+                quickPrioridadSelect.enable();
+                quickActivityResourcesSelect.enable();
+            } else {
+                quickSolicitanteSelect.disable();
+                quickPrioridadSelect.disable();
+                quickActivityResourcesSelect.disable();
+            }
+
+            activityActionLabel.textContent = isQuickActivity ? 'Nombre de la Actividad Rápida' : 'Acción de la Actividad';
+            actionInput.placeholder = isQuickActivity ? 'Ej: Junta semanal con cliente...' : 'Ej: Migración de script...';
+            detailsLabel.textContent = isQuickActivity ? 'Descripción para Reporte' : 'Detalles Técnicos';
+            detailsInput.placeholder = isQuickActivity ? 'Resumen, acuerdos, contexto o entregable esperado...' : 'Descripción detallada...';
+        }
+
+        function resetQuickActivityForm() {
+            quickSolicitanteSelect.setValue('', true);
+            quickPrioridadSelect.setValue('2', true);
+            quickActivityResourcesSelect.clear(true);
+            updateQuickActivityPanel();
         }
 
         // ─── 3. VALIDACIÓN ────────────────────────────────────────────────────────
         function validateForm() {
+            const isQuickActivity = isQuickActivitySelected();
+            const quickActivityOk = !isQuickActivity || (
+                quickSolicitanteSelect.getValue() &&
+                quickPrioridadSelect.getValue() &&
+                quickActivityResourcesSelect.items.length > 0
+            );
             const ok = userSelect.getValue() &&
                 projectSelect.getValue() &&
                 fp.input.value &&
@@ -2414,7 +2550,8 @@
                 activitySelect.getValue() &&
                 tipoSelect.getValue() &&
                 actionInput.value.trim().length > 3 &&
-                detailsInput.value.trim().length > 5;
+                detailsInput.value.trim().length > 5 &&
+                quickActivityOk;
             btnSubmit.disabled = !ok;
         }
 
@@ -2506,6 +2643,7 @@
             activitySelect.clearOptions();
             if (!projectId) {
                 activitySelect.disable();
+                updateQuickActivityPanel();
                 updateSubactivityTrigger();
                 validateForm();
                 return;
@@ -2586,6 +2724,7 @@
                 if (bar) { bar.style.width = '0%'; bar.classList.remove('danger'); }
             }
             updateDashboard();
+            updateQuickActivityPanel();
             syncSubactivityContext();
             updateSubactivityTrigger();
             validateForm();
@@ -2603,6 +2742,7 @@
                 activitySelect.clearOptions();
                 activitySelect.disable();
             }
+            updateQuickActivityPanel();
             syncSubactivityContext();
             updateSubactivityTrigger();
             validateForm();
@@ -2629,6 +2769,7 @@
                 if (divFinalizar) divFinalizar.style.display = 'none';
                 if (checkFinalizar) checkFinalizar.checked = false;
             }
+            updateQuickActivityPanel();
             syncSubactivityContext();
             updateSubactivityTrigger();
             validateForm();
@@ -2646,6 +2787,9 @@
         });
 
         detailsInput.addEventListener('input', validateForm);
+        quickSolicitanteSelect.on('change', validateForm);
+        quickPrioridadSelect.on('change', validateForm);
+        quickActivityResourcesSelect.on('change', validateForm);
 
         hoursInput.addEventListener('input', e => {
             const val = parseFloat(e.target.value);
@@ -2906,6 +3050,7 @@
                     this.reset(); setInitialState();
                     userSelect.clear(); projectSelect.clear(); activitySelect.clear(); tipoSelect.clear(); tipoSelect.disable();
                     resetEvidenceFields({ collapsePanel: true });
+                    resetQuickActivityForm();
                     resetSubactivityForm();
                     fetchWeeklyHours();
                 } else throw new Error(res.message);

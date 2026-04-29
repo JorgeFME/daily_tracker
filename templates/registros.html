@@ -155,6 +155,25 @@
             margin-bottom: 24px;
         }
 
+        .filter-context-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding: 12px 14px;
+            border: 1px solid rgba(37, 99, 235, .18);
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(219, 234, 254, .68), rgba(239, 246, 255, .92));
+            color: #1e3a8a;
+            font-size: .82rem;
+            box-shadow: 0 10px 28px rgba(37, 99, 235, .08);
+        }
+
+        .filter-context-note i {
+            font-size: 1rem;
+            margin-top: 1px;
+        }
+
         .filters-panel {
             background: linear-gradient(180deg, rgba(248, 250, 253, .96), rgba(241, 245, 249, .94));
             border: 1px solid var(--border);
@@ -934,7 +953,18 @@
             </div>
         </div>
 
-        {% set has_filters = filtros.user_id or filtros.proyecto_id or filtros.tipo_id or filtros.fecha_ini or filtros.fecha_fin %}
+        {% set has_filters = filtros_meta.tiene_filtros_explicitos %}
+
+        <div class="filter-context-note">
+            <i class="bi bi-funnel"></i>
+            <div>
+                {% if filtros_meta.usando_mes_actual_default %}
+                Mostrando por defecto el <strong>mes en curso</strong>. Si exportas, el Excel usará este rango y cualquier otro filtro activo.
+                {% else %}
+                El Excel respetará exactamente los filtros activos de esta pantalla: proyecto, desarrollador, tipo y rango de fechas.
+                {% endif %}
+            </div>
+        </div>
 
         <!-- Filter bar -->
         <form method="GET" action="/registros">
@@ -1026,7 +1056,7 @@
                     <!-- <button class="btn-export" onclick="exportCSV()">
                         <i class="bi bi-filetype-csv"></i> CSV
                     </button> -->
-                    <button class="btn-export" onclick="document.getElementById('modal-reporte').classList.add('open')"
+                    <button class="btn-export" onclick="descargarReporte()"
                         style="background:var(--primary);color:#fff;border-color:var(--primary);">
                         <i class="bi bi-file-earmark-excel"></i> Reporte Excel
                     </button>
@@ -1187,44 +1217,6 @@
         </div>
     </div>
 
-    <!-- MODAL REPORTE EXCEL -->
-    <div class="modal-overlay" id="modal-reporte">
-        <div class="modal">
-            <div class="modal-header">
-                <span class="modal-title">
-                    <i class="bi bi-file-earmark-excel me-2" style="color:#16a34a;"></i>
-                    Exportar Reporte Excel
-                </span>
-                <button class="modal-close" onclick="document.getElementById('modal-reporte').classList.remove('open')">
-                    <i class="bi bi-x"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:16px;">
-                    Selecciona el proyecto para generar el reporte. Se descargará un Excel con una fila por actividad,
-                    incluyendo responsables, recursos, horas y evidencias.
-                </p>
-                <div class="form-group">
-                    <label class="form-label">Proyecto</label>
-                    <select id="sel-reporte-proyecto" class="form-input">
-                        <option value="">Selecciona un proyecto...</option>
-                        {% for p in projects %}
-                        <option value="{{ p.ID }}">{{ p.NOMBRE_PROYECTO }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="document.getElementById('modal-reporte').classList.remove('open')">
-                    Cancelar
-                </button>
-                <button class="btn-save" onclick="descargarReporte()" style="background:#16a34a;">
-                    <i class="bi bi-file-earmark-excel"></i> Descargar Excel
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
@@ -1329,15 +1321,6 @@
         });
         const editActividadTs = new TomSelect('#edit-actividad', { create: false });
         const editTipoTs = new TomSelect('#edit-tipo', { create: false });
-        new TomSelect('#sel-reporte-proyecto', {
-            create: false,
-            dropdownParent: 'body',
-            render: {
-                option: (d, e) => `<div class="option">${e(d.text)}</div>`,
-                item: (d, e) => `<div class="item">${e(d.text)}</div>`,
-            }
-        });
-
         // ── Cargar actividades por proyecto ───────────────────────────────────
         async function cargarActividades(proyectoId, seleccionada = '') {
             editActividadTs.clear();
@@ -1422,9 +1405,6 @@
         document.getElementById('modal-edit').addEventListener('click', function (e) {
             if (e.target === this) cerrarModal();
         });
-        document.getElementById('modal-reporte').addEventListener('click', function (e) {
-            if (e.target === this) this.classList.remove('open');
-        });
 
         // ── Guardar edición ───────────────────────────────────────────────────
         async function guardarEdicion() {
@@ -1504,24 +1484,26 @@
 
         // ── Descargar Reporte Excel ───────────────────────────────────────────
         function descargarReporte() {
-            const proyId = document.getElementById('sel-reporte-proyecto').value;
+            const proyId = fProyTs.getValue();
             if (!proyId) {
                 Swal.fire({
-                    icon: 'warning', title: 'Selecciona un proyecto',
+                    icon: 'warning',
+                    title: 'Selecciona un proyecto en los filtros',
+                    text: 'La exportación sigue siendo por proyecto, pero respetará también los demás filtros activos.',
                     confirmButtonColor: '#2563eb'
                 });
                 return;
             }
+            const params = new URLSearchParams(new FormData(filtrosForm));
+            params.set('proyecto_id', proyId);
             Swal.fire({
                 title: 'Generando Excel...', text: 'Un momento por favor.',
                 allowOutsideClick: false, didOpen: () => Swal.showLoading()
             });
-            // Descarga directa via link
             const a = document.createElement('a');
-            a.href = `/reporte/excel/${proyId}`;
+            a.href = `/reporte/excel/${encodeURIComponent(proyId)}?${params.toString()}`;
             a.click();
             setTimeout(() => Swal.close(), 1500);
-            document.getElementById('modal-reporte').classList.remove('open');
         }
 
         // ── Export CSV ────────────────────────────────────────────────────────

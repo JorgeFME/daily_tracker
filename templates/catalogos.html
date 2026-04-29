@@ -470,23 +470,27 @@
 
         <!-- TABS -->
         <div class="cat-tabs">
-            <button class="cat-tab active" onclick="switchTab('estatus', this)">
+            <button class="cat-tab active" data-tab="estatus" onclick="switchTab('estatus', this)">
                 <i class="bi bi-circle-half"></i> Estatus de Actividad
                 <span class="tab-badge">{{ estatus|length }}</span>
             </button>
-            <button class="cat-tab" onclick="switchTab('tipos', this)">
+            <button class="cat-tab" data-tab="tipos" onclick="switchTab('tipos', this)">
                 <i class="bi bi-tag"></i> Tipos de Actividad
                 <span class="tab-badge">{{ tipos|length }}</span>
             </button>
-            <button class="cat-tab" onclick="switchTab('evidencia', this)">
+            <button class="cat-tab" data-tab="evidencia" onclick="switchTab('evidencia', this)">
                 <i class="bi bi-paperclip"></i> Tipos de Evidencia
                 <span class="tab-badge">{{ tipos_ev|length }}</span>
             </button>
-            <button class="cat-tab" onclick="switchTab('recursos', this)">
+            <button class="cat-tab" data-tab="recursos" onclick="switchTab('recursos', this)">
                 <i class="bi bi-people"></i> Recursos
                 <span class="tab-badge">{{ recursos|length }}</span>
             </button>
-            <button class="cat-tab" onclick="switchTab('proyectos', this)">
+            <button class="cat-tab" data-tab="solicitantes" onclick="switchTab('solicitantes', this)">
+                <i class="bi bi-person-badge"></i> Solicitantes
+                <span class="tab-badge">{{ solicitantes|length }}</span>
+            </button>
+            <button class="cat-tab" data-tab="proyectos" onclick="switchTab('proyectos', this)">
                 <i class="bi bi-briefcase"></i> Proyectos
                 <span class="tab-badge">{{ proyectos|length }}</span>
             </button>
@@ -668,6 +672,47 @@
             </div>
         </div>
 
+        <!-- ══ SOLICITANTES ══ -->
+        <div class="cat-panel" id="panel-solicitantes">
+            <div class="cat-card">
+                <div class="card-head">
+                    <span class="card-head-title">Solicitantes <span class="count-badge">{{ solicitantes|length }}</span></span>
+                </div>
+                <div class="add-bar">
+                    <div class="field-wrap">
+                        <label>Nombre del solicitante *</label>
+                        <input type="text" id="new-sol-nombre" placeholder="Ej: MESA DE AYUDA RH" style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()">
+                    </div>
+                    <button class="btn-add" onclick="agregarSolicitante()"><i class="bi bi-plus-lg"></i> Agregar</button>
+                </div>
+                <table>
+                    <thead><tr><th>Nombre</th><th>Estado</th><th style="width:130px;">Acciones</th></tr></thead>
+                    <tbody id="tbody-solicitantes">
+                    {% for s in solicitantes %}
+                    <tr id="sol-row-{{ s.ID }}">
+                        <td>
+                            <span class="view-mode" style="font-weight:500;">{{ s.NOMBRE }}</span>
+                            <input class="edit-input edit-mode" style="display:none;" value="{{ s.NOMBRE }}" data-field="nombre">
+                        </td>
+                        <td>{% if s.ACTIVO %}<span class="badge-active">Activo</span>{% else %}<span class="badge-inactive">Inactivo</span>{% endif %}</td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="btn-action edit view-mode" title="Editar" onclick="startEdit('sol-row-{{ s.ID }}')"><i class="bi bi-pencil"></i></button>
+                                <button class="btn-action save edit-mode" style="display:none;" title="Guardar" onclick="saveSolicitante('{{ s.ID }}')"><i class="bi bi-check-lg"></i></button>
+                                <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar" onclick="cancelEdit('sol-row-{{ s.ID }}')"><i class="bi bi-x-lg"></i></button>
+                                <button class="btn-action toggle view-mode" title="{{ 'Desactivar' if s.ACTIVO else 'Activar' }}" onclick="toggleCatalogo('solicitantes','{{ s.ID }}',{{ s.ACTIVO }},this)"><i class="bi bi-{{ 'toggle-on' if s.ACTIVO else 'toggle-off' }}"></i></button>
+                                <button class="btn-action del view-mode" title="Eliminar" onclick="eliminarCatalogo('solicitantes','{{ s.ID }}','sol-row-{{ s.ID }}')"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3"><div class="empty-state"><i class="bi bi-person-badge"></i><p>Sin solicitantes registrados.</p></div></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- ══ PROYECTOS ══ -->
         <div class="cat-panel" id="panel-proyectos">
             <div class="cat-card">
@@ -730,6 +775,7 @@
         const topNav = document.getElementById('top-nav');
         const navHamburger = document.getElementById('nav-hamburger');
         const navMenu = document.getElementById('nav-menu');
+        const catalogTabsStorageKey = 'catalogos-active-tab';
 
         function closeMobileNav() {
             topNav.classList.remove('menu-open');
@@ -768,6 +814,16 @@
             document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
             document.getElementById('panel-' + name).classList.add('active');
             btn.classList.add('active');
+            sessionStorage.setItem(catalogTabsStorageKey, name);
+        }
+
+        function restoreActiveTab() {
+            const savedTab = sessionStorage.getItem(catalogTabsStorageKey);
+            if (!savedTab) return;
+            const savedButton = document.querySelector(`.cat-tab[data-tab="${savedTab}"]`);
+            const savedPanel = document.getElementById(`panel-${savedTab}`);
+            if (!savedButton || !savedPanel) return;
+            switchTab(savedTab, savedButton);
         }
 
         function startEdit(rowId) {
@@ -868,6 +924,22 @@
             else Swal.fire({ icon: 'error', title: res.message });
         }
 
+        async function agregarSolicitante() {
+            const nombre = document.getElementById('new-sol-nombre').value.trim();
+            if (!nombre) { _toast('warning', 'Escribe un nombre'); return; }
+            const res = await _apiCall('/api/catalogos/solicitantes', 'POST', { nombre });
+            if (res.status === 'success') { _toast('success', 'Solicitante agregado'); location.reload(); }
+            else Swal.fire({ icon: 'error', title: res.message });
+        }
+
+        async function saveSolicitante(id) {
+            const data = _getEditValues(`sol-row-${id}`);
+            if (!data.nombre) { _toast('warning', 'El nombre no puede estar vacío'); return; }
+            const res = await _apiCall(`/api/catalogos/solicitantes/${id}`, 'PUT', data);
+            if (res.status === 'success') { _toast('success', 'Guardado'); location.reload(); }
+            else Swal.fire({ icon: 'error', title: res.message });
+        }
+
         async function agregarProyecto() {
             const nombre = document.getElementById('new-proy-nombre').value.trim();
             const cliente = document.getElementById('new-proy-cliente').value.trim();
@@ -921,11 +993,13 @@
             } else Swal.fire({ icon: 'error', title: 'No se puede eliminar', text: res.message });
         }
 
-        ['new-est-desc','new-tipo-desc','new-ev-desc','new-rec-nombre','new-proy-nombre','new-proy-cliente','new-proy-desc'].forEach(id => {
+        ['new-est-desc','new-tipo-desc','new-ev-desc','new-rec-nombre','new-sol-nombre','new-proy-nombre','new-proy-cliente','new-proy-desc'].forEach(id => {
             document.getElementById(id)?.addEventListener('keydown', e => {
                 if (e.key === 'Enter') e.target.closest('.add-bar').querySelector('.btn-add').click();
             });
         });
+
+        restoreActiveTab();
     </script>
 </body>
 </html>

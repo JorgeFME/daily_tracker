@@ -787,8 +787,35 @@
             transition: all .2s;
         }
 
+        .btn-edit-act {
+            position: absolute;
+            top: 10px;
+            right: 46px;
+            z-index: 10;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: none;
+            background: #eff6ff;
+            color: #2563eb;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .8rem;
+            opacity: 0;
+            transition: all .2s;
+        }
+
+        .act-card-wrap:hover .btn-edit-act,
         .act-card-wrap:hover .btn-delete-act {
             opacity: 1;
+        }
+
+        .btn-edit-act:hover {
+            background: #2563eb;
+            color: #fff;
+            transform: scale(1.1);
         }
 
         .btn-delete-act:hover {
@@ -1059,6 +1086,16 @@
                         </select>
                     </div>
 
+                    <div class="filter-field">
+                        <label class="filter-field-label" for="filter-solicitante">Solicitante</label>
+                        <select id="filter-solicitante" name="solicitante">
+                            <option value="">Todos los solicitantes</option>
+                            {% for s in solicitantes %}
+                            <option value="{{ s.NOMBRE }}" {% if (filtro_solicitante or '') == s.NOMBRE %}selected{% endif %}>{{ s.NOMBRE }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <div class="filter-field filter-field-dates">
                         <span class="filter-field-label">Rango de fechas</span>
                         <div class="filter-date-range">
@@ -1126,8 +1163,12 @@
                         <div class="row-2">
                             <div class="field-group">
                                 <label class="field-label">Solicitante (contacto cliente)</label>
-                                <input type="text" class="field-input" name="solicitante"
-                                    placeholder="Nombre o email...">
+                                <select class="field-input" name="solicitante">
+                                    <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero registra solicitantes en Catálogos' }}</option>
+                                    {% for s in solicitantes %}
+                                    <option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                             <div class="field-group">
                                 <label class="field-label">Fecha de solicitud *</label>
@@ -1177,6 +1218,120 @@
                         </div>
                         <button type="submit" class="btn-submit-modal">
                             <i class="bi bi-check2-circle me-2"></i>Crear Actividad
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEditarActividadRapida" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2 text-primary"></i>Editar Actividad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-editar-actividad-rapida">
+                        <input type="hidden" name="actividad_id" id="quick-edit-actividad-id">
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Proyecto *</label>
+                                <select id="quick-edit-proyecto" name="id_proyecto" required>
+                                    {% for p in projects %}
+                                    <option value="{{ p.ID }}">{{ p.NOMBRE_PROYECTO }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p
+                                    style="font-size:.7rem;color:#f59e0b;margin:5px 0 0;display:flex;align-items:center;gap:4px;">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    Al cambiar el proyecto, las horas registradas se reasignarán automáticamente al nuevo proyecto.
+                                </p>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Estatus *</label>
+                                <select id="quick-edit-estatus" name="id_estatus" required>
+                                    {% for e in estatus_list %}
+                                    <option value="{{ e.ID }}">{{ e.DESCRIPCION }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Nombre de la actividad *</label>
+                            <input type="text" class="field-input" id="quick-edit-nombre" name="nombre_actividad" required>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Descripción</label>
+                            <textarea class="field-input" id="quick-edit-descripcion" name="descripcion"
+                                placeholder="Contexto, objetivos, alcance..."></textarea>
+                        </div>
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Solicitante</label>
+                                <select class="field-input" id="quick-edit-solicitante" name="solicitante">
+                                    <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero registra solicitantes en Catálogos' }}</option>
+                                    {% for s in solicitantes %}
+                                    <option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Fecha de solicitud *</label>
+                                <input type="text" class="field-input" id="quick-edit-fecha-solicitud" name="fecha_solicitud"
+                                    placeholder="Selecciona fecha" autocomplete="off" required aria-required="true">
+                            </div>
+                        </div>
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Fecha inicio</label>
+                                <input type="text" class="field-input" id="quick-edit-fecha-inicio" name="fecha_inicio"
+                                    placeholder="Selecciona fecha" autocomplete="off">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Fecha fin real</label>
+                                <input type="text" class="field-input" id="quick-edit-fecha-fin" name="fecha_fin_real"
+                                    placeholder="Selecciona fecha" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Prioridad</label>
+                                <select class="field-input" id="quick-edit-prioridad" name="prioridad">
+                                    <option value="1">🔴 Alta</option>
+                                    <option value="2">🟡 Media</option>
+                                    <option value="3">🟢 Baja</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Se desprende de <span style="font-weight:400;color:var(--text-muted);font-size:.8em;">(opcional)</span></label>
+                                <select id="quick-edit-padre" name="id_actividad_padre">
+                                    <option value="">Sin actividad origen</option>
+                                    {% for a in todas_actividades %}
+                                    <option value="{{ a.ID }}">{{ a.NOMBRE_ACTIVIDAD }} — {{ a.NOMBRE_PROYECTO }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Responsable(s)</label>
+                            <select id="quick-edit-responsables" name="responsables" multiple>
+                                {% for u in users %}
+                                <option value="{{ u.ID }}">{{ u.NOMBRE_COMPLETO }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Recursos utilizados</label>
+                            <select id="quick-edit-recursos" name="recursos" multiple>
+                                {% for r in recursos %}
+                                <option value="{{ r.ID }}">{{ r.NOMBRE }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-submit-modal">
+                            <i class="bi bi-check2-circle me-2"></i>Guardar cambios
                         </button>
                     </form>
                 </div>
@@ -1418,6 +1573,7 @@
             }
         });
         new TomSelect('#filter-usuario', filterSubmitCfg);
+        new TomSelect('#filter-solicitante', filterSubmitCfg);
         syncStatusFilterState();
 
         // Flatpickr rango de fechas
@@ -1455,6 +1611,101 @@
         new TomSelect('#sel-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
         new TomSelect('#sel-actividad-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
 
+        const quickEditModalEl = document.getElementById('modalEditarActividadRapida');
+        const quickEditModal = quickEditModalEl ? new bootstrap.Modal(quickEditModalEl) : null;
+        const quickEditForm = document.getElementById('form-editar-actividad-rapida');
+        const quickEditActividadId = document.getElementById('quick-edit-actividad-id');
+        const quickEditSolicitante = document.getElementById('quick-edit-solicitante');
+        const quickEditPadreField = document.getElementById('quick-edit-padre');
+
+        const quickEditFechaSolicitudPicker = flatpickr("#quick-edit-fecha-solicitud", fpCfg);
+        const quickEditFechaInicioPicker = flatpickr("#quick-edit-fecha-inicio", fpCfg);
+        const quickEditFechaFinPicker = flatpickr("#quick-edit-fecha-fin", fpCfg);
+
+        const quickEditProyectoTs = new TomSelect('#quick-edit-proyecto', tsCfg);
+        const quickEditEstatusTs = new TomSelect('#quick-edit-estatus', tsCfg);
+        const quickEditResponsablesTs = new TomSelect('#quick-edit-responsables', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona responsables...' });
+        const quickEditRecursosTs = new TomSelect('#quick-edit-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
+        const quickEditPadreTs = new TomSelect('#quick-edit-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
+
+        function normalizarFechaInput(value) {
+            return String(value || '').trim().slice(0, 10);
+        }
+
+        function setPickerDateOrClear(picker, value) {
+            const fecha = normalizarFechaInput(value);
+            if (!picker) return;
+            if (fecha) {
+                picker.setDate(fecha, true);
+            } else {
+                picker.clear();
+            }
+        }
+
+        function ensureQuickEditSolicitanteOption(nombre) {
+            const valor = String(nombre || '').trim();
+            Array.from(quickEditSolicitante.options)
+                .filter((option) => option.dataset.legacyOption === '1')
+                .forEach((option) => option.remove());
+            if (!valor) return;
+            const existente = Array.from(quickEditSolicitante.options).some((option) => option.value === valor);
+            if (existente) return;
+            const option = document.createElement('option');
+            option.value = valor;
+            option.textContent = `${valor} (actual, fuera de catálogo)`;
+            option.dataset.legacyOption = '1';
+            quickEditSolicitante.appendChild(option);
+        }
+
+        function syncQuickEditPadreOptions(activityId) {
+            Array.from(quickEditPadreField.options).forEach((option) => {
+                const isSelf = option.value && option.value === activityId;
+                option.disabled = isSelf;
+                if (isSelf && option.selected) {
+                    option.selected = false;
+                }
+            });
+            quickEditPadreTs.refreshOptions(false);
+        }
+
+        async function abrirEdicionRapidaActividad(event, actividadId) {
+            event?.preventDefault();
+            event?.stopPropagation();
+            if (!quickEditModal || !quickEditForm || !actividadId) return;
+
+            Swal.fire({ title: 'Cargando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const response = await fetch(`/api/actividades/${actividadId}`);
+                const payload = await response.json();
+                if (!response.ok || payload.status !== 'success' || !payload.actividad) {
+                    throw new Error(payload.message || 'No se pudo cargar la actividad.');
+                }
+
+                const actividad = payload.actividad;
+                quickEditActividadId.value = actividad.id;
+                quickEditForm.querySelector('[name="nombre_actividad"]').value = actividad.nombre_actividad || '';
+                quickEditForm.querySelector('[name="descripcion"]').value = actividad.descripcion || '';
+                quickEditForm.querySelector('[name="prioridad"]').value = actividad.prioridad || '2';
+                setPickerDateOrClear(quickEditFechaSolicitudPicker, actividad.fecha_solicitud);
+                setPickerDateOrClear(quickEditFechaInicioPicker, actividad.fecha_inicio);
+                setPickerDateOrClear(quickEditFechaFinPicker, actividad.fecha_fin_real);
+
+                ensureQuickEditSolicitanteOption(actividad.solicitante);
+                quickEditSolicitante.value = actividad.solicitante || '';
+                quickEditProyectoTs.setValue(actividad.id_proyecto || '', true);
+                quickEditEstatusTs.setValue(actividad.id_estatus || '', true);
+                quickEditResponsablesTs.setValue(Array.isArray(actividad.responsables) ? actividad.responsables : [], true);
+                quickEditRecursosTs.setValue(Array.isArray(actividad.recursos) ? actividad.recursos : [], true);
+                syncQuickEditPadreOptions(actividad.id);
+                quickEditPadreTs.setValue(actividad.id_actividad_padre || '', true);
+
+                Swal.close();
+                quickEditModal.show();
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Error', text: error.message || 'No se pudo cargar la actividad.' });
+            }
+        }
+
         document.getElementById('form-nueva-actividad').addEventListener('submit', async function (e) {
             e.preventDefault();
             const fechaSolicitudField = document.getElementById('new-fecha-solicitud');
@@ -1474,6 +1725,37 @@
                 const res = await r.json();
                 if (res.status === 'success') {
                     Swal.fire({ icon: 'success', title: '¡Creada!', text: res.message, timer: 1800, showConfirmButton: false })
+                        .then(() => location.reload());
+                } else throw new Error(res.message);
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+            }
+        });
+
+        quickEditForm?.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const actividadId = quickEditActividadId.value;
+            if (!actividadId) return;
+
+            const fechaSolicitudField = document.getElementById('quick-edit-fecha-solicitud');
+            if (!fechaSolicitudField?.value?.trim()) {
+                const visibleDateInput = fechaSolicitudField?._flatpickr?.altInput || fechaSolicitudField;
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Fecha requerida',
+                    text: 'La fecha de solicitud es obligatoria por el momento.',
+                }).then(() => visibleDateInput?.focus());
+                return;
+            }
+
+            Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const fd = new FormData(this);
+            fd.delete('actividad_id');
+            try {
+                const r = await fetch(`/actividades/${actividadId}/editar`, { method: 'POST', body: fd });
+                const res = await r.json();
+                if (res.status === 'success') {
+                    Swal.fire({ icon: 'success', title: 'Actualizado', timer: 1500, showConfirmButton: false })
                         .then(() => location.reload());
                 } else throw new Error(res.message);
             } catch (err) {

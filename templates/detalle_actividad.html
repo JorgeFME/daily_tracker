@@ -1469,8 +1469,14 @@
                         <div class="row-2">
                             <div class="field-group">
                                 <label class="field-label">Solicitante</label>
-                                <input type="text" class="field-input" name="solicitante"
-                                    value="{{ actividad.SOLICITANTE or '' }}">
+                                <select class="field-input" name="solicitante">
+                                    <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero registra solicitantes en Catálogos' }}</option>
+                                    {% for s in solicitantes %}
+                                    <option value="{{ s.NOMBRE }}" {% if s.NOMBRE == (actividad.SOLICITANTE or '') %}selected{% endif %}>
+                                        {{ s.NOMBRE }}{% if s.ES_LEGACY %} (actual, fuera de catálogo){% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
                             </div>
                             <div class="field-group">
                                 <label class="field-label">Fecha solicitud</label>

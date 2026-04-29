@@ -305,10 +305,135 @@ def _get_date_range(period, fecha_ref_str=None):
 #  DAILY TRACKER
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _obtener_estatus_id(cur, *descripciones):
+    objetivos = [str(desc).strip().upper() for desc in descripciones if str(desc).strip()]
+    if not objetivos:
+        return None
+
+    placeholders = ",".join("?" for _ in objetivos)
+    cur.execute(
+        f'SELECT "ID", TRIM(UPPER("DESCRIPCION")) AS "DESC" '
+        f'FROM "CAT_ESTATUS_ACTIVIDAD" '
+        f'WHERE "ACTIVO"=1 AND TRIM(UPPER("DESCRIPCION")) IN ({placeholders}) '
+        f'ORDER BY "ORDEN"',
+        tuple(objetivos),
+    )
+    rows = cur.fetchall()
+    if not rows:
+        return None
+
+    ids_por_desc = {str(row[1]).strip().upper(): row[0] for row in rows}
+    for objetivo in objetivos:
+        if objetivo in ids_por_desc:
+            return ids_por_desc[objetivo]
+    return rows[0][0]
+
+
+def _crear_actividad_rapida_desde_registro(cur, datos):
+    solicitante = (datos.get("quick_solicitante") or "").strip()
+    prioridad_raw = str(datos.get("quick_prioridad") or "").strip()
+    recursos = list(dict.fromkeys(
+        str(recurso).strip() for recurso in (datos.get("quick_recursos") or []) if str(recurso).strip()
+    ))
+
+    missing_fields = []
+    if not solicitante:
+        missing_fields.append("solicitante")
+    if not prioridad_raw:
+        missing_fields.append("prioridad")
+    if not recursos:
+        missing_fields.append("recursos utilizados")
+    if missing_fields:
+        raise ValueError(
+            "Completa los datos requeridos para la Actividad Rápida: "
+            + ", ".join(missing_fields)
+            + "."
+        )
+
+    try:
+        prioridad = int(prioridad_raw)
+    except (TypeError, ValueError):
+        raise ValueError("La prioridad seleccionada para la Actividad Rápida no es válida.")
+
+    if prioridad not in (1, 2, 3):
+        raise ValueError("La prioridad seleccionada para la Actividad Rápida no es válida.")
+
+    proyecto_id = datos.get("project")
+    usuario_id = datos.get("user")
+    fecha_base = datos.get("date")
+    nombre_actividad = (datos.get("activity_action") or "").strip()
+    if nombre_actividad and not nombre_actividad.startswith("⚡"):
+        nombre_actividad = f"⚡ {nombre_actividad}"
+    descripcion = (datos.get("details") or "").strip() or None
+    creado_por = usuario_id or datos.get("creado_por") or "SISTEMA"
+
+    if not proyecto_id or not usuario_id or not fecha_base or not nombre_actividad:
+        raise ValueError("No se pudo preparar la Actividad Rápida con la información capturada.")
+
+    estatus_completado_id = _obtener_estatus_id(cur, "COMPLETADO")
+    if not estatus_completado_id:
+        raise ValueError('No se encontró el estatus activo "Completado" para la Actividad Rápida.')
+
+    cur.execute(
+        """
+            INSERT INTO "ACTIVIDADES"
+                ("ID","ID_PROYECTO","NOMBRE_ACTIVIDAD","DESCRIPCION",
+                 "FECHA_SOLICITUD","SOLICITANTE","FECHA_INICIO","FECHA_FIN_REAL",
+                 "ID_ESTATUS","PRIORIDAD","CREADO_EN","CREADO_POR")
+            VALUES (SYSUUID,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)
+        """,
+        (
+            proyecto_id,
+            nombre_actividad,
+            descripcion,
+            fecha_base,
+            solicitante,
+            fecha_base,
+            fecha_base,
+            estatus_completado_id,
+            prioridad,
+            creado_por,
+        ),
+    )
+
+    cur.execute(
+        """
+            SELECT TOP 1 "ID"
+            FROM "ACTIVIDADES"
+            WHERE "ID_PROYECTO"=?
+              AND "NOMBRE_ACTIVIDAD"=?
+              AND COALESCE("SOLICITANTE", '') = COALESCE(?, '')
+              AND "CREADO_POR"=?
+            ORDER BY "CREADO_EN" DESC
+        """,
+        (proyecto_id, nombre_actividad, solicitante, creado_por),
+    )
+    row = cur.fetchone()
+    if not row:
+        raise ValueError("No se pudo vincular la Actividad Rápida recién creada al registro.")
+
+    actividad_id = row[0]
+
+    cur.execute(
+        'INSERT INTO "ACTIVIDAD_RESPONSABLES" ("ID_ACTIVIDAD","ID_USUARIO") VALUES (?,?)',
+        (actividad_id, usuario_id),
+    )
+    for recurso_id in recursos:
+        cur.execute(
+            'INSERT INTO "ACTIVIDAD_RECURSOS" ("ID_ACTIVIDAD","ID_RECURSO") VALUES (?,?)',
+            (actividad_id, recurso_id),
+        )
+
+    datos["actividad_id"] = actividad_id
+    datos["actividad_rapida_creada"] = "1"
+    return actividad_id
+
+
 def guardar_registro_actividad(datos):
     # Validar que la actividad no esté Completada o Cancelada
     actividad_id = datos.get('actividad_id')
-    if actividad_id == 'ad_hoc' or not actividad_id:
+    crear_actividad_rapida = actividad_id == 'ad_hoc'
+    if crear_actividad_rapida or not actividad_id:
         actividad_id = None
         
     if actividad_id:
@@ -328,6 +453,9 @@ def guardar_registro_actividad(datos):
     with _pool.get_connection() as conn:
         cur = conn.cursor()
         try:
+            if crear_actividad_rapida:
+                actividad_id = _crear_actividad_rapida_desde_registro(cur, datos)
+
             cur.execute(
                 """
                     INSERT INTO "REGISTRO_ACTIVIDADES"
@@ -345,6 +473,7 @@ def guardar_registro_actividad(datos):
                     datos.get('details'),
                 )
             )
+            datos["actividad_id"] = actividad_id
 
             if actividad_id and datos.get('finalizar_actividad') == '1':
                 cur.execute(
@@ -576,6 +705,7 @@ def _filtros_actividades_sql(
     proyecto_id=None,
     estatus_id=None,
     usuario_id=None,
+    solicitante=None,
     fecha_desde=None,
     fecha_hasta=None,
     q=None,
@@ -592,6 +722,9 @@ def _filtros_actividades_sql(
     if usuario_id:
         filtros.append('EXISTS (SELECT 1 FROM "ACTIVIDAD_RESPONSABLES" AR WHERE AR."ID_ACTIVIDAD"=A."ID" AND AR."ID_USUARIO"=?)')
         params.append(usuario_id)
+    if solicitante:
+        filtros.append('UPPER(COALESCE(A."SOLICITANTE", \'\')) = ?')
+        params.append(str(solicitante).strip().upper())
     if fecha_desde:
         filtros.append('A."FECHA_SOLICITUD" >= ?')
         params.append(fecha_desde)
@@ -613,6 +746,7 @@ def obtener_actividades(
     proyecto_id=None,
     estatus_id=None,
     usuario_id=None,
+    solicitante=None,
     fecha_desde=None,
     fecha_hasta=None,
     q=None,
@@ -625,6 +759,7 @@ def obtener_actividades(
         proyecto_id=proyecto_id,
         estatus_id=estatus_id,
         usuario_id=usuario_id,
+        solicitante=solicitante,
         fecha_desde=fecha_desde,
         fecha_hasta=fecha_hasta,
         q=q,
@@ -674,6 +809,7 @@ def contar_actividades(
     proyecto_id=None,
     estatus_id=None,
     usuario_id=None,
+    solicitante=None,
     fecha_desde=None,
     fecha_hasta=None,
     q=None,
@@ -683,6 +819,7 @@ def contar_actividades(
         proyecto_id=proyecto_id,
         estatus_id=estatus_id,
         usuario_id=usuario_id,
+        solicitante=solicitante,
         fecha_desde=fecha_desde,
         fecha_hasta=fecha_hasta,
         q=q,
@@ -1144,6 +1281,13 @@ def obtener_recursos():
     )
 
 
+def obtener_solicitantes():
+    return _cached_query(
+        "cat_solicitantes",
+        'SELECT "ID","NOMBRE","ACTIVO" FROM "CAT_SOLICITANTES" WHERE "ACTIVO"=1 ORDER BY "NOMBRE"'
+    )
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  ACTIVIDADES POR PROYECTO
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1307,26 +1451,30 @@ def obtener_historial_actividad(actividad_id):
 #  GESTIÓN DE REGISTROS
 # ══════════════════════════════════════════════════════════════════════════════
 
-def obtener_registros(filtros=None):
+def _registros_where(alias='R', filtros=None):
     if filtros is None:
         filtros = {}
     params, where = [], []
-
     if filtros.get('user_id'):
-        where.append('"R"."ID_USUARIO" = ?')
+        where.append(f'"{alias}"."ID_USUARIO" = ?')
         params.append(filtros['user_id'])
     if filtros.get('proyecto_id'):
-        where.append('"R"."ID_PROYECTO" = ?')
+        where.append(f'"{alias}"."ID_PROYECTO" = ?')
         params.append(filtros['proyecto_id'])
     if filtros.get('fecha_ini'):
-        where.append('"R"."FECHA" >= ?')
+        where.append(f'"{alias}"."FECHA" >= ?')
         params.append(filtros['fecha_ini'])
     if filtros.get('fecha_fin'):
-        where.append('"R"."FECHA" <= ?')
+        where.append(f'"{alias}"."FECHA" <= ?')
         params.append(filtros['fecha_fin'])
     if filtros.get('tipo_id'):
-        where.append('"R"."ID_TIPO_ACT" = ?')
+        where.append(f'"{alias}"."ID_TIPO_ACT" = ?')
         params.append(filtros['tipo_id'])
+    return where, params
+
+
+def obtener_registros(filtros=None):
+    where, params = _registros_where('R', filtros)
 
     where_sql = ('WHERE ' + ' AND '.join(where)) if where else ''
     sql = f"""
@@ -1399,6 +1547,17 @@ def obtener_recursos_actividad(actividad_id):
     return ejecutar_query(sql, (actividad_id,))
 
 
+def obtener_responsables_actividad(actividad_id):
+    sql = """
+        SELECT U."ID", U."NOMBRE_COMPLETO"
+        FROM "ACTIVIDAD_RESPONSABLES" AR
+        JOIN "USUARIOS" U ON AR."ID_USUARIO" = U."ID"
+        WHERE AR."ID_ACTIVIDAD" = ?
+        ORDER BY U."NOMBRE_COMPLETO"
+    """
+    return ejecutar_query(sql, (actividad_id,))
+
+
 def guardar_recursos_actividad(actividad_id, ids_recursos):
     with _pool.get_connection() as conn:
         cur = conn.cursor()
@@ -1437,13 +1596,18 @@ def reasignar_registros_proyecto(actividad_id: str, nuevo_proyecto_id: str) -> b
 #  REPORTE EXCEL POR PROYECTO
 # ══════════════════════════════════════════════════════════════════════════════
 
-def obtener_datos_reporte_proyecto(proyecto_id):
+def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
     """
     Trae en una sola conexion:
       - actividades con todos sus metadatos (incluyendo SOLICITANTE)
       - evidencias agrupadas por actividad
     Devuelve: (actividades, evidencias_por_actividad)
     """
+    filtros_reporte = dict(filtros or {})
+    filtros_reporte['proyecto_id'] = proyecto_id
+    where_registros, params_registros = _registros_where('R', filtros_reporte)
+    where_registros_sql = ' AND '.join(where_registros) if where_registros else '1=1'
+
     sql_acts = """
         SELECT
             A."ID",
@@ -1459,7 +1623,7 @@ def obtener_datos_reporte_proyecto(proyecto_id):
             E."DESCRIPCION"  AS "ESTATUS",
             P."NOMBRE_PROYECTO",
             COALESCE((SELECT SUM(R."HORAS") FROM "REGISTRO_ACTIVIDADES" R
-                       WHERE R."ID_ACTIVIDAD" = A."ID"), 0) AS "HORAS_TOTALES",
+                       WHERE R."ID_ACTIVIDAD" = A."ID" AND """ + where_registros_sql + """), 0) AS "HORAS_TOTALES",
             (SELECT STRING_AGG(U2."NOMBRE_COMPLETO", ' / ')
              FROM "ACTIVIDAD_RESPONSABLES" AR
              JOIN "USUARIOS" U2 ON AR."ID_USUARIO" = U2."ID"
@@ -1478,7 +1642,12 @@ def obtener_datos_reporte_proyecto(proyecto_id):
         JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS" = E."ID"
         LEFT JOIN "ACTIVIDADES" PADRE ON A."ID_ACTIVIDAD_PADRE" = PADRE."ID"
         WHERE A."ID_PROYECTO" = ?
-        ORDER BY A."PRIORIDAD" ASC, A."FECHA_SOLICITUD" ASC
+          AND EXISTS (
+              SELECT 1
+              FROM "REGISTRO_ACTIVIDADES" R
+              WHERE R."ID_ACTIVIDAD" = A."ID" AND """ + where_registros_sql + """
+          )
+        ORDER BY A."FECHA_SOLICITUD" ASC, A."CREADO_EN" ASC
     """
     sql_evs = """
         SELECT
@@ -1492,16 +1661,26 @@ def obtener_datos_reporte_proyecto(proyecto_id):
         JOIN "CAT_TIPO_EVIDENCIA" T ON EV."ID_TIPO" = T."ID"
         JOIN "ACTIVIDADES" A ON EV."ID_ACTIVIDAD" = A."ID"
         WHERE A."ID_PROYECTO" = ?
+          AND EXISTS (
+              SELECT 1
+              FROM "REGISTRO_ACTIVIDADES" R
+              WHERE R."ID_ACTIVIDAD" = A."ID" AND """ + where_registros_sql + """
+          )
         ORDER BY EV."CREADO_EN" ASC
     """
     with _pool.get_connection() as conn:
         cur = conn.cursor()
         try:
-            cur.execute(sql_acts, (proyecto_id,))
+            params_acts = tuple(params_registros + [proyecto_id] + params_registros)
+            cur.execute(sql_acts, params_acts)
             cols_a = [c[0] for c in cur.description]
             actividades = [dict(zip(cols_a, row)) for row in cur.fetchall()]
+            for actividad in actividades:
+                actividad["ES_ACTIVIDAD_RAPIDA_HISTORICA"] = 0
+                actividad["NOTAS_REPORTE"] = ""
 
-            cur.execute(sql_evs, (proyecto_id,))
+            params_evs = tuple([proyecto_id] + params_registros)
+            cur.execute(sql_evs, params_evs)
             cols_e = [c[0] for c in cur.description]
             evidencias_por_actividad = {}
             for row in cur.fetchall():
@@ -1510,6 +1689,7 @@ def obtener_datos_reporte_proyecto(proyecto_id):
                 evidencias_por_actividad.setdefault(act_id, []).append(ev)
 
             # Inyectar pseudo-actividades individuales para Actividades Rápidas (Ad-hoc)
+            where_adhoc, params_adhoc = _registros_where('R', filtros_reporte)
             sql_adhoc = """
                 SELECT 
                     R."FECHA", 
@@ -1523,10 +1703,10 @@ def obtener_datos_reporte_proyecto(proyecto_id):
                 LEFT JOIN "CAT_TIPO_ACTIVIDAD" T ON R."ID_TIPO_ACT" = T."ID"
                 LEFT JOIN "USUARIOS" U ON R."ID_USUARIO" = U."ID"
                 LEFT JOIN "PROYECTOS" P ON R."ID_PROYECTO" = P."ID"
-                WHERE R."ID_PROYECTO"=? AND R."ID_ACTIVIDAD" IS NULL
+                WHERE """ + (' AND '.join(where_adhoc + ['R."ID_ACTIVIDAD" IS NULL']) if where_adhoc else 'R."ID_ACTIVIDAD" IS NULL') + """
                 ORDER BY R."FECHA" ASC
             """
-            cur.execute(sql_adhoc, (proyecto_id,))
+            cur.execute(sql_adhoc, tuple(params_adhoc))
             for rec in cur.fetchall():
                 fecha_val = rec[0]
                 horas_val = float(rec[1] or 0)
@@ -1556,8 +1736,31 @@ def obtener_datos_reporte_proyecto(proyecto_id):
                     "RESPONSABLES": responsable_val,
                     "RECURSOS": "—",
                     "NUM_HIJAS": 0,
-                    "NOMBRES_HIJAS": ""
+                    "NOMBRES_HIJAS": "",
+                    "ES_ACTIVIDAD_RAPIDA_HISTORICA": 1,
+                    "NOTAS_REPORTE": "Actividad rápida histórica registrada antes de capturar solicitante, prioridad y recursos en forma estructurada."
                 })
+
+            def _parse_fecha_reporte(valor):
+                if not valor:
+                    return datetime.max.date()
+                if isinstance(valor, datetime):
+                    return valor.date()
+                texto = str(valor).strip()
+                if not texto:
+                    return datetime.max.date()
+                try:
+                    return datetime.strptime(texto[:10], "%Y-%m-%d").date()
+                except ValueError:
+                    return datetime.max.date()
+
+            actividades.sort(
+                key=lambda actividad: (
+                    _parse_fecha_reporte(actividad.get("FECHA_SOLICITUD")),
+                    _parse_fecha_reporte(actividad.get("FECHA_INICIO")),
+                    str(actividad.get("NOMBRE_ACTIVIDAD") or "").upper(),
+                )
+            )
 
             return actividades, evidencias_por_actividad
         finally:
@@ -1580,6 +1783,19 @@ def _cat_delete(tabla: str, id_val: str) -> bool:
 def _cat_in_use(tabla_ref: str, col_fk: str, id_val: str) -> bool:
     """Verifica si un registro de catálogo está referenciado en otra tabla."""
     rows = ejecutar_query(f'SELECT COUNT(*) AS N FROM "{tabla_ref}" WHERE "{col_fk}"=?', (id_val,))
+    return bool(rows and int(rows[0]["N"]) > 0)
+
+
+def _cat_nombre_existe(tabla: str, nombre: str, exclude_id: str | None = None) -> bool:
+    nombre_normalizado = (nombre or "").strip()
+    if not nombre_normalizado:
+        return False
+    sql = f'SELECT COUNT(*) AS "N" FROM "{tabla}" WHERE UPPER(TRIM("NOMBRE"))=UPPER(TRIM(?))'
+    params = [nombre_normalizado]
+    if exclude_id:
+        sql += ' AND "ID"<>?'
+        params.append(exclude_id)
+    rows = ejecutar_query(sql, tuple(params))
     return bool(rows and int(rows[0]["N"]) > 0)
 
 
@@ -1727,6 +1943,75 @@ def eliminar_recurso(id_val: str):
         return False, "Este recurso está asignado a actividades y no puede eliminarse."
     ok = _cat_delete("CAT_RECURSOS", id_val)
     if ok: invalidar_cache("cat_recursos")
+    return ok, "" if ok else "Error al eliminar."
+
+
+# ── CAT_SOLICITANTES ───────────────────────────────────────────────────────────
+
+def obtener_solicitantes_todos():
+    return ejecutar_query(
+        'SELECT "ID","NOMBRE","ACTIVO" FROM "CAT_SOLICITANTES" ORDER BY "NOMBRE"'
+    )
+
+def _normalizar_nombre_solicitante(nombre: str | None) -> str:
+    return (nombre or "").strip().upper()
+
+def crear_solicitante(datos: dict) -> bool:
+    nombre = _normalizar_nombre_solicitante(datos.get("nombre"))
+    if not nombre or _cat_nombre_existe("CAT_SOLICITANTES", nombre):
+        return False
+    ok = ejecutar_dml('INSERT INTO "CAT_SOLICITANTES" ("ID","NOMBRE","ACTIVO") VALUES (SYSUUID,?,1)', (nombre,))
+    if ok:
+        invalidar_cache("cat_solicitantes")
+    return ok
+
+def actualizar_solicitante(id_val: str, datos: dict) -> bool:
+    nombre_nuevo = _normalizar_nombre_solicitante(datos.get("nombre"))
+    if not nombre_nuevo or _cat_nombre_existe("CAT_SOLICITANTES", nombre_nuevo, exclude_id=id_val):
+        return False
+
+    with _pool.get_connection() as conn:
+        cur = conn.cursor()
+        try:
+            cur.execute('SELECT "NOMBRE" FROM "CAT_SOLICITANTES" WHERE "ID"=?', (id_val,))
+            row = cur.fetchone()
+            if not row:
+                return False
+
+            nombre_actual = (row[0] or "").strip()
+            cur.execute('UPDATE "CAT_SOLICITANTES" SET "NOMBRE"=? WHERE "ID"=?', (nombre_nuevo, id_val))
+            if nombre_actual and nombre_actual != nombre_nuevo:
+                cur.execute('UPDATE "ACTIVIDADES" SET "SOLICITANTE"=? WHERE "SOLICITANTE"=?', (nombre_nuevo, nombre_actual))
+            conn.commit()
+            invalidar_cache("cat_solicitantes")
+            return True
+        except Exception as e:
+            print(f"[actualizar_solicitante] {e}")
+            conn.rollback()
+            return False
+        finally:
+            cur.close()
+
+def toggle_solicitante(id_val: str, activo: int) -> bool:
+    ok = _cat_toggle("CAT_SOLICITANTES", id_val, activo)
+    if ok:
+        invalidar_cache("cat_solicitantes")
+    return ok
+
+def eliminar_solicitante(id_val: str):
+    rows = ejecutar_query('SELECT "NOMBRE" FROM "CAT_SOLICITANTES" WHERE "ID"=?', (id_val,))
+    if not rows:
+        return False, "El solicitante ya no existe."
+
+    nombre = (rows[0].get("NOMBRE") or "").strip()
+    if nombre:
+        uso = ejecutar_query('SELECT COUNT(*) AS "N" FROM "ACTIVIDADES" WHERE "SOLICITANTE"=?', (nombre,))
+        if uso and int(uso[0]["N"]) > 0:
+            return False, "Este solicitante está asignado a una o más actividades y no puede eliminarse."
+
+    ok = _cat_delete("CAT_SOLICITANTES", id_val)
+    if ok:
+        invalidar_cache("cat_solicitantes")
     return ok, "" if ok else "Error al eliminar."
 
 
