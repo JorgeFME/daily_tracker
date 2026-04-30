@@ -835,6 +835,20 @@ def contar_actividades(
     return int(rows[0]["TOTAL"]) if rows else 0
 
 
+def obtener_catalogo_actividades(proyecto_id=None):
+    sql = """
+        SELECT A."ID", A."NOMBRE_ACTIVIDAD", A."ID_PROYECTO", P."NOMBRE_PROYECTO"
+        FROM "ACTIVIDADES" A
+        JOIN "PROYECTOS" P ON A."ID_PROYECTO" = P."ID"
+    """
+    params = []
+    if proyecto_id:
+        sql += ' WHERE A."ID_PROYECTO" = ?'
+        params.append(proyecto_id)
+    sql += ' ORDER BY A."NOMBRE_ACTIVIDAD" ASC, P."NOMBRE_PROYECTO" ASC'
+    return ejecutar_query(sql, tuple(params) if params else None)
+
+
 def _base_select_actividades():
     return '''SELECT A."ID", A."NOMBRE_ACTIVIDAD", A."DESCRIPCION",
                      A."FECHA_SOLICITUD", A."SOLICITANTE",
@@ -1292,7 +1306,7 @@ def obtener_solicitantes():
 #  ACTIVIDADES POR PROYECTO
 # ══════════════════════════════════════════════════════════════════════════════
 
-def obtener_actividades_por_proyecto(proyecto_id, usuario_id=None):
+def obtener_actividades_por_proyecto(proyecto_id, usuario_id=None, incluir_actividad_id=None):
         """Devuelve actividades activas del proyecto para carga de horas.
 
         Clasificacion por grupo cuando hay usuario:
@@ -1300,6 +1314,11 @@ def obtener_actividades_por_proyecto(proyecto_id, usuario_id=None):
             2) compartida: usuario responsable junto a otros responsables
             3) otra: resto
         """
+        filtro_activas = 'UPPER(E."DESCRIPCION") NOT IN (\'COMPLETADO\', \'CANCELADO\', \'ESPERANDO APROBACIÓN\')'
+        if incluir_actividad_id:
+                filtro_estatus = f'({filtro_activas} OR A."ID" = ?)'
+        else:
+                filtro_estatus = filtro_activas
         if usuario_id:
                 sql = """
                         SELECT A."ID", A."NOMBRE_ACTIVIDAD",
@@ -1339,11 +1358,11 @@ def obtener_actividades_por_proyecto(proyecto_id, usuario_id=None):
                                                      ELSE 'compartida'
                                                  END
                                          ELSE 'otra'
-                                     END as "GRUPO"
+                                      END as "GRUPO"
                         FROM "ACTIVIDADES" A
                         JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS" = E."ID"
                         WHERE A."ID_PROYECTO" = ?
-                            AND UPPER(E."DESCRIPCION") NOT IN ('COMPLETADO', 'CANCELADO', 'ESPERANDO APROBACIÓN')
+                            AND """ + filtro_estatus + """
                         ORDER BY
                             CASE
                                 WHEN A."ASIGNADO_A" = ? THEN 1
@@ -1365,16 +1384,20 @@ def obtener_actividades_por_proyecto(proyecto_id, usuario_id=None):
                             A."PRIORIDAD" ASC,
                             A."NOMBRE_ACTIVIDAD" ASC
                 """
-                params = (
+                params = [
                         usuario_id,
                         usuario_id,
                         usuario_id,
                         usuario_id,
                         proyecto_id,
+                ]
+                if incluir_actividad_id:
+                        params.append(incluir_actividad_id)
+                params.extend([
                         usuario_id,
                         usuario_id,
-                )
-                return ejecutar_query(sql, params)
+                ])
+                return ejecutar_query(sql, tuple(params))
 
         sql = """
                 SELECT A."ID", A."NOMBRE_ACTIVIDAD",
@@ -1386,10 +1409,13 @@ def obtener_actividades_por_proyecto(proyecto_id, usuario_id=None):
                 FROM "ACTIVIDADES" A
                 JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS" = E."ID"
                 WHERE A."ID_PROYECTO" = ?
-                    AND UPPER(E."DESCRIPCION") NOT IN ('COMPLETADO', 'CANCELADO', 'ESPERANDO APROBACIÓN')
+                    AND """ + filtro_estatus + """
                 ORDER BY A."PRIORIDAD" ASC, A."NOMBRE_ACTIVIDAD" ASC
         """
-        return ejecutar_query(sql, (proyecto_id,))
+        params = [proyecto_id]
+        if incluir_actividad_id:
+                params.append(incluir_actividad_id)
+        return ejecutar_query(sql, tuple(params))
 
 
 def recalcular_avance_actividad(actividad_id):
@@ -1461,6 +1487,9 @@ def _registros_where(alias='R', filtros=None):
     if filtros.get('proyecto_id'):
         where.append(f'"{alias}"."ID_PROYECTO" = ?')
         params.append(filtros['proyecto_id'])
+    if filtros.get('actividad_id'):
+        where.append(f'"{alias}"."ID_ACTIVIDAD" = ?')
+        params.append(filtros['actividad_id'])
     if filtros.get('fecha_ini'):
         where.append(f'"{alias}"."FECHA" >= ?')
         params.append(filtros['fecha_ini'])

@@ -961,7 +961,7 @@
                 {% if filtros_meta.usando_mes_actual_default %}
                 Mostrando por defecto el <strong>mes en curso</strong>. Si exportas, el Excel usará este rango y cualquier otro filtro activo.
                 {% else %}
-                El Excel respetará exactamente los filtros activos de esta pantalla: proyecto, desarrollador, tipo y rango de fechas.
+                El Excel respetará exactamente los filtros activos de esta pantalla: proyecto, desarrollador, actividad, tipo y rango de fechas.
                 {% endif %}
             </div>
         </div>
@@ -986,6 +986,18 @@
                                 <option value="">Todos</option>
                                 {% for p in projects %}
                                 <option value="{{ p.ID }}" {% if filtros.proyecto_id|string == p.ID|string %}selected{% endif %}>{{ p.NOMBRE_PROYECTO }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <span class="filter-label">Actividad</span>
+                            <select name="actividad_id" id="f-actividad">
+                                <option value="">Todas</option>
+                                {% for actividad in actividades %}
+                                <option value="{{ actividad.ID }}" data-project="{{ actividad.ID_PROYECTO }}"
+                                    {% if filtros.actividad_id|string == actividad.ID|string %}selected{% endif %}>
+                                    {{ actividad.NOMBRE_ACTIVIDAD }}{% if not filtros.proyecto_id and actividad.NOMBRE_PROYECTO %} · {{ actividad.NOMBRE_PROYECTO }}{% endif %}
+                                </option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -1273,10 +1285,33 @@
                 item: (d, e) => `<div class="item">${e(d.text)}</div>`,
             }
         });
+        const fActividadTs = new TomSelect('#f-actividad', {
+            create: false,
+            items: {{ [filtros.actividad_id] | tojson if filtros.actividad_id else '[]' }},
+            onChange: () => submitFiltros(),
+            render: {
+                option: (d, e) => `<div class="option">${e(d.text)}</div>`,
+                item: (d, e) => `<div class="item">${e(d.text)}</div>`,
+            }
+        });
+
+        function actividadPerteneceAProyecto(actividadId, proyectoId) {
+            if (!actividadId || !proyectoId) return true;
+            const option = Array.from(document.querySelectorAll('#f-actividad option'))
+                .find(item => item.value === String(actividadId));
+            return (option?.dataset.project || '') === String(proyectoId);
+        }
+
         const fProyTs = new TomSelect('#f-proyecto', {
             create: false,
             items: {{ [filtros.proyecto_id] | tojson if filtros.proyecto_id else '[]' }},
-            onChange: () => submitFiltros(),
+            onChange: (proyectoId) => {
+                const actividadId = fActividadTs.getValue();
+                if (actividadId && proyectoId && !actividadPerteneceAProyecto(actividadId, proyectoId)) {
+                    fActividadTs.clear(true);
+                }
+                submitFiltros();
+            },
             render: {
                 option: (d, e) => `<div class="option">${e(d.text)}</div>`,
                 item: (d, e) => `<div class="item">${e(d.text)}</div>`,
@@ -1329,7 +1364,9 @@
 
             if (!proyectoId) { editActividadTs.refreshOptions(false); return; }
             try {
-                const r = await fetch(`/api/actividades_proyecto?proyecto=${proyectoId}`);
+                const params = new URLSearchParams({ proyecto: proyectoId });
+                if (seleccionada) params.set('actividad_actual', seleccionada);
+                const r = await fetch(`/api/actividades_proyecto?${params.toString()}`);
                 const data = await r.json();
                 data.forEach(a => editActividadTs.addOption({ value: a.id, text: a.nombre }));
                 editActividadTs.refreshOptions(false);
@@ -1390,7 +1427,7 @@
             editOriginalUsuario = userId;
 
             editUsuarioTs.setValue(userId);
-            editProyectoTs.setValue(proyId);
+            editProyectoTs.setValue(proyId, true);
             await cargarActividades(proyId, actId);
             editTipoTs.setValue(tipoId);
 

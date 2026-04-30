@@ -21,6 +21,7 @@ from db import (
     obtener_registros_recientes_filtrados,
     # Actividades
     obtener_actividades,
+    obtener_catalogo_actividades,
     obtener_actividad_por_id,
     obtener_actividades_hijas,
     obtener_actividad_nombre,
@@ -197,6 +198,7 @@ def _registros_filters_from_request(req_args, proyecto_id: str | None = None):
     filtros = {
         "user_id": (req_args.get("user_id") or "").strip() or None,
         "proyecto_id": proyecto_id or (req_args.get("proyecto_id") or "").strip() or None,
+        "actividad_id": (req_args.get("actividad_id") or "").strip() or None,
         "tipo_id": (req_args.get("tipo_id") or "").strip() or None,
         "fecha_ini": (req_args.get("fecha_ini") or "").strip() or None,
         "fecha_fin": (req_args.get("fecha_fin") or "").strip() or None,
@@ -212,6 +214,12 @@ def _registros_filters_from_request(req_args, proyecto_id: str | None = None):
         "tiene_filtros_explicitos": tiene_filtros_explicitos,
         "usando_mes_actual_default": usando_mes_actual_default,
     }
+
+
+def _registros_activity_options(filtros):
+    return obtener_catalogo_actividades(
+        proyecto_id=filtros.get("proyecto_id"),
+    )
 
 
 def _catalog_label(items, selected_id, id_key, label_key, fallback="Todos"):
@@ -232,12 +240,16 @@ def _fmt_fecha_corta(value: str | None) -> str:
         return value
 
 
-def _build_registros_export_context(filtros, filtros_meta, base):
+def _build_registros_export_context(filtros, filtros_meta, base, actividades=None):
     proyecto_nombre = _catalog_label(
         base["projects"], filtros.get("proyecto_id"), "ID", "NOMBRE_PROYECTO", fallback="Sin proyecto"
     )
     desarrollador = _catalog_label(
         base["users"], filtros.get("user_id"), "ID", "NOMBRE_COMPLETO"
+    )
+    actividades = actividades if actividades is not None else _registros_activity_options(filtros)
+    actividad = _catalog_label(
+        actividades, filtros.get("actividad_id"), "ID", "NOMBRE_ACTIVIDAD", fallback="Todas"
     )
     tipos = obtener_tipos_actividad()
     tipo = _catalog_label(tipos, filtros.get("tipo_id"), "ID", "DESCRIPCION")
@@ -248,16 +260,18 @@ def _build_registros_export_context(filtros, filtros_meta, base):
     return {
         "proyecto": proyecto_nombre,
         "desarrollador": desarrollador,
+        "actividad": actividad,
         "tipo": tipo,
         "fecha_ini": fecha_ini,
         "fecha_fin": fecha_fin,
         "origen_rango": origen_rango,
         "scope_label": (
             f"Proyecto: {proyecto_nombre} · Desarrollador: {desarrollador} · "
-            f"Tipo: {tipo} · Rango: {fecha_ini} a {fecha_fin} · {origen_rango}"
+            f"Actividad: {actividad} · Tipo: {tipo} · "
+            f"Rango: {fecha_ini} a {fecha_fin} · {origen_rango}"
         ),
         "scope_label_short": (
-            f"Desarrollador: {desarrollador} · Tipo: {tipo} · "
+            f"Desarrollador: {desarrollador} · Actividad: {actividad} · Tipo: {tipo} · "
             f"Rango: {fecha_ini} a {fecha_fin}"
         ),
     }
@@ -401,9 +415,12 @@ def api_daily_hours():
 def api_actividades_proyecto():
     proyecto_id = request.args.get("proyecto")
     usuario_id = request.args.get("usuario")
+    actividad_actual_id = request.args.get("actividad_actual") or None
     if not proyecto_id:
         return jsonify([])
-    acts = obtener_actividades_por_proyecto(proyecto_id, usuario_id)
+    acts = obtener_actividades_por_proyecto(
+        proyecto_id, usuario_id, incluir_actividad_id=actividad_actual_id
+    )
     return jsonify(
         [
             {
@@ -890,12 +907,14 @@ def api_evidencia(evidencia_id):
 def vista_registros():
     base = _catalogo_base()
     filtros, filtros_meta = _registros_filters_from_request(request.args)
+    actividades_registro = _registros_activity_options(filtros)
     registros = obtener_registros(filtros)
     return render_template(
         "registros.html",
         registros=registros,
         users=base["users"],
         projects=base["projects"],
+        actividades=actividades_registro,
         tipos_actividad=obtener_tipos_actividad(),
         filtros=filtros,
         filtros_meta=filtros_meta,
@@ -984,6 +1003,7 @@ def exportar_reporte_excel(proyecto_id):
 
     base = _catalogo_base()
     filtros, filtros_meta = _registros_filters_from_request(request.args, proyecto_id=proyecto_id)
+    actividades_catalogo = _registros_activity_options(filtros)
     proyecto = next((p for p in base["projects"] if str(p["ID"]) == str(filtros["proyecto_id"])), None)
     if not proyecto:
         return jsonify({"error": "Proyecto no encontrado"}), 404
@@ -992,7 +1012,9 @@ def exportar_reporte_excel(proyecto_id):
     )
     nombre = proyecto["NOMBRE_PROYECTO"]
     upload_base = os.path.join(app.root_path, "static", "uploads", "evidencias")
-    export_context = _build_registros_export_context(filtros, filtros_meta, base)
+    export_context = _build_registros_export_context(
+        filtros, filtros_meta, base, actividades_catalogo
+    )
     xlsx_bytes = generar_reporte(
         nombre,
         actividades,
