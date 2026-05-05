@@ -1441,6 +1441,14 @@
                             </div>
                         </div>
                         <div class="field-group">
+                            <label class="field-label">Tipo *</label>
+                            <select id="sel-edit-tipo" name="tipo" required>
+                                <option value="">Selecciona...</option>
+                                <option value="DESARROLLO" {% if actividad.TIPO == 'DESARROLLO' %}selected{% endif %}>DESARROLLO</option>
+                                <option value="TAREA" {% if actividad.TIPO == 'TAREA' %}selected{% endif %}>TAREA</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
                             <label class="field-label">Proyecto *</label>
                             <select id="sel-edit-proyecto" name="id_proyecto" required>
                                 {% for p in projects %}
@@ -1607,6 +1615,7 @@
 
         new TomSelect('#sel-edit-proyecto', tsCfg);
         new TomSelect('#sel-edit-estatus', tsCfg);
+        new TomSelect('#sel-edit-tipo', tsCfg);
         new TomSelect('#sel-edit-resp', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona responsables...' });
         new TomSelect('#sel-edit-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
         new TomSelect('#sel-edit-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
@@ -1622,8 +1631,17 @@
         // ── Editar actividad ──────────────────────────────────────
         document.getElementById('form-editar').addEventListener('submit', async function (e) {
             e.preventDefault();
-            Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             const fd = new FormData(this);
+            const tipo = String(fd.get('tipo') || '').trim();
+            if (!tipo) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Tipo requerido',
+                    text: 'Selecciona el tipo de actividad (DESARROLLO o TAREA).',
+                });
+                return;
+            }
+            Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
                 const r = await fetch(`/actividades/${ACT_ID}/editar`, { method: 'POST', body: fd });
                 const res = await r.json();

@@ -42,7 +42,7 @@ WARN_SIDE = Side(style="thin", color=C_WARN_BORDER)
 BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
 WARN_BORDER_STYLE = Border(left=WARN_SIDE, right=WARN_SIDE, top=WARN_SIDE, bottom=WARN_SIDE)
 C_ALN = Alignment(horizontal="center", vertical="center", wrap_text=True)
-L_ALN = C_ALN
+L_ALN = Alignment(horizontal="left", vertical="center", wrap_text=True)
 R_ALN = C_ALN
 
 
@@ -130,6 +130,14 @@ def _build_summary(actividades, evidencias_por_actividad):
         if prioridad != "—":
             prioridad_counter[prioridad] += 1
 
+    tipo_counter = Counter()
+    tipo_horas = Counter()
+    for item in actividades:
+        tipo = _safe(item.get("TIPO"))
+        horas_item = float(item.get("HORAS_TOTALES") or 0)
+        tipo_counter[tipo] += 1
+        tipo_horas[tipo] += horas_item
+
     return {
         "total_actividades": total_actividades,
         "total_horas": total_horas,
@@ -139,6 +147,8 @@ def _build_summary(actividades, evidencias_por_actividad):
         "estatus_counter": estatus_counter,
         "estatus_horas": estatus_horas,
         "prioridad_counter": prioridad_counter,
+        "tipo_counter": tipo_counter,
+        "tipo_horas": tipo_horas,
     }
 
 
@@ -158,6 +168,7 @@ def _render_resumen(ws, proyecto_nombre, generado_en, actividades, evidencias_po
     ws.title = "Resumen"
     ws.sheet_view.showGridLines = False
     ws.sheet_view.zoomScale = 90
+    ws.sheet_properties.tabColor = "1E293B"
     ws.freeze_panes = "A5"
     ws.column_dimensions["A"].width = 28
     ws.column_dimensions["B"].width = 24
@@ -187,7 +198,7 @@ def _render_resumen(ws, proyecto_nombre, generado_en, actividades, evidencias_po
     subtitle.border = BORDER
     ws.row_dimensions[2].height = 34
 
-    ws.merge_cells("A4:C4")
+    ws.merge_cells("A4:F4")
     section = ws["A4"]
     section.value = "Contexto de exportación"
     section.font = _font(bold=True, color=C_WHITE, size=10)
@@ -271,7 +282,7 @@ def _render_resumen(ws, proyecto_nombre, generado_en, actividades, evidencias_po
         ws.cell(row=row, column=6).number_format = "#,##0.0"
 
     prioridad_section_row = max(status_start_row + max(len(summary["estatus_counter"]), 1) + 2, 18)
-    ws.merge_cells(start_row=prioridad_section_row, start_column=1, end_row=prioridad_section_row, end_column=3)
+    ws.merge_cells(start_row=prioridad_section_row, start_column=1, end_row=prioridad_section_row, end_column=2)
     prioridad_header = ws.cell(row=prioridad_section_row, column=1, value="Distribución por prioridad")
     prioridad_header.font = _font(bold=True, color=C_WHITE, size=10)
     prioridad_header.fill = _fill(C_BLUE)
@@ -318,16 +329,54 @@ def _render_resumen(ws, proyecto_nombre, generado_en, actividades, evidencias_po
     alert_note.border = WARN_BORDER_STYLE if summary["actividades_rapidas_historicas"] > 0 else BORDER
     alert_note.alignment = L_ALN
 
+    tipo_section_row = alert_row + 4
+    ws.merge_cells(start_row=tipo_section_row, start_column=1, end_row=tipo_section_row, end_column=3)
+    tipo_hdr = ws.cell(row=tipo_section_row, column=1, value="Distribución por tipo")
+    tipo_hdr.font = _font(bold=True, color=C_WHITE, size=10)
+    tipo_hdr.fill = _fill(C_BLUE)
+    tipo_hdr.alignment = L_ALN
+    tipo_hdr.border = BORDER
+
+    for col_i, label in enumerate(("Tipo", "Actividades", "Horas"), start=1):
+        cell = ws.cell(row=tipo_section_row + 1, column=col_i, value=label)
+        cell.font = _font(bold=True, color=C_WHITE)
+        cell.fill = _fill(C_MID)
+        cell.alignment = C_ALN
+        cell.border = BORDER
+
+    for offset, tipo_key in enumerate(("DESARROLLO", "TAREA"), start=0):
+        row = tipo_section_row + 2 + offset
+        tipo_bg = "DBEAFE" if tipo_key == "DESARROLLO" else "FEF3C7"
+        tipo_color = "1D4ED8" if tipo_key == "DESARROLLO" else "D97706"
+        c1 = ws.cell(row=row, column=1, value=tipo_key)
+        c2 = ws.cell(row=row, column=2, value=summary["tipo_counter"].get(tipo_key, 0))
+        c3 = ws.cell(row=row, column=3, value=round(summary["tipo_horas"].get(tipo_key, 0), 2))
+        for cell in (c1, c2, c3):
+            cell.border = BORDER
+            cell.fill = _fill(tipo_bg)
+        c1.font = _font(bold=True, color=tipo_color)
+        c1.alignment = L_ALN
+        c2.font = _font(bold=True, color=C_BLUE)
+        c2.alignment = C_ALN
+        c3.font = _font(bold=True, color=C_BLUE)
+        c3.alignment = C_ALN
+        c3.number_format = "#,##0.0"
+
 
 def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencias_por_actividad, export_context=None):
     ws.title = "Actividades"
     ws.sheet_view.showGridLines = False
     ws.sheet_view.zoomScale = 90
+    ws.sheet_properties.tabColor = "2563EB"
     ws.freeze_panes = "A4"
-    ws.auto_filter.ref = "A3:N3"
+    ws.auto_filter.ref = "A3:Q3"
     ws.page_setup.orientation = "landscape"
+    ws.page_setup.fitToPage = True
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.print_title_rows = "1:3"
 
-    ws.merge_cells("A1:N1")
+    ws.merge_cells("A1:Q1")
     ws["A1"] = proyecto_nombre
     ws["A1"].font = _font(bold=True, color=C_WHITE, size=16)
     ws["A1"].fill = _fill(C_DARK)
@@ -335,7 +384,7 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
     ws["A1"].border = BORDER
     ws.row_dimensions[1].height = 36
 
-    ws.merge_cells("A2:N2")
+    ws.merge_cells("A2:Q2")
     ws["A2"] = (
         f"Generado el {generado_en} · {_export_scope_short(export_context)} · "
         "La columna de evidencia resume tipos registrados, no archivos incrustados."
@@ -354,14 +403,21 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
         ("Fecha inicio", 13),
         ("Fecha fin", 13),
         ("Prioridad", 11),
+        ("Tipo", 14),
         ("Horas totales", 13),
         ("Responsable/s", 26),
         ("Solicitante", 18),
-        ("Descripción", 40),
+        ("Descripción", 34),
+        ("Desglose", 44),
         ("Evidencia adjunta", 28),
         ("Actividades ligadas", 28),
         ("Observaciones", 34),
+        ("% del total", 12),
     ]
+    desglose_col_index = 13
+    desglose_col_letter = get_column_letter(desglose_col_index)
+    max_desglose_line_len = len("Desglose")
+    total_horas_reporte = sum(float(a.get("HORAS_TOTALES") or 0) for a in actividades)
 
     ws.row_dimensions[3].height = 32
     for column_index, (header, width) in enumerate(headers, start=1):
@@ -381,6 +437,9 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
         row_bg = C_LBLUE if row_index % 2 == 0 else C_GRAY
         evidencia_texto = _tipos_evidencia_texto(evidencias_por_actividad.get(actividad_id, []))
         observaciones = actividad.get("NOTAS_REPORTE") or "—"
+        tipo_actividad = _safe(actividad.get("TIPO"))
+        desglose = _safe(actividad.get("DESGLOSE_REPORTE"))
+        pct_del_total = horas / total_horas_reporte if total_horas_reporte > 0 else 0.0
 
         row_data = [
             _safe(actividad.get("NOMBRE_ACTIVIDAD")),
@@ -390,16 +449,24 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
             _fecha(actividad.get("FECHA_INICIO")),
             _fecha(actividad.get("FECHA_FIN_REAL")),
             prioridad_texto,
+            tipo_actividad,
             horas,
             _safe(actividad.get("RESPONSABLES")),
             _safe(actividad.get("SOLICITANTE")),
             _safe(actividad.get("DESCRIPCION")),
+            desglose,
             evidencia_texto,
             _linked_text(actividad),
             observaciones,
+            pct_del_total,
         ]
 
-        ws.row_dimensions[row_index].height = std_row_height
+        desglose_lineas = str(desglose).splitlines() if desglose else ["—"]
+        max_desglose_line_len = max(
+            max_desglose_line_len,
+            max((len(linea) for linea in desglose_lineas), default=0),
+        )
+        ws.row_dimensions[row_index].height = max(std_row_height, 16 * max(len(desglose_lineas), 1))
         for column_index, value in enumerate(row_data, start=1):
             cell = ws.cell(row=row_index, column=column_index, value=value)
             cell.border = BORDER
@@ -416,14 +483,27 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
                 cell.font = _font(bold=True, color=color)
             elif column_index == 8:
                 cell.alignment = C_ALN
+                if tipo_actividad == "DESARROLLO":
+                    cell.fill = _fill("DBEAFE")
+                    cell.font = _font(bold=True, color="1D4ED8")
+                elif tipo_actividad == "TAREA":
+                    cell.fill = _fill("FEF3C7")
+                    cell.font = _font(bold=True, color="D97706")
+            elif column_index == 9:
+                cell.alignment = C_ALN
                 cell.number_format = "#,##0.0"
             elif column_index == 3:
                 cell.alignment = C_ALN
                 cell.fill = _fill(ESTATUS_BG.get(estatus_texto.lower(), C_WHITE))
+            elif column_index == desglose_col_index:
+                cell.alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
+            elif column_index == 17:
+                cell.alignment = C_ALN
+                cell.number_format = "0.0%"
             else:
                 cell.alignment = L_ALN
 
-        linked_cell = ws.cell(row=row_index, column=13)
+        linked_cell = ws.cell(row=row_index, column=15)
         if actividad.get("ID_ACTIVIDAD_PADRE") and int(actividad.get("NUM_HIJAS") or 0) > 0:
             linked_cell.fill = _fill("E9D5FF")
         elif actividad.get("ID_ACTIVIDAD_PADRE"):
@@ -432,19 +512,26 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
             linked_cell.fill = _fill(C_LINKED)
             linked_cell.font = _font(bold=True, color=C_BLUE)
 
+        if horas > 40:
+            horas_cell = ws.cell(row=row_index, column=9)
+            horas_cell.fill = _fill("FEE2E2")
+            horas_cell.font = _font(bold=True, color="DC2626")
+
         if int(actividad.get("ES_ACTIVIDAD_RAPIDA_HISTORICA") or 0) == 1:
-            observation_cell = ws.cell(row=row_index, column=14)
+            observation_cell = ws.cell(row=row_index, column=16)
             observation_cell.fill = _fill(C_WARN)
             observation_cell.border = WARN_BORDER_STYLE
             observation_cell.font = _font(color="9A3412", bold=True)
             ws.cell(row=row_index, column=1).font = _font(bold=True, color="9A3412")
 
     data_end_row = max(len(actividades) + 3, 3)
-    ws.auto_filter.ref = f"A3:N{data_end_row}"
+    ws.auto_filter.ref = f"A3:Q{data_end_row}"
+    ws.column_dimensions[desglose_col_letter].width = max(34, min(70, max_desglose_line_len + 6))
+    ws.print_area = f"A1:Q{data_end_row + 2}"
 
     total_row = len(actividades) + 4
     ws.row_dimensions[total_row].height = 20
-    ws.merge_cells(f"A{total_row}:G{total_row}")
+    ws.merge_cells(f"A{total_row}:H{total_row}")
 
     total_caption = ws.cell(row=total_row, column=1, value="TOTAL HORAS")
     total_caption.font = _font(bold=True, color=C_WHITE)
@@ -452,31 +539,125 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
     total_caption.alignment = R_ALN
     total_caption.border = BORDER
 
-    total_formula = f"=SUM(H4:H{total_row - 1})" if actividades else 0
-    total_hours_cell = ws.cell(row=total_row, column=8, value=total_formula)
+    total_formula = f"=SUM(I4:I{total_row - 1})" if actividades else 0
+    total_hours_cell = ws.cell(row=total_row, column=9, value=total_formula)
     total_hours_cell.font = _font(bold=True, color=C_WHITE)
     total_hours_cell.fill = _fill(C_BLUE)
     total_hours_cell.alignment = C_ALN
     total_hours_cell.number_format = "#,##0.0"
     total_hours_cell.border = BORDER
 
-    for column_index in range(9, 15):
+    total_pct_cell = ws.cell(row=total_row, column=17, value=1.0 if actividades else 0.0)
+    total_pct_cell.font = _font(bold=True, color=C_WHITE)
+    total_pct_cell.fill = _fill(C_BLUE)
+    total_pct_cell.alignment = C_ALN
+    total_pct_cell.number_format = "0.0%"
+    total_pct_cell.border = BORDER
+
+    for column_index in range(10, 17):
         cell = ws.cell(row=total_row, column=column_index)
         cell.fill = _fill(C_MID)
         cell.border = BORDER
 
     note_row = total_row + 2
-    ws.merge_cells(f"A{note_row}:N{note_row}")
+    ws.merge_cells(f"A{note_row}:Q{note_row}")
     note = ws.cell(
         row=note_row,
         column=1,
         value=(
-            "ℹ️ La columna de evidencia adjunta resume tipos de evidencia registrados. "
+            "ℹ️ La columna DESGLOSE incluye los registros por actividad (desarrollador, acción/detalle y descripción). "
+            "La columna de evidencia adjunta resume tipos de evidencia registrados. "
             "Las actividades rápidas históricas con datos parciales se marcan en Observaciones."
         ),
     )
     note.font = _font(size=8, color="94A3B8", italic=True)
     note.alignment = C_ALN
+
+
+def _parse_desarrolladores(actividades):
+    """Extrae stats de desarrolladores desde DESGLOSE_REPORTE."""
+    devs = {}
+    for actividad in actividades:
+        act_id = actividad.get("ID") or actividad.get("NOMBRE_ACTIVIDAD")
+        desglose = actividad.get("DESGLOSE_REPORTE") or ""
+        current_dev = None
+        dev_names_in_act = []
+        for line in str(desglose).splitlines():
+            if line and not line.startswith(" ") and line.rstrip().endswith(":"):
+                dev_name = line.rstrip().rstrip(":")
+                if dev_name not in devs:
+                    devs[dev_name] = {"actividades": set(), "registros": 0}
+                current_dev = dev_name
+                if dev_name not in dev_names_in_act:
+                    dev_names_in_act.append(dev_name)
+                    devs[dev_name]["actividades"].add(act_id)
+            elif line.strip().startswith("•") and current_dev:
+                devs[current_dev]["registros"] += 1
+    return {
+        k: {"actividades": len(v["actividades"]), "registros": v["registros"]}
+        for k, v in sorted(devs.items())
+    }
+
+
+def _render_desarrolladores(ws, actividades):
+    """Hoja 3: tabla resumen por desarrollador extraída del DESGLOSE_REPORTE."""
+    ws.title = "Por Desarrollador"
+    ws.sheet_properties.tabColor = "16A34A"
+    ws.sheet_view.showGridLines = False
+    ws.sheet_view.zoomScale = 90
+    ws.freeze_panes = "A4"
+    ws.column_dimensions["A"].width = 34
+    ws.column_dimensions["B"].width = 16
+    ws.column_dimensions["C"].width = 16
+
+    ws.merge_cells("A1:C1")
+    title = ws["A1"]
+    title.value = "Resumen por desarrollador"
+    title.font = _font(bold=True, color=C_WHITE, size=14)
+    title.fill = _fill("16A34A")
+    title.alignment = C_ALN
+    title.border = BORDER
+    ws.row_dimensions[1].height = 28
+
+    ws.merge_cells("A2:C2")
+    subtitle = ws["A2"]
+    subtitle.value = "Extraído del desglose por actividad. Los registros son entradas de trabajo individuales."
+    subtitle.font = _font(size=8, color="94A3B8", italic=True)
+    subtitle.alignment = C_ALN
+    subtitle.fill = _fill(C_GRAY)
+    subtitle.border = BORDER
+    ws.row_dimensions[2].height = 16
+
+    for col_i, label in enumerate(("Desarrollador", "Actividades", "Registros"), start=1):
+        cell = ws.cell(row=3, column=col_i, value=label)
+        cell.font = _font(bold=True, color=C_WHITE)
+        cell.fill = _fill("16A34A")
+        cell.alignment = C_ALN
+        cell.border = BORDER
+    ws.row_dimensions[3].height = 24
+
+    devs = _parse_desarrolladores(actividades)
+    if not devs:
+        empty = ws.cell(row=4, column=1, value="Sin datos de desglose disponibles.")
+        empty.font = _font(italic=True, color="94A3B8")
+        empty.alignment = L_ALN
+        return
+
+    for row_i, (dev, stats) in enumerate(devs.items(), start=4):
+        row_bg = C_GRAY if row_i % 2 == 0 else C_WHITE
+        c1 = ws.cell(row=row_i, column=1, value=dev)
+        c2 = ws.cell(row=row_i, column=2, value=stats["actividades"])
+        c3 = ws.cell(row=row_i, column=3, value=stats["registros"])
+        for cell in (c1, c2, c3):
+            cell.fill = _fill(row_bg)
+            cell.border = BORDER
+        c1.font = _font(bold=True, color=C_DARK)
+        c1.alignment = L_ALN
+        c2.font = _font(bold=True, color=C_BLUE)
+        c2.alignment = C_ALN
+        c3.font = _font(color=C_DARK)
+        c3.alignment = C_ALN
+        ws.row_dimensions[row_i].height = 18
 
 
 def generar_reporte(
@@ -519,6 +700,9 @@ def generar_reporte(
         evidencias_por_actividad,
         export_context=export_context,
     )
+
+    ws_desarrolladores = wb.create_sheet("Por Desarrollador")
+    _render_desarrolladores(ws_desarrolladores, actividades)
 
     wb.active = 0
 

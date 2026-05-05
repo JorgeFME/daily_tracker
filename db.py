@@ -370,6 +370,9 @@ def _crear_actividad_rapida_desde_registro(cur, datos):
     if not proyecto_id or not usuario_id or not fecha_base or not nombre_actividad:
         raise ValueError("No se pudo preparar la Actividad Rápida con la información capturada.")
 
+    # Regla de negocio: toda Actividad Rapida se crea como tipo TAREA.
+    datos["tipo"] = "TAREA"
+
     estatus_completado_id = _obtener_estatus_id(cur, "COMPLETADO")
     if not estatus_completado_id:
         raise ValueError('No se encontró el estatus activo "Completado" para la Actividad Rápida.')
@@ -379,8 +382,8 @@ def _crear_actividad_rapida_desde_registro(cur, datos):
             INSERT INTO "ACTIVIDADES"
                 ("ID","ID_PROYECTO","NOMBRE_ACTIVIDAD","DESCRIPCION",
                  "FECHA_SOLICITUD","SOLICITANTE","FECHA_INICIO","FECHA_FIN_REAL",
-                 "ID_ESTATUS","PRIORIDAD","CREADO_EN","CREADO_POR")
-            VALUES (SYSUUID,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)
+                 "ID_ESTATUS","PRIORIDAD","TIPO","CREADO_EN","CREADO_POR")
+            VALUES (SYSUUID,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)
         """,
         (
             proyecto_id,
@@ -392,6 +395,7 @@ def _crear_actividad_rapida_desde_registro(cur, datos):
             fecha_base,
             estatus_completado_id,
             prioridad,
+            "TAREA",
             creado_por,
         ),
     )
@@ -704,6 +708,7 @@ def obtener_registros_recientes_filtrados(user_id=None, period='month', fecha_re
 def _filtros_actividades_sql(
     proyecto_id=None,
     estatus_id=None,
+    tipo=None,
     usuario_id=None,
     solicitante=None,
     fecha_desde=None,
@@ -719,6 +724,9 @@ def _filtros_actividades_sql(
     if estatus_id:
         filtros.append('A."ID_ESTATUS"=?')
         params.append(estatus_id)
+    if tipo:
+        filtros.append('UPPER(COALESCE(A."TIPO", \'\')) = ?')
+        params.append(str(tipo).strip().upper())
     if usuario_id:
         filtros.append('EXISTS (SELECT 1 FROM "ACTIVIDAD_RESPONSABLES" AR WHERE AR."ID_ACTIVIDAD"=A."ID" AND AR."ID_USUARIO"=?)')
         params.append(usuario_id)
@@ -745,6 +753,7 @@ def _filtros_actividades_sql(
 def obtener_actividades(
     proyecto_id=None,
     estatus_id=None,
+    tipo=None,
     usuario_id=None,
     solicitante=None,
     fecha_desde=None,
@@ -758,6 +767,7 @@ def obtener_actividades(
     where, params = _filtros_actividades_sql(
         proyecto_id=proyecto_id,
         estatus_id=estatus_id,
+        tipo=tipo,
         usuario_id=usuario_id,
         solicitante=solicitante,
         fecha_desde=fecha_desde,
@@ -808,6 +818,7 @@ def obtener_actividades(
 def contar_actividades(
     proyecto_id=None,
     estatus_id=None,
+    tipo=None,
     usuario_id=None,
     solicitante=None,
     fecha_desde=None,
@@ -818,6 +829,7 @@ def contar_actividades(
     where, params = _filtros_actividades_sql(
         proyecto_id=proyecto_id,
         estatus_id=estatus_id,
+        tipo=tipo,
         usuario_id=usuario_id,
         solicitante=solicitante,
         fecha_desde=fecha_desde,
@@ -928,7 +940,7 @@ def obtener_actividad_por_id(actividad_id):
     sql = """SELECT A."ID", A."NOMBRE_ACTIVIDAD", A."DESCRIPCION",
                     A."FECHA_SOLICITUD", A."SOLICITANTE",
                     A."FECHA_INICIO", A."FECHA_FIN_REAL",
-                    A."PRIORIDAD",
+                    A."PRIORIDAD", A."TIPO",
                     A."ID_PROYECTO", A."ID_ESTATUS",
                     A."ID_ACTIVIDAD_PADRE",
                     A."CREADO_EN", A."ACTUALIZADO_EN",
@@ -984,15 +996,16 @@ def crear_actividad(datos):
     sql = """INSERT INTO "ACTIVIDADES"
                  ("ID","ID_PROYECTO","NOMBRE_ACTIVIDAD","DESCRIPCION",
                   "FECHA_SOLICITUD","SOLICITANTE","FECHA_INICIO",
-                  "ID_ESTATUS","PRIORIDAD","ID_ACTIVIDAD_PADRE",
+                  "ID_ESTATUS","PRIORIDAD","TIPO","ID_ACTIVIDAD_PADRE",
                   "CREADO_EN","CREADO_POR")
-             VALUES (SYSUUID,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)"""
+             VALUES (SYSUUID,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)"""
     return ejecutar_dml(sql, (
         datos.get('id_proyecto'), datos.get('nombre_actividad'),
         datos.get('descripcion') or None,
         datos.get('fecha_solicitud') or None, datos.get('solicitante') or None,
         datos.get('fecha_inicio') or None,
         datos.get('id_estatus'), int(datos.get('prioridad', 2)),
+        datos.get('tipo'),
         datos.get('id_actividad_padre') or None,
         datos.get('creado_por', 'SISTEMA'),
     ))
@@ -1004,7 +1017,7 @@ def actualizar_actividad(actividad_id, datos):
                  "NOMBRE_ACTIVIDAD"=?, "DESCRIPCION"=?,
                  "FECHA_SOLICITUD"=?, "SOLICITANTE"=?,
                  "FECHA_INICIO"=?, "FECHA_FIN_REAL"=?,
-                 "ID_ESTATUS"=?, "PRIORIDAD"=?,
+                 "ID_ESTATUS"=?, "PRIORIDAD"=?, "TIPO"=?,
                  "ID_ACTIVIDAD_PADRE"=?,
                  "ACTUALIZADO_EN"=CURRENT_TIMESTAMP, "ACTUALIZADO_POR"=?
              WHERE "ID"=?"""
@@ -1014,6 +1027,7 @@ def actualizar_actividad(actividad_id, datos):
         datos.get('fecha_solicitud') or None, datos.get('solicitante') or None,
         datos.get('fecha_inicio') or None, datos.get('fecha_fin_real') or None,
         datos.get('id_estatus'), int(datos.get('prioridad', 2)),
+        datos.get('tipo'),
         datos.get('id_actividad_padre') or None,
         datos.get('actualizado_por', 'SISTEMA'), actividad_id,
     ))
@@ -1642,6 +1656,7 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
             A."ID",
             A."NOMBRE_ACTIVIDAD",
             A."DESCRIPCION",
+            A."TIPO",
             A."FECHA_SOLICITUD",
             A."FECHA_INICIO",
             A."FECHA_FIN_REAL",
@@ -1704,9 +1719,38 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
             cur.execute(sql_acts, params_acts)
             cols_a = [c[0] for c in cur.description]
             actividades = [dict(zip(cols_a, row)) for row in cur.fetchall()]
-            for actividad in actividades:
-                actividad["ES_ACTIVIDAD_RAPIDA_HISTORICA"] = 0
-                actividad["NOTAS_REPORTE"] = ""
+
+            sql_registros_desglose = """
+                SELECT
+                    R."ID_ACTIVIDAD",
+                    R."FECHA",
+                    R."CREADO_EN",
+                    R."ACCION",
+                    R."DETALLES",
+                    U."NOMBRE_COMPLETO" AS "DESARROLLADOR"
+                FROM "REGISTRO_ACTIVIDADES" R
+                LEFT JOIN "USUARIOS" U ON R."ID_USUARIO" = U."ID"
+                WHERE """ + where_registros_sql + """
+                ORDER BY R."FECHA" ASC, R."CREADO_EN" ASC, R."ID" ASC
+            """
+            cur.execute(sql_registros_desglose, tuple(params_registros))
+            cols_r = [c[0] for c in cur.description]
+            desglose_por_actividad = {}
+            for row in cur.fetchall():
+                registro = dict(zip(cols_r, row))
+                actividad_id = registro.get("ID_ACTIVIDAD")
+                if not actividad_id:
+                    continue
+
+                desarrollador = (registro.get("DESARROLLADOR") or "").strip() or "Sin desarrollador"
+                fecha_registro = str(registro.get("FECHA") or "").strip()[:10] or "—"
+                accion = (registro.get("ACCION") or "").strip()
+                detalles = (registro.get("DETALLES") or "").strip()
+                accion_o_detalle = accion or detalles or "—"
+                descripcion_registro = detalles or "—"
+                linea = f"• {fecha_registro} - {accion_o_detalle}: {descripcion_registro}"
+                bloques_actividad = desglose_por_actividad.setdefault(actividad_id, {})
+                bloques_actividad.setdefault(desarrollador, []).append(linea)
 
             params_evs = tuple([proyecto_id] + params_registros)
             cur.execute(sql_evs, params_evs)
@@ -1752,6 +1796,7 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
                     "ID": None,
                     "NOMBRE_ACTIVIDAD": f"⚡ {tipo_val} - {accion_val}",
                     "DESCRIPCION": detalles_val,
+                    "TIPO": "TAREA",
                     "FECHA_SOLICITUD": fecha_str,
                     "FECHA_INICIO": fecha_str,
                     "FECHA_FIN_REAL": fecha_str,
@@ -1767,8 +1812,28 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
                     "NUM_HIJAS": 0,
                     "NOMBRES_HIJAS": "",
                     "ES_ACTIVIDAD_RAPIDA_HISTORICA": 1,
-                    "NOTAS_REPORTE": "Actividad rápida histórica registrada antes de capturar solicitante, prioridad y recursos en forma estructurada."
+                    "NOTAS_REPORTE": "Actividad rápida histórica registrada antes de capturar solicitante, prioridad y recursos en forma estructurada.",
+                    "DESGLOSE_REPORTE": f"{responsable_val}:\n  • {fecha_str or '—'} - {accion_val}: {detalles_val or '—'}"
                 })
+
+            for actividad in actividades:
+                if "ES_ACTIVIDAD_RAPIDA_HISTORICA" not in actividad:
+                    actividad["ES_ACTIVIDAD_RAPIDA_HISTORICA"] = 0
+                if "NOTAS_REPORTE" not in actividad:
+                    actividad["NOTAS_REPORTE"] = ""
+                if "DESGLOSE_REPORTE" not in actividad:
+                    actividad_id = actividad.get("ID")
+                    bloques = desglose_por_actividad.get(actividad_id, {})
+                    lineas_desglose = []
+                    for desarrollador, items in bloques.items():
+                        lineas_desglose.append(f"{desarrollador}:")
+                        for item in items:
+                            lineas_desglose.append(f"  {item}")
+                        lineas_desglose.append("")
+                    if lineas_desglose and lineas_desglose[-1] == "":
+                        lineas_desglose.pop()
+                    actividad["DESGLOSE_REPORTE"] = "\n".join(lineas_desglose) or "—"
+                actividad["TIPO"] = (actividad.get("TIPO") or "—").strip() or "—"
 
             def _parse_fecha_reporte(valor):
                 if not valor:

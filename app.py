@@ -345,6 +345,9 @@ def index():
             ok = guardar_registro_actividad(datos)
         except ValueError as e:
             return jsonify({"status": "error", "message": str(e)}), 400
+        except Exception:
+            app.logger.exception("Error inesperado al guardar registro de actividad")
+            return jsonify({"status": "error", "message": "Ocurrio un error interno al guardar el registro."}), 500
         if ok:
             if datos.get("actividad_id") and datos.get("actividad_rapida_creada") != "1":
                 recalcular_avance_actividad(datos.get("actividad_id"))
@@ -524,6 +527,7 @@ def dashboard_data():
 def actividades():
     proyecto_id  = request.args.get("proyecto")    or None
     estatus_id   = request.args.get("estatus")     or None
+    tipo         = (request.args.get("tipo") or "").strip().upper() or None
     usuario_id   = request.args.get("usuario")     or None
     solicitante  = (request.args.get("solicitante") or "").strip() or None
     fecha_desde  = request.args.get("fecha_desde") or None
@@ -549,7 +553,7 @@ def actividades():
     # Default UX: mostrar actividades del mes actual y conservar abiertas anteriores al final.
     sin_filtros = (
         scope == "all"
-        and not any([proyecto_id, estatus_id, usuario_id, solicitante, fecha_desde, fecha_hasta, q])
+        and not any([proyecto_id, estatus_id, tipo, usuario_id, solicitante, fecha_desde, fecha_hasta, q])
     )
     solo_activas = False
     default_scope = None
@@ -561,7 +565,7 @@ def actividades():
         estatus_id = _estatus_id_por_desc("CANCELADO")
 
     has_filters = bool(
-        proyecto_id or estatus_id or usuario_id or solicitante or fecha_desde or fecha_hasta or q
+        proyecto_id or estatus_id or tipo or usuario_id or solicitante or fecha_desde or fecha_hasta or q
         or (scope and scope != "all")
     )
     scope_label = "Todas las actividades"
@@ -596,6 +600,7 @@ def actividades():
         total_actividades = contar_actividades(
             proyecto_id=proyecto_id,
             estatus_id=estatus_id,
+            tipo=tipo,
             usuario_id=usuario_id,
             solicitante=solicitante,
             fecha_desde=fecha_desde,
@@ -609,6 +614,7 @@ def actividades():
         actividades_data = obtener_actividades(
             proyecto_id=proyecto_id,
             estatus_id=estatus_id,
+            tipo=tipo,
             usuario_id=usuario_id,
             solicitante=solicitante,
             fecha_desde=fecha_desde,
@@ -629,6 +635,7 @@ def actividades():
         "solicitantes": base["solicitantes"],
         "filtro_proyecto": proyecto_id,
         "filtro_estatus": estatus_id,
+        "filtro_tipo": tipo,
         "filtro_usuario": usuario_id,
         "filtro_solicitante": solicitante,
         "filtro_fecha_desde": fecha_desde,
@@ -661,6 +668,7 @@ def nueva_actividad():
     datos["nombre_actividad"] = (datos.get("nombre_actividad") or "").strip()
     datos["descripcion"] = (datos.get("descripcion") or "").strip() or None
     datos["solicitante"] = (datos.get("solicitante") or "").strip() or None
+    datos["tipo"] = (datos.get("tipo") or "").strip().upper()
 
     missing_fields = []
     if not datos.get("id_proyecto"):
@@ -671,11 +679,23 @@ def nueva_actividad():
         missing_fields.append("fecha de solicitud")
     if not datos.get("nombre_actividad"):
         missing_fields.append("nombre de la actividad")
+    if not datos.get("tipo"):
+        missing_fields.append("tipo")
     if missing_fields:
         return (
             jsonify({
                 "status": "error",
                 "message": f"Faltan campos requeridos: {', '.join(missing_fields)}.",
+            }),
+            400,
+        )
+
+    allowed_tipos = {"DESARROLLO", "TAREA"}
+    if datos["tipo"] not in allowed_tipos:
+        return (
+            jsonify({
+                "status": "error",
+                "message": "El tipo de actividad es inválido. Solo se permite DESARROLLO o TAREA.",
             }),
             400,
         )
@@ -773,6 +793,7 @@ def api_actividad_detalle(actividad_id):
         "actividad": {
             "id": actividad["ID"],
             "id_proyecto": actividad["ID_PROYECTO"],
+            "tipo": (actividad.get("TIPO") or ""),
             "nombre_actividad": actividad["NOMBRE_ACTIVIDAD"] or "",
             "descripcion": actividad.get("DESCRIPCION") or "",
             "solicitante": actividad.get("SOLICITANTE") or "",
@@ -792,6 +813,18 @@ def api_actividad_detalle(actividad_id):
 def editar_actividad(actividad_id):
     datos = request.form.to_dict()
     datos["solicitante"] = (datos.get("solicitante") or "").strip() or None
+    datos["tipo"] = (datos.get("tipo") or "").strip().upper()
+
+    if not datos.get("tipo"):
+        return jsonify({"status": "error", "message": "El tipo es obligatorio."}), 400
+    if datos["tipo"] not in {"DESARROLLO", "TAREA"}:
+        return (
+            jsonify({
+                "status": "error",
+                "message": "El tipo de actividad es inválido. Solo se permite DESARROLLO o TAREA.",
+            }),
+            400,
+        )
 
     # Si cambió el proyecto, reasignar los registros de horas al nuevo proyecto
     actividad_actual = obtener_actividad_por_id(actividad_id)
@@ -1026,7 +1059,11 @@ def exportar_reporte_excel(proyecto_id):
         io.BytesIO(xlsx_bytes),
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True,
-        download_name=f'Reporte_{nombre.replace(" ","_")}.xlsx',
+        download_name=(
+            f'Reporte_{nombre.replace(" ","_")}'
+            f'_{export_context.get("fecha_ini","").replace("/","-")}'
+            f'_al_{export_context.get("fecha_fin","").replace("/","-")}.xlsx'
+        ),
     )
 
 

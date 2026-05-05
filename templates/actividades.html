@@ -1077,6 +1077,15 @@
                     </div>
 
                     <div class="filter-field">
+                        <label class="filter-field-label" for="filter-tipo">Tipo</label>
+                        <select id="filter-tipo" name="tipo">
+                            <option value="">Todos los tipos</option>
+                            <option value="DESARROLLO" {% if (filtro_tipo or '') == 'DESARROLLO' %}selected{% endif %}>DESARROLLO</option>
+                            <option value="TAREA" {% if (filtro_tipo or '') == 'TAREA' %}selected{% endif %}>TAREA</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
                         <label class="filter-field-label" for="filter-usuario">Responsable</label>
                         <select id="filter-usuario" name="usuario">
                             <option value="">Todos los responsables</option>
@@ -1149,6 +1158,14 @@
                                     {% endfor %}
                                 </select>
                             </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Tipo *</label>
+                            <select id="sel-tipo" name="tipo" required>
+                                <option value="">Selecciona...</option>
+                                <option value="DESARROLLO">DESARROLLO</option>
+                                <option value="TAREA">TAREA</option>
+                            </select>
                         </div>
                         <div class="field-group">
                             <label class="field-label">Nombre de la actividad *</label>
@@ -1257,6 +1274,14 @@
                                     {% endfor %}
                                 </select>
                             </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Tipo *</label>
+                            <select id="quick-edit-tipo" name="tipo" required>
+                                <option value="">Selecciona...</option>
+                                <option value="DESARROLLO">DESARROLLO</option>
+                                <option value="TAREA">TAREA</option>
+                            </select>
                         </div>
                         <div class="field-group">
                             <label class="field-label">Nombre de la actividad *</label>
@@ -1572,6 +1597,7 @@
                 submitFiltros(true);
             }
         });
+        new TomSelect('#filter-tipo', filterSubmitCfg);
         new TomSelect('#filter-usuario', filterSubmitCfg);
         new TomSelect('#filter-solicitante', filterSubmitCfg);
         syncStatusFilterState();
@@ -1607,6 +1633,7 @@
 
         new TomSelect('#sel-proyecto', tsCfg);
         new TomSelect('#sel-estatus', tsCfg);
+        new TomSelect('#sel-tipo', tsCfg);
         new TomSelect('#sel-responsable', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona responsables...' });
         new TomSelect('#sel-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
         new TomSelect('#sel-actividad-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
@@ -1624,6 +1651,7 @@
 
         const quickEditProyectoTs = new TomSelect('#quick-edit-proyecto', tsCfg);
         const quickEditEstatusTs = new TomSelect('#quick-edit-estatus', tsCfg);
+        const quickEditTipoTs = new TomSelect('#quick-edit-tipo', tsCfg);
         const quickEditResponsablesTs = new TomSelect('#quick-edit-responsables', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona responsables...' });
         const quickEditRecursosTs = new TomSelect('#quick-edit-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
         const quickEditPadreTs = new TomSelect('#quick-edit-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
@@ -1694,6 +1722,7 @@
                 quickEditSolicitante.value = actividad.solicitante || '';
                 quickEditProyectoTs.setValue(actividad.id_proyecto || '', true);
                 quickEditEstatusTs.setValue(actividad.id_estatus || '', true);
+                quickEditTipoTs.setValue(actividad.tipo || '', true);
                 quickEditResponsablesTs.setValue(Array.isArray(actividad.responsables) ? actividad.responsables : [], true);
                 quickEditRecursosTs.setValue(Array.isArray(actividad.recursos) ? actividad.recursos : [], true);
                 syncQuickEditPadreOptions(actividad.id);
@@ -1720,6 +1749,15 @@
             }
             Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             const fd = new FormData(this);
+            const tipo = String(fd.get('tipo') || '').trim();
+            if (!tipo) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Tipo requerido',
+                    text: 'Selecciona el tipo de actividad (DESARROLLO o TAREA).',
+                });
+                return;
+            }
             try {
                 const r = await fetch('/actividades/nueva', { method: 'POST', body: fd });
                 const res = await r.json();
@@ -1750,6 +1788,15 @@
 
             Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             const fd = new FormData(this);
+            const tipo = String(fd.get('tipo') || '').trim();
+            if (!tipo) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Tipo requerido',
+                    text: 'Selecciona el tipo de actividad (DESARROLLO o TAREA).',
+                });
+                return;
+            }
             fd.delete('actividad_id');
             try {
                 const r = await fetch(`/actividades/${actividadId}/editar`, { method: 'POST', body: fd });

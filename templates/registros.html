@@ -1130,11 +1130,11 @@
                         <td>
                             <div class="actions">
                                 <button class="btn-action edit" title="Editar"
-                                    onclick="abrirEditar('{{ r.ID }}','{{ r.FECHA }}','{{ r.HORAS }}','{{ r.ACCION | replace("'","\\'")|replace('"','&quot;') }}','{{ r.DETALLES or '' | replace("'","\\'") }}','{{ r.ID_USUARIO }}','{{ r.ID_PROYECTO }}','{{ r.ID_ACTIVIDAD or '' }}','{{ r.ID_TIPO_ACT or '' }}')">
+                                    onclick="abrirEditar({{ r.ID | tojson | forceescape }}, {{ r.FECHA | tojson | forceescape }}, {{ r.HORAS | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }}, {{ (r.DETALLES or '') | tojson | forceescape }}, {{ r.ID_USUARIO | tojson | forceescape }}, {{ r.ID_PROYECTO | tojson | forceescape }}, {{ (r.ID_ACTIVIDAD or '') | tojson | forceescape }}, {{ (r.ID_TIPO_ACT or '') | tojson | forceescape }})">
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <button class="btn-action del" title="Eliminar"
-                                    onclick="eliminarRegistro('{{ r.ID }}','{{ r.ACCION | replace("'","\\'") }}')">
+                                    onclick="eliminarRegistro({{ r.ID | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }})">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
