@@ -972,18 +972,9 @@
                 <div class="filters-panel">
                     <div class="filters-grid">
                         <div class="filter-item">
-                            <span class="filter-label">Desarrollador</span>
-                            <select name="user_id" id="f-user">
-                                <option value="">Todos</option>
-                                {% for u in users %}
-                                <option value="{{ u.ID }}" {% if filtros.user_id|string == u.ID|string %}selected{% endif %}>{{ u.NOMBRE_COMPLETO }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="filter-item">
                             <span class="filter-label">Proyecto</span>
                             <select name="proyecto_id" id="f-proyecto">
-                                <option value="">Todos</option>
+                                <option value="">Todos los proyectos</option>
                                 {% for p in projects %}
                                 <option value="{{ p.ID }}" {% if filtros.proyecto_id|string == p.ID|string %}selected{% endif %}>{{ p.NOMBRE_PROYECTO }}</option>
                                 {% endfor %}
@@ -991,13 +982,22 @@
                         </div>
                         <div class="filter-item">
                             <span class="filter-label">Actividad</span>
-                            <select name="actividad_id" id="f-actividad">
-                                <option value="">Todas</option>
+                            <select name="actividad_id" id="f-actividad" {% if not filtros.proyecto_id %}disabled{% endif %}>
+                                <option value="">{% if filtros.proyecto_id %}Todas las actividades{% else %}Selecciona un proyecto primero{% endif %}</option>
                                 {% for actividad in actividades %}
-                                <option value="{{ actividad.ID }}" data-project="{{ actividad.ID_PROYECTO }}"
+                                <option value="{{ actividad.ID }}"
                                     {% if filtros.actividad_id|string == actividad.ID|string %}selected{% endif %}>
-                                    {{ actividad.NOMBRE_ACTIVIDAD }}{% if not filtros.proyecto_id and actividad.NOMBRE_PROYECTO %} · {{ actividad.NOMBRE_PROYECTO }}{% endif %}
+                                    {{ actividad.NOMBRE_ACTIVIDAD }}
                                 </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <span class="filter-label">Desarrollador</span>
+                            <select name="user_id" id="f-user">
+                                <option value="">Todos</option>
+                                {% for u in users %}
+                                <option value="{{ u.ID }}" {% if filtros.user_id|string == u.ID|string %}selected{% endif %}>{{ u.NOMBRE_COMPLETO }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -1276,15 +1276,16 @@
         }
 
         // ── Tom Select filtros ─────────────────────────────────────────────────
-        const fUserTs = new TomSelect('#f-user', {
+        // fProyTs se declara primero porque fActividadTs depende de él al cambiar proyecto.
+        const fProyTs = new TomSelect('#f-proyecto', {
             create: false,
-            items: {{ [filtros.user_id] | tojson if filtros.user_id else '[]' }},
-            onChange: () => submitFiltros(),
+            items: {{ [filtros.proyecto_id] | tojson if filtros.proyecto_id else '[]' }},
             render: {
                 option: (d, e) => `<div class="option">${e(d.text)}</div>`,
                 item: (d, e) => `<div class="item">${e(d.text)}</div>`,
             }
         });
+
         const fActividadTs = new TomSelect('#f-actividad', {
             create: false,
             items: {{ [filtros.actividad_id] | tojson if filtros.actividad_id else '[]' }},
@@ -1294,24 +1295,26 @@
                 item: (d, e) => `<div class="item">${e(d.text)}</div>`,
             }
         });
+        {% if not filtros.proyecto_id %}
+        fActividadTs.disable();
+        {% endif %}
 
-        function actividadPerteneceAProyecto(actividadId, proyectoId) {
-            if (!actividadId || !proyectoId) return true;
-            const option = Array.from(document.querySelectorAll('#f-actividad option'))
-                .find(item => item.value === String(actividadId));
-            return (option?.dataset.project || '') === String(proyectoId);
-        }
+        // Al cambiar proyecto: resetear actividad y enviar el formulario.
+        // El backend devolverá solo las actividades del proyecto seleccionado.
+        fProyTs.on('change', (proyectoId) => {
+            fActividadTs.clear(true);
+            if (proyectoId) {
+                fActividadTs.enable();
+            } else {
+                fActividadTs.disable();
+            }
+            submitFiltros();
+        });
 
-        const fProyTs = new TomSelect('#f-proyecto', {
+        const fUserTs = new TomSelect('#f-user', {
             create: false,
-            items: {{ [filtros.proyecto_id] | tojson if filtros.proyecto_id else '[]' }},
-            onChange: (proyectoId) => {
-                const actividadId = fActividadTs.getValue();
-                if (actividadId && proyectoId && !actividadPerteneceAProyecto(actividadId, proyectoId)) {
-                    fActividadTs.clear(true);
-                }
-                submitFiltros();
-            },
+            items: {{ [filtros.user_id] | tojson if filtros.user_id else '[]' }},
+            onChange: () => submitFiltros(),
             render: {
                 option: (d, e) => `<div class="option">${e(d.text)}</div>`,
                 item: (d, e) => `<div class="item">${e(d.text)}</div>`,

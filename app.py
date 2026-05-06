@@ -534,7 +534,7 @@ def actividades():
     fecha_hasta  = request.args.get("fecha_hasta") or None
     scope        = request.args.get("scope") or "all"
     q            = (request.args.get("q") or "").strip() or None
-    sort_by      = request.args.get("sort") or "prioridad"
+    sort_by      = request.args.get("sort") or "recientes"
     try:
         page = max(int(request.args.get("page", 1)), 1)
     except (TypeError, ValueError):
@@ -550,13 +550,12 @@ def actividades():
                 return e.get("ID")
         return None
 
-    # Default UX: mostrar actividades del mes actual y conservar abiertas anteriores al final.
-    sin_filtros = (
+    solo_activas = False
+    default_scope = None
+    sin_filtros_explicitos = (
         scope == "all"
         and not any([proyecto_id, estatus_id, tipo, usuario_id, solicitante, fecha_desde, fecha_hasta, q])
     )
-    solo_activas = False
-    default_scope = None
     if scope == "active" and not estatus_id:
         solo_activas = True
     elif scope == "completed" and not estatus_id:
@@ -576,8 +575,7 @@ def actividades():
     elif scope == "canceled":
         scope_label = "Actividades canceladas"
 
-    actividades_data = None
-    if sin_filtros:
+    if sin_filtros_explicitos:
         today = _local_today()
         fecha_desde = today.replace(day=1).isoformat()
         fecha_hasta = today.isoformat()
@@ -940,7 +938,9 @@ def api_evidencia(evidencia_id):
 def vista_registros():
     base = _catalogo_base()
     filtros, filtros_meta = _registros_filters_from_request(request.args)
-    actividades_registro = _registros_activity_options(filtros)
+    # Solo carga actividades cuando hay un proyecto seleccionado; si no, lista vacía
+    # para evitar que el select de Actividad se popule con todas las actividades.
+    actividades_registro = _registros_activity_options(filtros) if filtros.get("proyecto_id") else []
     registros = obtener_registros(filtros)
     return render_template(
         "registros.html",
