@@ -550,11 +550,23 @@ def actividades():
                 return e.get("ID")
         return None
 
+    # Cuando hay texto de busqueda, forzamos una consulta global sin restricciones.
+    if q:
+        proyecto_id = None
+        estatus_id = None
+        tipo = None
+        usuario_id = None
+        solicitante = None
+        fecha_desde = None
+        fecha_hasta = None
+        scope = "all"
+
     solo_activas = False
     default_scope = None
     sin_filtros_explicitos = (
         scope == "all"
-        and not any([proyecto_id, estatus_id, tipo, usuario_id, solicitante, fecha_desde, fecha_hasta, q])
+        and not q
+        and not any([proyecto_id, estatus_id, tipo, usuario_id, solicitante, fecha_desde, fecha_hasta])
     )
     if scope == "active" and not estatus_id:
         solo_activas = True

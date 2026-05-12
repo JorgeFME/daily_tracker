@@ -1559,8 +1559,19 @@
             let searchDebounceTimer = null;
             let lastSubmittedSearch = (searchInput.value || '').trim();
 
+            const returnToInitialView = () => {
+                if (window.location.pathname === '/actividades' && window.location.search === '') {
+                    return;
+                }
+                window.location.assign('/actividades');
+            };
+
             const triggerSearchSubmit = ({ force = false } = {}) => {
                 const currentSearch = (searchInput.value || '').trim();
+                if (currentSearch.length === 0) {
+                    returnToInitialView();
+                    return;
+                }
                 if (!force) {
                     if (currentSearch.length === 1) return;
                     if (currentSearch === lastSubmittedSearch) return;
@@ -1572,6 +1583,10 @@
             searchInput.addEventListener('input', () => {
                 clearTimeout(searchDebounceTimer);
                 const nextSearch = (searchInput.value || '').trim();
+                if (nextSearch.length === 0) {
+                    returnToInitialView();
+                    return;
+                }
                 if (nextSearch.length === 1) return;
                 searchDebounceTimer = setTimeout(() => triggerSearchSubmit(), 300);
             });
