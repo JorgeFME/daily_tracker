@@ -68,6 +68,21 @@ from db import (
 load_env_from_dotenv()
 app = Flask(__name__)
 
+# ── Filtro Jinja2 para formatear fechas ───────────────────────────────────
+@app.template_filter('strftime')
+def _filter_strftime(value, fmt='%Y-%m-%d'):
+    """Formatea un objeto date/datetime o string ISO al formato indicado."""
+    if value is None:
+        return ''
+    if hasattr(value, 'strftime'):
+        return value.strftime(fmt)
+    # Si viene como string (ej. '2026-05-18'), convertir primero
+    try:
+        from datetime import date as _date
+        return _date.fromisoformat(str(value)[:10]).strftime(fmt)
+    except Exception:
+        return str(value)
+
 # ── Configuración de uploads ───────────────────────────────────────────────
 # Estructura en disco:
 #   static/uploads/evidencias/<proyecto_id>/<actividad_id>/<uuid>_<filename>

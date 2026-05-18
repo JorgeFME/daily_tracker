@@ -1093,7 +1093,7 @@
                 <tbody>
                     {% for r in registros %}
                     <tr id="row-{{ r.ID }}">
-                        <td class="td-fecha">{{ r.FECHA }}</td>
+                        <td class="td-fecha">{{ r.FECHA|strftime('%Y-%m-%d') }}</td>
                         <td>
                             <div class="td-usuario">
                                 <div class="avatar">{{ r.USUARIO[0] }}</div>
@@ -1130,7 +1130,7 @@
                         <td>
                             <div class="actions">
                                 <button class="btn-action edit" title="Editar"
-                                    onclick="abrirEditar({{ r.ID | tojson | forceescape }}, {{ r.FECHA | tojson | forceescape }}, {{ r.HORAS | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }}, {{ (r.DETALLES or '') | tojson | forceescape }}, {{ r.ID_USUARIO | tojson | forceescape }}, {{ r.ID_PROYECTO | tojson | forceescape }}, {{ (r.ID_ACTIVIDAD or '') | tojson | forceescape }}, {{ (r.ID_TIPO_ACT or '') | tojson | forceescape }})">
+                                    onclick="abrirEditar({{ r.ID | tojson | forceescape }}, {{ r.FECHA|strftime('%Y-%m-%d') | tojson | forceescape }}, {{ r.HORAS | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }}, {{ (r.DETALLES or '') | tojson | forceescape }}, {{ r.ID_USUARIO | tojson | forceescape }}, {{ r.ID_PROYECTO | tojson | forceescape }}, {{ (r.ID_ACTIVIDAD or '') | tojson | forceescape }}, {{ (r.ID_TIPO_ACT or '') | tojson | forceescape }})">
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <button class="btn-action del" title="Eliminar"
