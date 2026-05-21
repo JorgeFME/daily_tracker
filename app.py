@@ -351,48 +351,135 @@ def _serialize_evidencia(row):
 # ── DAILY TRACKER ─────────────────────────────────────────────────────────
 
 
+def _guardar_registro_con_evidencia(datos, request_files):
+    """Guarda un registro individual y, opcionalmente, su evidencia adjunta.
+    Retorna True si se guardó correctamente, False en caso contrario.
+    Puede lanzar ValueError si la actividad está en un estado inválido.
+    """
+    ok = guardar_registro_actividad(datos)
+    if ok:
+        if datos.get("actividad_id") and datos.get("actividad_rapida_creada") != "1":
+            recalcular_avance_actividad(datos.get("actividad_id"))
+
+        if datos.get("incluir_evidencia") == "on" and datos.get("actividad_id"):
+            actividad_id = datos.get("actividad_id")
+            actividad = obtener_actividad_por_id(actividad_id)
+            proyecto_id = actividad["ID_PROYECTO"] if actividad else "sin_proyecto"
+
+            archivo = request_files.get("archivo_evidencia")
+            if archivo and archivo.filename:
+                if _allowed(archivo.filename):
+                    try:
+                        meta = _save_upload(archivo, proyecto_id, actividad_id)
+                        datos["url_archivo"] = meta["url"]
+                        datos["nombre_archivo"] = meta["nombre"]
+                        datos["mime_type"] = meta["mime"]
+                        datos["tamano_bytes"] = str(meta["size"])
+                    except ValueError:
+                        pass
+
+            if datos.get("id_tipo_evidencia"):
+                datos["id_tipo"] = datos.get("id_tipo_evidencia")
+                datos["titulo"] = datos.get("titulo_evidencia") or None
+                datos["contenido_texto"] = datos.get("contenido_evidencia") or None
+                datos["subido_por"] = datos.get("user")
+                crear_evidencia(actividad_id, datos)
+    return ok
+
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
         datos = request.form.to_dict()
         datos["quick_recursos"] = request.form.getlist("quick_recursos")
+
+        # ── Modo rango de fechas ──────────────────────────────────────────────
+        date_start_str = datos.get("date_start", "").strip()
+        date_end_str = datos.get("date_end", "").strip()
+
+        if date_start_str and date_end_str:
+            try:
+                date_start = datetime.strptime(date_start_str, "%Y-%m-%d").date()
+                date_end = datetime.strptime(date_end_str, "%Y-%m-%d").date()
+            except ValueError:
+                return jsonify({"status": "error", "message": "Formato de fecha inválido."}), 400
+
+            if date_start > date_end:
+                return jsonify({"status": "error", "message": "La fecha de inicio debe ser anterior o igual a la fecha fin."}), 400
+
+            horas_pedidas = float(datos.get("hours") or 0)
+            user_id = datos.get("user")
+
+            registrados, omitidos, errores = [], [], []
+            current = date_start
+
+            while current <= date_end:
+                # Saltar fines de semana
+                if current.weekday() >= 5:
+                    current += timedelta(days=1)
+                    continue
+
+                fecha_str = current.strftime("%Y-%m-%d")
+
+                ausencia = get_horas_ausencia_dia(user_id, fecha_str)
+                ya_registradas = get_horas_diarias(user_id, fecha_str)
+                disponibles = max(0.0, (8.0 - ausencia) - ya_registradas)
+
+                if disponibles <= 0:
+                    omitidos.append(fecha_str)
+                    current += timedelta(days=1)
+                    continue
+
+                horas_dia = min(horas_pedidas, disponibles)
+                datos_dia = dict(datos)
+                datos_dia["date"] = fecha_str
+                datos_dia["hours"] = str(horas_dia)
+
+                try:
+                    ok = _guardar_registro_con_evidencia(datos_dia, request.files)
+                    if ok:
+                        registrados.append(fecha_str)
+                    else:
+                        errores.append(fecha_str)
+                except ValueError as e:
+                    return jsonify({"status": "error", "message": str(e)}), 400
+                except Exception:
+                    app.logger.exception(f"Error al guardar registro de rango para {fecha_str}")
+                    errores.append(fecha_str)
+
+                current += timedelta(days=1)
+
+            if not registrados and not errores:
+                msg = f"No se creó ningún registro. {len(omitidos)} día(s) ya tenían el límite de horas cubierto."
+                return jsonify({"status": "error", "message": msg}), 400
+
+            partes = []
+            if registrados:
+                partes.append(f"✅ {len(registrados)} día(s) registrado(s)")
+            if omitidos:
+                partes.append(f"⏭️ {len(omitidos)} día(s) omitido(s) (sin horas disponibles)")
+            if errores:
+                partes.append(f"⚠️ {len(errores)} día(s) con error")
+
+            return jsonify({
+                "status": "success",
+                "message": " · ".join(partes),
+                "registrados": len(registrados),
+                "omitidos": len(omitidos),
+                "errores": len(errores),
+                "fechas_registradas": registrados,
+                "fechas_omitidas": omitidos,
+            })
+
+        # ── Modo fecha única (comportamiento original) ────────────────────────
         try:
-            ok = guardar_registro_actividad(datos)
+            ok = _guardar_registro_con_evidencia(datos, request.files)
         except ValueError as e:
             return jsonify({"status": "error", "message": str(e)}), 400
         except Exception:
             app.logger.exception("Error inesperado al guardar registro de actividad")
             return jsonify({"status": "error", "message": "Ocurrio un error interno al guardar el registro."}), 500
         if ok:
-            if datos.get("actividad_id") and datos.get("actividad_rapida_creada") != "1":
-                recalcular_avance_actividad(datos.get("actividad_id"))
-            
-            # Manejar evidencia si está incluida
-            if datos.get("incluir_evidencia") == "on" and datos.get("actividad_id"):
-                actividad_id = datos.get("actividad_id")
-                actividad = obtener_actividad_por_id(actividad_id)
-                proyecto_id = actividad["ID_PROYECTO"] if actividad else "sin_proyecto"
-                
-                archivo = request.files.get("archivo_evidencia")
-                if archivo and archivo.filename:
-                    if _allowed(archivo.filename):
-                        try:
-                            meta = _save_upload(archivo, proyecto_id, actividad_id)
-                            datos["url_archivo"] = meta["url"]
-                            datos["nombre_archivo"] = meta["nombre"]
-                            datos["mime_type"] = meta["mime"]
-                            datos["tamano_bytes"] = str(meta["size"])
-                        except ValueError:
-                            pass  # Ignorar error de cuota en evidencia
-                
-                # Guardar evidencia con datos obligatorios
-                if datos.get("id_tipo_evidencia"):
-                    datos["id_tipo"] = datos.get("id_tipo_evidencia")
-                    datos["titulo"] = datos.get("titulo_evidencia") or None
-                    datos["contenido_texto"] = datos.get("contenido_evidencia") or None
-                    datos["subido_por"] = datos.get("user")
-                    crear_evidencia(actividad_id, datos)
-            
             return jsonify({"status": "success", "message": "¡Registro guardado correctamente!"})
         return jsonify({"status": "error", "message": "Hubo un fallo al conectar con SAP HANA."}), 500
 

@@ -758,6 +758,52 @@
             box-shadow: none;
         }
 
+        /* ─── DATE MODE TOGGLE ─────────────────────────────────── */
+        .date-mode-toggle {
+            display: flex;
+            gap: 3px;
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 3px;
+            margin-bottom: 10px;
+        }
+
+        .date-mode-btn {
+            flex: 1;
+            padding: 6px 10px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 0.80rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all .18s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            white-space: nowrap;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .date-mode-btn.active {
+            background: var(--surface);
+            color: var(--primary);
+            box-shadow: 0 1px 4px rgba(15, 23, 42, .1);
+        }
+
+        .date-range-info {
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            display: flex;
+            align-items: flex-start;
+            gap: 5px;
+            line-height: 1.4;
+        }
+
         /* ─── EVIDENCIA PANEL ──────────────────────────────────── */
         .evidencia-panel {
             background: var(--surface-alt);
@@ -1146,7 +1192,7 @@
             padding: 7px 12px;
             border-radius: 99px;
             border: 1.5px dashed var(--border);
-            background: rgba(255,255,255,.8);
+            background: rgba(255, 255, 255, .8);
             color: var(--text-secondary);
             font-size: 0.74rem;
             font-weight: 600;
@@ -1172,7 +1218,7 @@
         .records-filter-state {
             padding: 10px 14px;
             border-bottom: 1px solid var(--border);
-            background: linear-gradient(180deg, rgba(248,250,253,.95), rgba(255,255,255,.9));
+            background: linear-gradient(180deg, rgba(248, 250, 253, .95), rgba(255, 255, 255, .9));
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -1780,20 +1826,6 @@
 
                 <div class="form-body">
                     <form method="POST" id="tracker-form">
-                        <!-- Desarrollador -->
-                        <div class="field-group">
-                            <label class="field-label">Desarrollador</label>
-                            <div class="input-wrap">
-                                <span class="input-icon"><i class="bi bi-person"></i></span>
-                                <select id="select-user" name="user">
-                                    <option value="">Busca tu nombre...</option>
-                                    {% for user in users %}
-                                    <option value="{{ user.ID }}">{{ user.NOMBRE_COMPLETO }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-
                         <!-- Weekly Progress (oculto hasta seleccionar usuario) -->
                         <div class="weekly-widget" id="weekly-widget-box">
                             <div class="weekly-header">
@@ -1816,6 +1848,21 @@
                             </div>
                         </div>
 
+                        <!-- Desarrollador -->
+                        <div class="field-group">
+                            <label class="field-label">Desarrollador</label>
+                            <div class="input-wrap">
+                                <span class="input-icon"><i class="bi bi-person"></i></span>
+                                <select id="select-user" name="user">
+                                    <option value="">Busca tu nombre...</option>
+                                    {% for user in users %}
+                                    <option value="{{ user.ID }}">{{ user.NOMBRE_COMPLETO }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+
                         <!-- Proyecto -->
                         <div class="field-group">
                             <label class="field-label">Proyecto</label>
@@ -1831,7 +1878,18 @@
                         </div>
 
                         <!-- Fecha + Tiempo -->
-                        <div class="field-group row-fields">
+                        <!-- Toggle: Fecha única / Rango de fechas -->
+                        <div class="date-mode-toggle" id="date-mode-toggle">
+                            <button type="button" class="date-mode-btn active" id="btn-mode-single">
+                                <i class="bi bi-calendar4"></i> Fecha única
+                            </button>
+                            <button type="button" class="date-mode-btn" id="btn-mode-range">
+                                <i class="bi bi-calendar-range"></i> Rango de fechas
+                            </button>
+                        </div>
+
+                        <!-- Modo fecha única -->
+                        <div class="field-group row-fields" id="date-single-row">
                             <div>
                                 <label class="field-label">Fecha</label>
                                 <div class="input-wrap">
@@ -1847,6 +1905,35 @@
                                         min="0.5" max="8" required>
                                     <span class="input-suffix">Hrs</span>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Modo rango de fechas -->
+                        <div class="field-group" id="date-range-row" style="display:none;">
+                            <div class="row-fields">
+                                <div>
+                                    <label class="field-label">Desde</label>
+                                    <div class="input-wrap">
+                                        <span class="input-icon"><i class="bi bi-calendar4"></i></span>
+                                        <input type="text" class="field-input" id="date-start"
+                                            placeholder="Fecha inicio...">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="field-label">Hasta</label>
+                                    <div class="input-wrap">
+                                        <span class="input-icon"><i class="bi bi-calendar4"></i></span>
+                                        <input type="text" class="field-input" id="date-end" placeholder="Fecha fin...">
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="margin-top:8px;">
+                                <p class="date-range-info">
+                                    <i class="bi bi-info-circle" style="margin-top:2px; flex-shrink:0;"></i>
+                                    Se registrarán 8 horas por día hábil. Los fines de semana se omiten
+                                    automáticamente. Si un día ya tiene horas registradas, se completará con las horas
+                                    disponibles restantes.
+                                </p>
                             </div>
                         </div>
 
@@ -1877,19 +1964,24 @@
                         <div class="quick-activity-panel" id="quick-activity-panel">
                             <label class="field-label">
                                 Datos para Actividad Rápida
-                                <span style="font-size:0.68rem; font-weight:500; color:var(--text-muted);">Se guardará como actividad real para completar el reporte</span>
+                                <span style="font-size:0.68rem; font-weight:500; color:var(--text-muted);">Se guardará
+                                    como actividad real para completar el reporte</span>
                             </label>
                             <div class="quick-activity-note">
                                 <i class="bi bi-lightning-charge-fill"></i>
-                                <span>El nombre saldrá del campo <strong>Acción</strong>, la descripción se tomará de <strong>Detalles Técnicos</strong> y el desarrollador seleccionado quedará como responsable.</span>
+                                <span>El nombre saldrá del campo <strong>Acción</strong>, la descripción se tomará de
+                                    <strong>Detalles Técnicos</strong> y el desarrollador seleccionado quedará como
+                                    responsable.</span>
                             </div>
                             <div class="field-group row-fields">
                                 <div>
                                     <label class="field-label">Solicitante</label>
                                     <div class="input-wrap">
                                         <span class="input-icon"><i class="bi bi-person-badge"></i></span>
-                                        <select class="field-input" id="quick-solicitante" name="quick_solicitante" disabled>
-                                            <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero registra solicitantes en Catálogos' }}</option>
+                                        <select class="field-input" id="quick-solicitante" name="quick_solicitante"
+                                            disabled>
+                                            <option value="">{{ 'Selecciona un solicitante...' if solicitantes else
+                                                'Primero registra solicitantes en Catálogos' }}</option>
                                             {% for s in solicitantes %}
                                             <option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>
                                             {% endfor %}
@@ -1900,7 +1992,8 @@
                                     <label class="field-label">Prioridad</label>
                                     <div class="input-wrap">
                                         <span class="input-icon"><i class="bi bi-flag"></i></span>
-                                        <select class="field-input" id="quick-prioridad" name="quick_prioridad" disabled>
+                                        <select class="field-input" id="quick-prioridad" name="quick_prioridad"
+                                            disabled>
                                             <option value="1">🔴 Alta</option>
                                             <option value="2" selected>🟡 Media</option>
                                             <option value="3">🟢 Baja</option>
@@ -1925,7 +2018,8 @@
                         <div class="field-group">
                             <label class="field-label">
                                 Tipo
-                                <span style="font-size:0.68rem; font-weight:500; color:var(--text-muted);">Etapa de la actividad</span>
+                                <span style="font-size:0.68rem; font-weight:500; color:var(--text-muted);">Etapa de la
+                                    actividad</span>
                             </label>
                             <div class="input-wrap">
                                 <span class="input-icon"><i class="bi bi-tag"></i></span>
@@ -1940,7 +2034,8 @@
 
                         <!-- Acción -->
                         <div class="field-group">
-                            <label class="field-label" id="activity-action-label" style="color: var(--primary); opacity:0.9;">Acción de la
+                            <label class="field-label" id="activity-action-label"
+                                style="color: var(--primary); opacity:0.9;">Acción de la
                                 Actividad</label>
                             <div class="input-wrap">
                                 <span class="input-icon"><i class="bi bi-play-circle"
@@ -1988,8 +2083,8 @@
                                 </div>
                                 <div class="evidencia-field">
                                     <label class="field-label">Título</label>
-                                    <input type="text" class="field-input" id="titulo_evidencia"
-                                        name="titulo_evidencia" placeholder="Asunto o referencia...">
+                                    <input type="text" class="field-input" id="titulo_evidencia" name="titulo_evidencia"
+                                        placeholder="Asunto o referencia...">
                                 </div>
                             </div>
                             <div class="evidencia-field full">
@@ -2004,8 +2099,8 @@
                                         class="evidence-file-input-hidden">
                                     <div class="evidence-file-content" id="evidence-file-content">
                                         <i class="bi bi-cloud-upload evidence-file-icon"></i>
-                                        <p class="evidence-file-label">Arrastra o <span
-                                                class="evidence-file-link">haz clic para cargar</span></p>
+                                        <p class="evidence-file-label">Arrastra o <span class="evidence-file-link">haz
+                                                clic para cargar</span></p>
                                         <p class="evidence-file-hint">Archivo único, máx. 10 MB</p>
                                     </div>
                                     <div class="evidence-preview" id="evidence-preview" style="display:none;">
@@ -2142,7 +2237,8 @@
                                 <span class="records-count" id="records-count">0</span>
                             </div>
                             <div class="records-toolbar-actions">
-                                <select id="filtro-tipo-act" class="select-filter-tipo" title="Filtrar por tipo de actividad">
+                                <select id="filtro-tipo-act" class="select-filter-tipo"
+                                    title="Filtrar por tipo de actividad">
                                     <option value="">Todos los tipos</option>
                                 </select>
                                 <button type="button" class="btn-clear-soft hidden" id="btn-clear-tipo">
@@ -2155,7 +2251,8 @@
                         </div>
                     </div>
                     <div class="records-filter-state" id="records-filter-state">
-                        <span class="records-filter-text" id="records-filter-text">Mostrando <strong>todos los tipos</strong> del período actual.</span>
+                        <span class="records-filter-text" id="records-filter-text">Mostrando <strong>todos los
+                                tipos</strong> del período actual.</span>
                     </div>
                     <div class="table-wrap">
                         <table class="records-table">
@@ -2187,7 +2284,8 @@
         </div>
     </div>
 
-    <div class="modal fade subactivity-modal" id="subactivityModal" tabindex="-1" aria-labelledby="subactivityModalLabel" aria-hidden="true">
+    <div class="modal fade subactivity-modal" id="subactivityModal" tabindex="-1"
+        aria-labelledby="subactivityModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -2207,17 +2305,21 @@
                         <div class="subactivity-summary">
                             <div class="subactivity-summary-item">
                                 <span class="subactivity-summary-label">Proyecto</span>
-                                <span class="subactivity-summary-value" id="subactivity-project-name">Sin proyecto</span>
+                                <span class="subactivity-summary-value" id="subactivity-project-name">Sin
+                                    proyecto</span>
                             </div>
                             <div class="subactivity-summary-item">
                                 <span class="subactivity-summary-label">Actividad padre</span>
-                                <span class="subactivity-summary-value" id="subactivity-parent-name">Sin actividad base</span>
+                                <span class="subactivity-summary-value" id="subactivity-parent-name">Sin actividad
+                                    base</span>
                             </div>
                         </div>
 
                         <div class="subactivity-note">
                             <i class="bi bi-lightning-charge-fill"></i>
-                            <span>La subactividad quedará asignada inicialmente a <strong id="subactivity-user-name">tu selección actual</strong> y se autoseleccionará para seguir registrando horas.</span>
+                            <span>La subactividad quedará asignada inicialmente a <strong id="subactivity-user-name">tu
+                                    selección actual</strong> y se autoseleccionará para seguir registrando
+                                horas.</span>
                         </div>
 
                         <div class="field-group">
@@ -2256,7 +2358,8 @@
                             <div class="input-wrap">
                                 <span class="input-icon"><i class="bi bi-person-badge"></i></span>
                                 <select class="field-input" name="solicitante">
-                                    <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero registra solicitantes en Catálogos' }}</option>
+                                    <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero
+                                        registra solicitantes en Catálogos' }}</option>
                                     {% for s in solicitantes %}
                                     <option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>
                                     {% endfor %}
@@ -2267,7 +2370,8 @@
                         <div class="field-group">
                             <label class="field-label">Descripción</label>
                             <div class="input-wrap" style="align-items:flex-start;">
-                                <span class="input-icon" style="padding-top:14px;"><i class="bi bi-card-text"></i></span>
+                                <span class="input-icon" style="padding-top:14px;"><i
+                                        class="bi bi-card-text"></i></span>
                                 <textarea class="field-input" name="descripcion" rows="3"
                                     placeholder="Contexto rápido, alcance o entregable esperado..."></textarea>
                             </div>
@@ -2484,6 +2588,80 @@
             onChange: () => { fetchWeeklyHours(); validateForm(); }
         });
 
+        // ─── RANGO DE FECHAS ──────────────────────────────────────────────────────
+        let isRangeMode = false;
+
+        const fpCfgRange = {
+            locale: "es",
+            altInput: true,
+            altFormat: "j F, Y",
+            dateFormat: "Y-m-d",
+            maxDate: "today",
+            disableMobile: true,
+            disable: [function (date) { return date.getDay() === 0 || date.getDay() === 6; }],
+            onChange: () => validateForm(),
+        };
+        const fpStart = flatpickr("#date-start", fpCfgRange);
+        const fpEnd = flatpickr("#date-end", {
+            ...fpCfgRange,
+            onChange: () => {
+                // Ensure end >= start
+                if (fpStart.selectedDates[0] && fpEnd.selectedDates[0]) {
+                    if (fpEnd.selectedDates[0] < fpStart.selectedDates[0]) {
+                        fpEnd.setDate(fpStart.selectedDates[0]);
+                    }
+                }
+                validateForm();
+            },
+        });
+        const hoursRangeInput = null; // removed: hours always default to 8 in range mode
+
+        const btnModeSingle = document.getElementById('btn-mode-single');
+        const btnModeRange = document.getElementById('btn-mode-range');
+        const dateSingleRow = document.getElementById('date-single-row');
+        const dateRangeRow = document.getElementById('date-range-row');
+
+        function setDateMode(mode) {
+            isRangeMode = (mode === 'range');
+
+            btnModeSingle.classList.toggle('active', !isRangeMode);
+            btnModeRange.classList.toggle('active', isRangeMode);
+            dateSingleRow.style.display = isRangeMode ? 'none' : '';
+            dateRangeRow.style.display = isRangeMode ? '' : 'none';
+
+            // Toggle required on single-date inputs
+            const singleDateInput = document.getElementById('date');
+            const singleHoursInput = document.querySelector('#date-single-row input[name="hours"]');
+            singleDateInput.required = !isRangeMode;
+            if (singleHoursInput) singleHoursInput.required = !isRangeMode;
+
+            // In range mode: disable/hide weekly progress and evidence
+            const widget = document.getElementById('weekly-widget-box');
+            if (widget) widget.style.opacity = isRangeMode ? '0.4' : '';
+
+            const checkIncluirEv = document.getElementById('incluir_evidencia');
+            const evPanel = document.getElementById('evidencia-panel');
+            if (checkIncluirEv) {
+                checkIncluirEv.disabled = isRangeMode;
+                if (isRangeMode) {
+                    checkIncluirEv.checked = false;
+                    if (evPanel) evPanel.classList.remove('visible');
+                }
+            }
+
+            const divFinalizar = document.getElementById('div-finalizar-actividad');
+            const checkFinalizar = document.getElementById('finalizar_actividad');
+            if (isRangeMode && divFinalizar) {
+                divFinalizar.style.display = 'none';
+                if (checkFinalizar) checkFinalizar.checked = false;
+            }
+
+            validateForm();
+        }
+
+        btnModeSingle.addEventListener('click', () => setDateMode('single'));
+        btnModeRange.addEventListener('click', () => setDateMode('range'));
+
         // ─── 2. ESTADO INICIAL ────────────────────────────────────────────────────
         function setInitialState() {
             projectSelect.disable();
@@ -2493,6 +2671,9 @@
             actionInput.disabled = true;
             detailsInput.disabled = true;
             if (fp?.altInput) { fp.input.disabled = true; fp.altInput.disabled = true; }
+            if (fpStart?.altInput) { fpStart.input.disabled = true; fpStart.altInput.disabled = true; }
+            if (fpEnd?.altInput) { fpEnd.input.disabled = true; fpEnd.altInput.disabled = true; }
+            if (hoursRangeInput) hoursRangeInput.disabled = true;
             const divFinalizar = document.getElementById('div-finalizar-actividad');
             if (divFinalizar) divFinalizar.style.display = 'none';
             const checkFinalizar = document.getElementById('finalizar_actividad');
@@ -2543,10 +2724,25 @@
                 quickPrioridadSelect.getValue() &&
                 quickActivityResourcesSelect.items.length > 0
             );
+
+            let dateOk, hoursOk;
+            if (isRangeMode) {
+                const startOk = fpStart?.input?.value;
+                const endOk = fpEnd?.input?.value;
+                const bothSet = startOk && endOk;
+                const endAfterStart = bothSet &&
+                    new Date(fpEnd.input.value) >= new Date(fpStart.input.value);
+                dateOk = bothSet && endAfterStart;
+                hoursOk = true; // always 8h in range mode
+            } else {
+                dateOk = fp.input.value;
+                hoursOk = parseFloat(hoursInput.value) > 0;
+            }
+
             const ok = userSelect.getValue() &&
                 projectSelect.getValue() &&
-                fp.input.value &&
-                parseFloat(hoursInput.value) > 0 &&
+                dateOk &&
+                hoursOk &&
                 activitySelect.getValue() &&
                 tipoSelect.getValue() &&
                 actionInput.value.trim().length > 3 &&
@@ -2734,10 +2930,16 @@
             if (val) {
                 fp.input.disabled = false; fp.altInput.disabled = false;
                 hoursInput.disabled = false;
+                if (fpStart?.altInput) { fpStart.input.disabled = false; fpStart.altInput.disabled = false; }
+                if (fpEnd?.altInput) { fpEnd.input.disabled = false; fpEnd.altInput.disabled = false; }
+                if (hoursRangeInput) hoursRangeInput.disabled = false;
                 await loadActivitiesForProject(val);
             } else {
                 fp.input.disabled = true; fp.altInput.disabled = true;
                 hoursInput.disabled = true;
+                if (fpStart?.altInput) { fpStart.input.disabled = true; fpStart.altInput.disabled = true; }
+                if (fpEnd?.altInput) { fpEnd.input.disabled = true; fpEnd.altInput.disabled = true; }
+                if (hoursRangeInput) hoursRangeInput.disabled = true;
                 activitySelect.clear();
                 activitySelect.clearOptions();
                 activitySelect.disable();
@@ -2754,7 +2956,8 @@
             if (val) {
                 tipoSelect.enable();
                 if (divFinalizar) {
-                    if (val === 'ad_hoc') {
+                    // Never show "finalizar" in range mode
+                    if (val === 'ad_hoc' || isRangeMode) {
                         divFinalizar.style.display = 'none';
                         if (checkFinalizar) checkFinalizar.checked = false;
                     } else {
@@ -2888,7 +3091,10 @@
         }
 
         trackerForm.addEventListener('submit', function () {
-            this.querySelectorAll('[disabled]').forEach(el => el.disabled = false);
+            // Re-enable only relevant fields before serialization
+            if (!isRangeMode) {
+                this.querySelectorAll('[disabled]').forEach(el => el.disabled = false);
+            }
         });
 
         // ─── 5. PROGRESO DIARIO ───────────────────────────────────────────────────
@@ -3039,6 +3245,76 @@
 
         trackerForm.addEventListener('submit', async function (e) {
             e.preventDefault();
+
+            if (isRangeMode) {
+                // ── Envío en modo rango ─────────────────────────────────────────────
+                const startVal = fpStart.input.value;
+                const endVal = fpEnd.input.value;
+
+                if (!startVal || !endVal) {
+                    Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Selecciona el rango de fechas.' });
+                    return;
+                }
+                if (new Date(startVal) > new Date(endVal)) {
+                    Swal.fire({ icon: 'warning', title: 'Rango inválido', text: 'La fecha de inicio debe ser anterior o igual a la fecha fin.' });
+                    return;
+                }
+
+                Swal.fire({ title: 'Registrando días...', text: 'Procesando rango de fechas', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                // Temporarily enable fields so FormData picks them up
+                const prevDisabled = [];
+                this.querySelectorAll('[disabled]').forEach(el => { prevDisabled.push(el); el.disabled = false; });
+
+                const fd = new FormData(this);
+
+                // Restore disabled state
+                prevDisabled.forEach(el => el.disabled = true);
+
+                // Set range fields explicitly
+                fd.set('date_start', startVal);
+                fd.set('date_end', endVal);
+                fd.set('hours', '8'); // always request 8h; backend caps to available hours per day
+                fd.delete('date');
+
+                try {
+                    const r = await fetch('/', { method: 'POST', body: fd });
+                    const res = await r.json();
+                    if (res.status === 'success') {
+                        let html = `<p>${res.message}</p>`;
+                        if (res.fechas_registradas?.length) {
+                            html += `<p style="font-size:.85rem;color:#10b981;margin-top:8px;">`;
+                            html += res.fechas_registradas.map(f => {
+                                const d = new Date(f + 'T00:00:00');
+                                return d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
+                            }).join(' · ');
+                            html += `</p>`;
+                        }
+                        if (res.fechas_omitidas?.length) {
+                            html += `<p style="font-size:.82rem;color:#94a3b8;margin-top:4px;">Omitidos: `;
+                            html += res.fechas_omitidas.map(f => {
+                                const d = new Date(f + 'T00:00:00');
+                                return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+                            }).join(', ');
+                            html += `</p>`;
+                        }
+                        Swal.fire({ icon: 'success', title: '¡Rango registrado!', html, confirmButtonText: 'Aceptar' });
+                        this.reset(); setInitialState();
+                        userSelect.clear(); projectSelect.clear(); activitySelect.clear(); tipoSelect.clear(); tipoSelect.disable();
+                        fpStart.clear(); fpEnd.clear();
+                        if (hoursRangeInput) hoursRangeInput.value = '';
+                        resetEvidenceFields({ collapsePanel: true });
+                        resetQuickActivityForm();
+                        resetSubactivityForm();
+                        setDateMode('single'); // Return to single mode after successful range submit
+                    } else throw new Error(res.message);
+                } catch (err) {
+                    Swal.fire({ icon: 'error', title: 'Oops...', text: err.message || 'No se pudo guardar el registro.' });
+                }
+                return;
+            }
+
+            // ── Envío en modo fecha única (comportamiento original) ───────────────
             Swal.fire({ title: 'Guardando avance...', text: 'Conectando con BD', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             const fd = new FormData(this);
