@@ -1181,6 +1181,44 @@ def exportar_reporte_excel(proyecto_id):
     )
 
 
+@app.route("/reporte/ausencias/excel")
+def reporte_ausencias_excel():
+    """Exporta un reporte Excel de ausencias del mes visible en Calendario."""
+    from excel_ausencias_reporte import generar_reporte_ausencias, TIPOS_VALIDOS
+    import io as _io
+    from datetime import date as _date
+
+    try:
+        anio = int(request.args.get("anio", _date.today().year))
+        mes  = int(request.args.get("mes",  _date.today().month))
+        tipo = request.args.get("tipo", "").strip().upper()
+    except (ValueError, TypeError):
+        return jsonify({"error": "Parámetros inválidos."}), 400
+
+    if not (2020 <= anio <= 2100) or not (1 <= mes <= 12):
+        return jsonify({"error": "Año o mes fuera de rango."}), 400
+
+    if tipo and tipo not in TIPOS_VALIDOS:
+        return jsonify({"error": f"Tipo de ausencia no válido: {tipo!r}."}), 400
+
+    try:
+        base      = _catalogo_base()
+        ausencias = obtener_ausencias_mes(anio, mes)
+        xlsx      = generar_reporte_ausencias(anio, mes, base["users"], ausencias, tipo)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception:
+        return jsonify({"error": "Error interno al generar el reporte."}), 500
+
+    tipo_sufijo = f"_{tipo}" if tipo else ""
+    return send_file(
+        _io.BytesIO(xlsx),
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=f"Ausencias{tipo_sufijo}_{anio}_{mes:02d}.xlsx",
+    )
+
+
 # ── CATÁLOGOS ──────────────────────────────────────────────────────────────
 
 from db import (

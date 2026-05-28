@@ -551,7 +551,12 @@
                     <div class="section-toolbar-title">Ausencias del equipo</div>
                     <div class="section-toolbar-sub">Filtra rápidamente por usuario o tipo de ausencia.</div>
                 </div>
-                <span class="filter-count" id="count-ausencias">0</span>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span class="filter-count" id="count-ausencias">0</span>
+                    <button type="button" class="btn-primary-custom" onclick="exportarAusenciasExcel()" title="Exportar reporte Excel del mes visible">
+                        <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+                    </button>
+                </div>
             </div>
             <div class="filter-panel">
                 <div class="filter-grid">
@@ -772,6 +777,7 @@ let calMes  = {{ mes }};  // 1-indexed
 
 let ausencias = {{ todas_ausencias | tojson }};
 let festivos  = {{ todos_festivos  | tojson }};
+let loadMesReqId = 0;
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -938,33 +944,62 @@ function buildCalendar() {
     }
 }
 
+function updateMonthLabel() {
+    document.getElementById('cal-month-label').textContent = `${MESES[calMes-1]} ${calAnio}`;
+}
+
 function navMes(delta) {
     calMes += delta;
     if (calMes < 1)  { calMes = 12; calAnio--; }
     if (calMes > 12) { calMes = 1;  calAnio++; }
-    loadMes();
+    updateMonthLabel();
+    loadMes(calAnio, calMes);
 }
 
 function goToday() {
     calAnio = HOY.getFullYear();
     calMes = HOY.getMonth() + 1;
-    loadMes();
+    updateMonthLabel();
+    loadMes(calAnio, calMes);
 }
 
-async function loadMes() {
-    const [resAusencias, resFestivos] = await Promise.all([
-        fetch(`/api/ausencias?anio=${calAnio}`),
-        fetch(`/api/festivos?anio=${calAnio}`),
-    ]);
-    ausencias = normalizeAusencias(await resAusencias.json());
-    festivos = normalizeFestivos(await resFestivos.json());
-    const festivosYear = document.getElementById('flt-anio-festivos');
-    if (festivosYear && Array.from(festivosYear.options).some(opt => opt.value === String(calAnio))) {
-        festivosYear.value = String(calAnio);
+async function loadMes(targetAnio = calAnio, targetMes = calMes) {
+    const reqId = ++loadMesReqId;
+
+    try {
+        const [resAusencias, resFestivos] = await Promise.all([
+            fetch(`/api/ausencias?anio=${targetAnio}`),
+            fetch(`/api/festivos?anio=${targetAnio}`),
+        ]);
+
+        if (!resAusencias.ok || !resFestivos.ok) {
+            throw new Error('No se pudieron cargar ausencias/festivos');
+        }
+
+        const ausenciasCargadas = normalizeAusencias(await resAusencias.json());
+        const festivosCargados = normalizeFestivos(await resFestivos.json());
+
+        // Ignorar respuestas viejas cuando hubo clics rápidos de navegación.
+        if (reqId !== loadMesReqId) return;
+
+        calAnio = targetAnio;
+        calMes = targetMes;
+        ausencias = ausenciasCargadas;
+        festivos = festivosCargados;
+
+        const festivosYear = document.getElementById('flt-anio-festivos');
+        if (festivosYear && Array.from(festivosYear.options).some(opt => opt.value === String(calAnio))) {
+            festivosYear.value = String(calAnio);
+        }
+
+        buildCalendar();
+        renderTabla();
+        renderFestivos();
+    } catch (error) {
+        if (reqId !== loadMesReqId) return;
+        console.error('Error al cargar datos del calendario:', error);
+        alert('No se pudo actualizar el calendario. Intenta nuevamente.');
     }
-    buildCalendar();
-    renderTabla();
-    renderFestivos();
 }
 
 function toYMD(d) {
@@ -1255,6 +1290,20 @@ document.getElementById('modal-festivo').addEventListener('click',  e => { if (e
 document.getElementById('aus-horas').addEventListener('input', () => recalcularHorasAusencia(document.getElementById('aus-horas').value));
 ausUsuarioTs.on('change', () => syncAusenciaFormState());
 ausTipoTs.on('change', () => updateDescripcionAusenciaVisibility());
+
+// ─── Exportar Excel de ausencias ────────────────────────────────────────────
+function exportarAusenciasExcel() {
+    const tipo = document.getElementById('flt-tipo').value || '';
+    const params = new URLSearchParams({ anio: calAnio, mes: calMes });
+    if (tipo) params.set('tipo', tipo);
+    const url = `/reporte/ausencias/excel?${params.toString()}`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 ausencias = normalizeAusencias(ausencias);
