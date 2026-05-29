@@ -209,6 +209,20 @@ def _mes_actual_limites() -> tuple[str, str]:
     return inicio.isoformat(), fin.isoformat()
 
 
+def _semana_actual_limites() -> tuple[date, date]:
+    """Regresa el rango lunes-domingo de la semana local actual."""
+    hoy = _local_today()
+    inicio = hoy - timedelta(days=hoy.weekday())
+    fin = inicio + timedelta(days=6)
+    return inicio, fin
+
+
+def _validar_fecha_hasta_fin_semana_actual(fecha_obj: date) -> bool:
+    """Permite fechas históricas y bloquea solo fechas posteriores al fin de semana actual."""
+    _, fin = _semana_actual_limites()
+    return fecha_obj <= fin
+
+
 def _registros_filters_from_request(req_args, proyecto_id: str | None = None):
     filtros = {
         "user_id": (req_args.get("user_id") or "").strip() or None,
@@ -392,6 +406,7 @@ def index():
     if request.method == "POST":
         datos = request.form.to_dict()
         datos["quick_recursos"] = request.form.getlist("quick_recursos")
+        semana_inicio, semana_fin = _semana_actual_limites()
 
         # ── Modo rango de fechas ──────────────────────────────────────────────
         date_start_str = datos.get("date_start", "").strip()
@@ -406,6 +421,15 @@ def index():
 
             if date_start > date_end:
                 return jsonify({"status": "error", "message": "La fecha de inicio debe ser anterior o igual a la fecha fin."}), 400
+
+            if not (_validar_fecha_hasta_fin_semana_actual(date_start) and _validar_fecha_hasta_fin_semana_actual(date_end)):
+                return jsonify({
+                    "status": "error",
+                    "message": (
+                        "No puedes registrar fechas posteriores al fin de la semana en curso "
+                        f"({semana_fin.isoformat()})."
+                    ),
+                }), 400
 
             horas_pedidas = float(datos.get("hours") or 0)
             user_id = datos.get("user")
@@ -472,6 +496,22 @@ def index():
             })
 
         # ── Modo fecha única (comportamiento original) ────────────────────────
+        date_single_str = (datos.get("date") or "").strip()
+        if date_single_str:
+            try:
+                date_single = datetime.strptime(date_single_str, "%Y-%m-%d").date()
+            except ValueError:
+                return jsonify({"status": "error", "message": "Formato de fecha inválido."}), 400
+
+            if not _validar_fecha_hasta_fin_semana_actual(date_single):
+                return jsonify({
+                    "status": "error",
+                    "message": (
+                        "No puedes registrar fechas posteriores al fin de la semana en curso "
+                        f"({semana_fin.isoformat()})."
+                    ),
+                }), 400
+
         try:
             ok = _guardar_registro_con_evidencia(datos, request.files)
         except ValueError as e:
@@ -484,6 +524,7 @@ def index():
         return jsonify({"status": "error", "message": "Hubo un fallo al conectar con SAP HANA."}), 500
 
     base = _catalogo_base()
+    semana_inicio, semana_fin = _semana_actual_limites()
     return render_template(
         "index.html",
         users=base["users"],
@@ -493,6 +534,8 @@ def index():
         recursos=obtener_recursos(),
         tipos_actividad=obtener_tipos_actividad(),
         tipos_evidencia=obtener_tipos_evidencia(),
+        current_week_start=semana_inicio.isoformat(),
+        current_week_end=semana_fin.isoformat(),
     )
 
 

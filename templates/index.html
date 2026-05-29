@@ -2576,13 +2576,16 @@
             disableMobile: true,
         });
 
+        const currentWeekStart = "{{ current_week_start }}";
+        const currentWeekEnd = "{{ current_week_end }}";
+
         const fp = flatpickr("#date", {
             locale: "es",
             altInput: true,
             altFormat: "j F, Y",
             dateFormat: "Y-m-d",
             defaultDate: "today",
-            maxDate: "today",
+            maxDate: currentWeekEnd,
             disableMobile: true,
             disable: [function (date) { return date.getDay() === 0 || date.getDay() === 6; }],
             onChange: () => { fetchWeeklyHours(); validateForm(); }
@@ -2596,7 +2599,7 @@
             altInput: true,
             altFormat: "j F, Y",
             dateFormat: "Y-m-d",
-            maxDate: "today",
+            maxDate: currentWeekEnd,
             disableMobile: true,
             disable: [function (date) { return date.getDay() === 0 || date.getDay() === 6; }],
             onChange: () => validateForm(),
