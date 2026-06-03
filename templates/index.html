@@ -758,6 +758,55 @@
             box-shadow: none;
         }
 
+        /* ─── ADD PEOPLE PANEL ─────────────────────────────────── */
+        .add-people-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px dashed var(--border);
+            border-radius: var(--radius-input);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 6px;
+        }
+        .add-people-toggle:hover {
+            border-color: #2563eb;
+            color: #2563eb;
+            background: rgba(37,99,235,0.05);
+        }
+        .add-people-toggle.active {
+            border-color: #2563eb;
+            color: #2563eb;
+            background: rgba(37,99,235,0.07);
+        }
+        .add-people-panel {
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-input);
+            padding: 14px;
+            margin-bottom: 10px;
+            display: none;
+        }
+        .add-people-panel.open {
+            display: block;
+        }
+        .add-people-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         /* ─── DATE MODE TOGGLE ─────────────────────────────────── */
         .date-mode-toggle {
             display: flex;
@@ -2127,6 +2176,28 @@
                             </label>
                         </div>
 
+                        <!-- ── Añadir personas a esta actividad ── -->
+                        <button type="button" id="btn-add-people-toggle" class="add-people-toggle" style="display:none;">
+                            <i class="bi bi-people-fill"></i>
+                            <span id="add-people-toggle-label">Añadir personas a esta actividad</span>
+                            <i class="bi bi-chevron-down ms-auto" id="add-people-chevron"></i>
+                        </button>
+                        <div class="add-people-panel" id="add-people-panel">
+                            <div class="add-people-label">
+                                <i class="bi bi-info-circle"></i>
+                                Se registrará la misma actividad para las personas seleccionadas
+                            </div>
+                            <div class="input-wrap">
+                                <span class="input-icon"><i class="bi bi-people"></i></span>
+                                <select id="select-extra-people" name="extra_people" multiple
+                                    placeholder="Selecciona personas adicionales...">
+                                    {% for user in users %}
+                                    <option value="{{ user.ID }}">{{ user.NOMBRE_COMPLETO }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
                         <button id="btn-submit" type="submit" class="btn-submit" disabled>
                             <i class="bi bi-check2-circle me-2"></i>Registrar Avance
                         </button>
@@ -2541,6 +2612,10 @@
             plugins: ['remove_button'],
             placeholder: 'Selecciona recursos...',
         });
+        const extraPeopleSelect = makeTomSelect("#select-extra-people", {
+            plugins: ['remove_button'],
+            placeholder: 'Selecciona personas adicionales...',
+        });
         const trackerForm = document.getElementById('tracker-form');
         const btnOpenSubactivity = document.getElementById('btn-open-subactivity');
         const subactivityHelper = document.getElementById('subactivity-helper');
@@ -2681,9 +2756,46 @@
             if (divFinalizar) divFinalizar.style.display = 'none';
             const checkFinalizar = document.getElementById('finalizar_actividad');
             if (checkFinalizar) checkFinalizar.checked = false;
+            resetAddPeoplePanel();
             updateQuickActivityPanel();
             updateSubactivityTrigger();
         }
+
+        // ─── ADD PEOPLE PANEL ─────────────────────────────────────────────────────
+        function resetAddPeoplePanel() {
+            const panel = document.getElementById('add-people-panel');
+            const toggle = document.getElementById('btn-add-people-toggle');
+            const chevron = document.getElementById('add-people-chevron');
+            if (panel) panel.classList.remove('open');
+            if (toggle) { toggle.classList.remove('active'); toggle.style.display = 'none'; }
+            if (chevron) { chevron.classList.remove('bi-chevron-up'); chevron.classList.add('bi-chevron-down'); }
+            extraPeopleSelect.clear(true);
+        }
+
+        function updateExtraPeopleOptions() {
+            const currentUserId = userSelect.getValue();
+            // Habilitar todas las opciones, luego deshabilitar la del usuario actual
+            Object.values(extraPeopleSelect.options).forEach(opt => {
+                const shouldDisable = opt.value === currentUserId;
+                extraPeopleSelect.updateOption(opt.value, { ...opt, disabled: shouldDisable });
+            });
+            // Si el usuario actual estaba seleccionado en la lista extra, quitarlo
+            if (currentUserId && extraPeopleSelect.items.includes(currentUserId)) {
+                extraPeopleSelect.removeItem(currentUserId, true);
+            }
+        }
+
+        document.getElementById('btn-add-people-toggle')?.addEventListener('click', function () {
+            const panel = document.getElementById('add-people-panel');
+            const chevron = document.getElementById('add-people-chevron');
+            const isOpen = panel?.classList.toggle('open');
+            this.classList.toggle('active', isOpen);
+            if (chevron) {
+                chevron.classList.toggle('bi-chevron-up', isOpen);
+                chevron.classList.toggle('bi-chevron-down', !isOpen);
+            }
+            if (isOpen) updateExtraPeopleOptions();
+        });
 
         function isQuickActivitySelected() {
             return activitySelect.getValue() === 'ad_hoc';
@@ -2752,6 +2864,17 @@
                 detailsInput.value.trim().length > 5 &&
                 quickActivityOk;
             btnSubmit.disabled = !ok;
+
+            // Mostrar/ocultar el toggle de personas adicionales cuando el form está listo
+            const btnAddPeopleToggle = document.getElementById('btn-add-people-toggle');
+            if (btnAddPeopleToggle) {
+                btnAddPeopleToggle.style.display = ok ? 'flex' : 'none';
+                if (!ok) {
+                    // Cerrar el panel si se invalida el form
+                    document.getElementById('add-people-panel')?.classList.remove('open');
+                    btnAddPeopleToggle.classList.remove('active');
+                }
+            }
         }
 
         function normalizeActivityGroup(raw) {
@@ -2926,6 +3049,7 @@
             updateQuickActivityPanel();
             syncSubactivityContext();
             updateSubactivityTrigger();
+            updateExtraPeopleOptions();
             validateForm();
         });
 
@@ -3279,6 +3403,7 @@
                 fd.set('date_end', endVal);
                 fd.set('hours', '8'); // always request 8h; backend caps to available hours per day
                 fd.delete('date');
+                fd.delete('extra_people');
 
                 try {
                     const r = await fetch('/', { method: 'POST', body: fd });
@@ -3318,21 +3443,67 @@
             }
 
             // ── Envío en modo fecha única (comportamiento original) ───────────────
-            Swal.fire({ title: 'Guardando avance...', text: 'Conectando con BD', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const extraPeople = extraPeopleSelect.items.slice(); // IDs adicionales seleccionados
+            const totalPersonas = 1 + extraPeople.length;
+            const loadingMsg = totalPersonas > 1
+                ? `Registrando para ${totalPersonas} persona(s)...`
+                : 'Conectando con BD';
+
+            Swal.fire({ title: 'Guardando avance...', text: loadingMsg, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
             const fd = new FormData(this);
+            // Eliminar el campo multi-select de personas del FormData del usuario principal
+            fd.delete('extra_people');
             try {
                 const r = await fetch('/', { method: 'POST', body: fd });
                 const res = await r.json();
-                if (res.status === 'success') {
-                    Swal.fire({ icon: 'success', title: '¡Logrado!', text: res.message, timer: 2000, showConfirmButton: false });
-                    this.reset(); setInitialState();
-                    userSelect.clear(); projectSelect.clear(); activitySelect.clear(); tipoSelect.clear(); tipoSelect.disable();
-                    resetEvidenceFields({ collapsePanel: true });
-                    resetQuickActivityForm();
-                    resetSubactivityForm();
-                    fetchWeeklyHours();
-                } else throw new Error(res.message);
+                if (res.status !== 'success') throw new Error(res.message);
+
+                // Registrar para personas adicionales si las hay
+                const extraResultados = [];
+                for (const uid of extraPeople) {
+                    const fdExtra = new FormData(this);
+                    fdExtra.delete('extra_people');
+                    fdExtra.set('user', uid);
+                    // No incluir finalizar_actividad para personas adicionales
+                    fdExtra.delete('finalizar_actividad');
+                    try {
+                        const rExtra = await fetch('/', { method: 'POST', body: fdExtra });
+                        const resExtra = await rExtra.json();
+                        const nombre = extraPeopleSelect.getOption(uid)?.textContent?.trim() || uid;
+                        extraResultados.push({ nombre, ok: resExtra.status === 'success', msg: resExtra.message });
+                    } catch {
+                        const nombre = extraPeopleSelect.getOption(uid)?.textContent?.trim() || uid;
+                        extraResultados.push({ nombre, ok: false, msg: 'Error de red' });
+                    }
+                }
+
+                // Construir mensaje final
+                let htmlMsg = `<p>${res.message}</p>`;
+                if (extraResultados.length > 0) {
+                    htmlMsg += `<div style="margin-top:10px;text-align:left;font-size:.85rem;">`;
+                    extraResultados.forEach(r => {
+                        const icon = r.ok ? '✅' : '⚠️';
+                        htmlMsg += `<div style="margin-bottom:4px;">${icon} <strong>${r.nombre}</strong>${r.ok ? '' : ': ' + r.msg}</div>`;
+                    });
+                    htmlMsg += `</div>`;
+                }
+
+                const todosOk = extraResultados.every(r => r.ok);
+                Swal.fire({
+                    icon: todosOk ? 'success' : 'warning',
+                    title: '¡Logrado!',
+                    html: htmlMsg,
+                    timer: extraResultados.length === 0 ? 2000 : undefined,
+                    showConfirmButton: extraResultados.length > 0,
+                    confirmButtonText: 'Aceptar',
+                });
+                this.reset(); setInitialState();
+                userSelect.clear(); projectSelect.clear(); activitySelect.clear(); tipoSelect.clear(); tipoSelect.disable();
+                resetEvidenceFields({ collapsePanel: true });
+                resetQuickActivityForm();
+                resetSubactivityForm();
+                fetchWeeklyHours();
             } catch (err) {
                 Swal.fire({ icon: 'error', title: 'Oops...', text: err.message || 'No se pudo guardar el registro.' });
             }
