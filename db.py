@@ -434,31 +434,36 @@ def _crear_actividad_rapida_desde_registro(cur, datos):
 
 
 def guardar_registro_actividad(datos):
-    # Validar que la actividad no esté Completada o Cancelada
     actividad_id = datos.get('actividad_id')
     crear_actividad_rapida = actividad_id == 'ad_hoc'
+    nuevo_estatus_id = str(datos.get('nuevo_estatus_id') or '').strip() or None
     if crear_actividad_rapida or not actividad_id:
         actividad_id = None
-        
-    if actividad_id:
-        rows = ejecutar_query(
-            'SELECT E."DESCRIPCION" FROM "ACTIVIDADES" A '
-            'JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS"=E."ID" '
-            'WHERE A."ID"=?',
-            (actividad_id,)
-        )
-        if rows:
-            estatus = rows[0]["DESCRIPCION"].upper()
-            if estatus in ("COMPLETADO", "CANCELADO"):
-                raise ValueError(
-                    f"No se pueden registrar horas en una actividad con estatus '{rows[0]['DESCRIPCION']}'."
-                )
+        nuevo_estatus_id = None
 
     with _pool.get_connection() as conn:
         cur = conn.cursor()
         try:
             if crear_actividad_rapida:
                 actividad_id = _crear_actividad_rapida_desde_registro(cur, datos)
+
+            if actividad_id:
+                cur.execute(
+                    'SELECT A."ID_ESTATUS", E."DESCRIPCION" '
+                    'FROM "ACTIVIDADES" A '
+                    'JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS"=E."ID" '
+                    'WHERE A."ID"=?',
+                    (actividad_id,)
+                )
+                actividad_row = cur.fetchone()
+                if not actividad_row:
+                    raise ValueError('La actividad seleccionada ya no existe o no está disponible.')
+
+                estatus_actual_desc = str(actividad_row[1] or '').strip().upper()
+                if estatus_actual_desc in ("COMPLETADO", "CANCELADO"):
+                    raise ValueError(
+                        f"No se pueden registrar horas en una actividad con estatus '{actividad_row[1]}'."
+                    )
 
             cur.execute(
                 """
@@ -479,18 +484,34 @@ def guardar_registro_actividad(datos):
             )
             datos["actividad_id"] = actividad_id
 
-            if actividad_id and datos.get('finalizar_actividad') == '1':
+            estatus_objetivo_id = None
+            estatus_objetivo_desc = None
+
+            if actividad_id and nuevo_estatus_id:
                 cur.execute(
-                    'SELECT "ID" FROM "CAT_ESTATUS_ACTIVIDAD" WHERE TRIM(UPPER("DESCRIPCION"))=? AND "ACTIVO"=1 ORDER BY "ORDEN"',
-                    ('COMPLETADO',)
+                    'SELECT TRIM(UPPER("DESCRIPCION")) AS "DESC" '
+                    'FROM "CAT_ESTATUS_ACTIVIDAD" '
+                    'WHERE "ID"=? AND "ACTIVO"=1',
+                    (nuevo_estatus_id,)
                 )
                 row_estatus = cur.fetchone()
                 if not row_estatus:
+                    raise ValueError('El estatus seleccionado no existe o está inactivo.')
+                estatus_objetivo_id = nuevo_estatus_id
+                estatus_objetivo_desc = str(row_estatus[0] or '').strip().upper()
+            elif actividad_id and datos.get('finalizar_actividad') == '1':
+                estatus_completado_id = _obtener_estatus_id(cur, 'COMPLETADO')
+                if not estatus_completado_id:
                     raise ValueError('No se encontró el estatus activo "Completado" para finalizar la actividad.')
+                estatus_objetivo_id = estatus_completado_id
+                estatus_objetivo_desc = 'COMPLETADO'
+
+            if actividad_id and estatus_objetivo_id:
+                fecha_fin_real = datos.get('date') if estatus_objetivo_desc == 'COMPLETADO' else None
 
                 cur.execute(
                     'UPDATE "ACTIVIDADES" SET "ID_ESTATUS"=?, "FECHA_FIN_REAL"=?, "ACTUALIZADO_EN"=CURRENT_TIMESTAMP WHERE "ID"=?',
-                    (row_estatus[0], datos.get('date'), actividad_id)
+                    (estatus_objetivo_id, fecha_fin_real, actividad_id)
                 )
 
             conn.commit()

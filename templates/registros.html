@@ -688,6 +688,12 @@
             background: var(--danger-light);
         }
 
+        .btn-action.dup:hover {
+            border-color: var(--success);
+            color: var(--success);
+            background: var(--success-light);
+        }
+
         /* ── EMPTY STATE ── */
         .empty-state {
             text-align: center;
@@ -1133,6 +1139,10 @@
                                     onclick="abrirEditar({{ r.ID | tojson | forceescape }}, {{ r.FECHA|strftime('%Y-%m-%d') | tojson | forceescape }}, {{ r.HORAS | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }}, {{ (r.DETALLES or '') | tojson | forceescape }}, {{ r.ID_USUARIO | tojson | forceescape }}, {{ r.ID_PROYECTO | tojson | forceescape }}, {{ (r.ID_ACTIVIDAD or '') | tojson | forceescape }}, {{ (r.ID_TIPO_ACT or '') | tojson | forceescape }})">
                                     <i class="bi bi-pencil"></i>
                                 </button>
+                                <button class="btn-action dup" title="Duplicar"
+                                    onclick="duplicarRegistro({{ r.ID | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }}, {{ r.FECHA|strftime('%Y-%m-%d') | tojson | forceescape }})">
+                                    <i class="bi bi-copy"></i>
+                                </button>
                                 <button class="btn-action del" title="Eliminar"
                                     onclick="eliminarRegistro({{ r.ID | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }})">
                                     <i class="bi bi-trash"></i>
@@ -1519,6 +1529,56 @@
                 } else throw new Error(res.message);
             } catch (err) {
                 Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+            }
+        }
+
+        // ── Duplicar registro ─────────────────────────────────────────────────
+        async function duplicarRegistro(id, accion, fechaOrigen) {
+            const datePrompt = await Swal.fire({
+                title: 'Duplicar registro',
+                html: `<span style="font-weight:600;">${accion}</span><br><span style="font-size:.85rem;color:#64748b;">Elige la fecha destino para crear una copia.</span>`,
+                input: 'date',
+                inputValue: fechaOrigen,
+                inputAttributes: {
+                    required: 'required'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Duplicar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#2563eb',
+                preConfirm: (value) => {
+                    if (!value) {
+                        Swal.showValidationMessage('Selecciona una fecha destino.');
+                    }
+                    return value;
+                }
+            });
+
+            if (!datePrompt.isConfirmed) return;
+
+            Swal.fire({ title: 'Duplicando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const r = await fetch(`/registros/${id}/duplicar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fecha_destino: datePrompt.value })
+                });
+                const res = await r.json();
+                if (res.status !== 'success') throw new Error(res.message || 'No se pudo duplicar el registro.');
+
+                const ajustada = Boolean(res.ajustada);
+                const htmlMsg = ajustada
+                    ? `<span style="font-size:.9rem;">Se ajustaron horas por límite diario.</span><br><span style="font-size:.82rem;color:#64748b;">Original: ${res.horas_originales}h · Duplicado: ${res.horas_finales}h</span>`
+                    : `<span style="font-size:.9rem;">Se creó el duplicado para ${res.fecha_destino} con ${res.horas_finales}h.</span>`;
+
+                Swal.fire({
+                    icon: ajustada ? 'info' : 'success',
+                    title: ajustada ? 'Duplicado con ajuste' : 'Registro duplicado',
+                    html: htmlMsg,
+                    confirmButtonColor: '#2563eb'
+                }).then(() => location.reload());
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'No se pudo duplicar el registro.' });
             }
         }
 

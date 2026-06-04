@@ -200,7 +200,8 @@
             border-radius: var(--radius-card);
             box-shadow: var(--shadow-card);
             border: 1px solid var(--border);
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: visible;
         }
 
         .form-panel {
@@ -2010,6 +2011,25 @@
                             </div>
                         </div>
 
+                        <div class="field-group" id="activity-status-group" style="display:none;">
+                            <label class="field-label">
+                                Estatus de la actividad
+                                <span style="font-size:0.68rem; font-weight:500; color:var(--text-muted);">Opcional al registrar este avance</span>
+                            </label>
+                            <div class="input-wrap">
+                                <span class="input-icon"><i class="bi bi-flag"></i></span>
+                                <select id="select-activity-status" name="nuevo_estatus_id" disabled>
+                                    <option value="">Sin cambios de estatus</option>
+                                    {% for estatus in estatus_list %}
+                                    <option value="{{ estatus.ID }}">{{ estatus.DESCRIPCION }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <span style="font-size:0.74rem; color:var(--text-muted); margin-top:4px; display:block;">
+                                Este estatus también se aplicará a las personas adicionales seleccionadas.
+                            </span>
+                        </div>
+
                         <div class="quick-activity-panel" id="quick-activity-panel">
                             <label class="field-label">
                                 Datos para Actividad Rápida
@@ -2174,6 +2194,9 @@
                                 style="font-weight: 500;">
                                 <i class="bi bi-check2-circle me-1"></i> Dar por finalizada la actividad
                             </label>
+                            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:3px;">
+                                Si eliges un estatus en el selector superior, tendrá prioridad sobre esta opción.
+                            </div>
                         </div>
 
                         <!-- ── Añadir personas a esta actividad ── -->
@@ -2595,6 +2618,7 @@
                 },
             },
         });
+        const activityStatusSelect = makeTomSelect("#select-activity-status");
         const tipoSelect = makeTomSelect("#select-tipo");
         const evidenciaTipoSelect = makeTomSelect("#id_tipo_evidencia");
         const subactivityStatusField = document.getElementById('subactivity-status');
@@ -2734,6 +2758,8 @@
                 if (checkFinalizar) checkFinalizar.checked = false;
             }
 
+            syncActivityStatusControl();
+
             validateForm();
         }
 
@@ -2744,6 +2770,7 @@
         function setInitialState() {
             projectSelect.disable();
             activitySelect.disable();
+            activityStatusSelect.disable();
             tipoSelect.disable();
             hoursInput.disabled = true;
             actionInput.disabled = true;
@@ -2756,6 +2783,9 @@
             if (divFinalizar) divFinalizar.style.display = 'none';
             const checkFinalizar = document.getElementById('finalizar_actividad');
             if (checkFinalizar) checkFinalizar.checked = false;
+            activityStatusSelect.clear(true);
+            const activityStatusGroup = document.getElementById('activity-status-group');
+            if (activityStatusGroup) activityStatusGroup.style.display = 'none';
             resetAddPeoplePanel();
             updateQuickActivityPanel();
             updateSubactivityTrigger();
@@ -2822,6 +2852,23 @@
             actionInput.placeholder = isQuickActivity ? 'Ej: Junta semanal con cliente...' : 'Ej: Migración de script...';
             detailsLabel.textContent = isQuickActivity ? 'Descripción para Reporte' : 'Detalles Técnicos';
             detailsInput.placeholder = isQuickActivity ? 'Resumen, acuerdos, contexto o entregable esperado...' : 'Descripción detallada...';
+        }
+
+        function syncActivityStatusControl() {
+            const statusGroup = document.getElementById('activity-status-group');
+            const activityValue = activitySelect.getValue();
+            const isRealActivity = Boolean(activityValue && activityValue !== 'ad_hoc');
+            const shouldShow = !isRangeMode && isRealActivity;
+
+            if (statusGroup) statusGroup.style.display = shouldShow ? '' : 'none';
+
+            if (shouldShow) {
+                activityStatusSelect.enable();
+                return;
+            }
+
+            activityStatusSelect.clear(true);
+            activityStatusSelect.disable();
         }
 
         function resetQuickActivityForm() {
@@ -2963,6 +3010,7 @@
         async function loadActivitiesForProject(projectId) {
             activitySelect.clear();
             activitySelect.clearOptions();
+            syncActivityStatusControl();
             if (!projectId) {
                 activitySelect.disable();
                 updateQuickActivityPanel();
@@ -3018,6 +3066,7 @@
                 activitySelect.addOption({ value: '', text: 'Error al cargar' });
             } finally {
                 if (requestSeq === activityFetchSeq) {
+                    syncActivityStatusControl();
                     updateSubactivityTrigger();
                     validateForm();
                 }
@@ -3047,6 +3096,7 @@
             }
             updateDashboard();
             updateQuickActivityPanel();
+            syncActivityStatusControl();
             syncSubactivityContext();
             updateSubactivityTrigger();
             updateExtraPeopleOptions();
@@ -3070,6 +3120,7 @@
                 activitySelect.clear();
                 activitySelect.clearOptions();
                 activitySelect.disable();
+                syncActivityStatusControl();
             }
             updateQuickActivityPanel();
             syncSubactivityContext();
@@ -3099,6 +3150,7 @@
                 if (divFinalizar) divFinalizar.style.display = 'none';
                 if (checkFinalizar) checkFinalizar.checked = false;
             }
+            syncActivityStatusControl();
             updateQuickActivityPanel();
             syncSubactivityContext();
             updateSubactivityTrigger();
@@ -3404,6 +3456,7 @@
                 fd.set('hours', '8'); // always request 8h; backend caps to available hours per day
                 fd.delete('date');
                 fd.delete('extra_people');
+                fd.delete('nuevo_estatus_id');
 
                 try {
                     const r = await fetch('/', { method: 'POST', body: fd });

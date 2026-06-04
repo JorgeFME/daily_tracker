@@ -458,6 +458,9 @@ def index():
                 datos_dia = dict(datos)
                 datos_dia["date"] = fecha_str
                 datos_dia["hours"] = str(horas_dia)
+                # En modo rango no se permite modificar estatus de actividad.
+                datos_dia.pop("nuevo_estatus_id", None)
+                datos_dia.pop("finalizar_actividad", None)
 
                 try:
                     ok = _guardar_registro_con_evidencia(datos_dia, request.files)
@@ -1179,6 +1182,81 @@ def api_eliminar_registro(registro_id):
     if eliminar_registro(registro_id):
         return jsonify({"status": "success"})
     return jsonify({"status": "error", "message": "Error al eliminar"}), 500
+
+
+@app.route("/registros/<registro_id>/duplicar", methods=["POST"])
+def api_duplicar_registro(registro_id):
+    payload = request.get_json(silent=True) or {}
+    fecha_destino = (payload.get("fecha_destino") or "").strip()
+    if not fecha_destino:
+        return jsonify({"status": "error", "message": "La fecha destino es obligatoria."}), 400
+
+    try:
+        fecha_obj = datetime.strptime(fecha_destino, "%Y-%m-%d").date()
+    except ValueError:
+        return jsonify({"status": "error", "message": "Formato de fecha inválido."}), 400
+
+    if not _validar_fecha_hasta_fin_semana_actual(fecha_obj):
+        _, semana_fin = _semana_actual_limites()
+        return jsonify({
+            "status": "error",
+            "message": (
+                "No puedes duplicar en fechas posteriores al fin de la semana en curso "
+                f"({semana_fin.isoformat()})."
+            ),
+        }), 400
+
+    origen = obtener_registro_por_id(registro_id)
+    if not origen:
+        return jsonify({"status": "error", "message": "Registro origen no encontrado."}), 404
+
+    user_id = origen.get("ID_USUARIO")
+    horas_originales = float(origen.get("HORAS") or 0)
+    if horas_originales <= 0:
+        return jsonify({"status": "error", "message": "El registro origen no tiene horas válidas para duplicar."}), 400
+
+    horas_ausencia = get_horas_ausencia_dia(user_id, fecha_destino)
+    horas_ocupadas = get_horas_diarias(user_id, fecha_destino)
+    disponibles = max(0.0, (8.0 - horas_ausencia) - horas_ocupadas)
+
+    if disponibles <= 0:
+        return jsonify({
+            "status": "error",
+            "message": "No hay horas disponibles para ese usuario en la fecha seleccionada.",
+        }), 400
+
+    horas_finales = min(horas_originales, disponibles)
+    datos_duplicado = {
+        "date": fecha_destino,
+        "user": user_id,
+        "project": origen.get("ID_PROYECTO"),
+        "actividad_id": origen.get("ID_ACTIVIDAD") or None,
+        "tipo_act": origen.get("ID_TIPO_ACT") or None,
+        "activity_action": origen.get("ACCION") or "",
+        "hours": str(round(horas_finales, 2)),
+        "details": origen.get("DETALLES") or "",
+    }
+
+    try:
+        ok = _guardar_registro_con_evidencia(datos_duplicado, {})
+    except ValueError as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+    except Exception:
+        app.logger.exception("Error inesperado al duplicar registro")
+        return jsonify({"status": "error", "message": "Ocurrió un error interno al duplicar el registro."}), 500
+
+    if not ok:
+        return jsonify({"status": "error", "message": "No se pudo duplicar el registro."}), 500
+
+    ajustada = abs(horas_finales - horas_originales) > 1e-9
+    return jsonify({
+        "status": "success",
+        "message": "Registro duplicado correctamente.",
+        "horas_originales": round(horas_originales, 2),
+        "horas_finales": round(horas_finales, 2),
+        "ajustada": ajustada,
+        "fecha_destino": fecha_destino,
+    })
 
 
 #
