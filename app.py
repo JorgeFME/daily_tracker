@@ -35,7 +35,6 @@ from db import (
     actualizar_actividad,
     guardar_responsables_actividad,
     obtener_actividades_por_proyecto,
-    recalcular_avance_actividad,
     # Detalle
     obtener_historial_actividad,
     obtener_detalles_actividad,
@@ -63,6 +62,8 @@ from db import (
     contar_actividades_default_mes,
     reasignar_registros_proyecto,
     contar_actividades,
+    obtener_dashboard_actividades,
+    contar_dashboard_actividades,
 )
 
 load_env_from_dotenv()
@@ -269,6 +270,69 @@ def _fmt_fecha_corta(value: str | None) -> str:
         return value
 
 
+def _parse_iso_date(value: str | None, field_name: str) -> str | None:
+    """Valida fecha en formato YYYY-MM-DD y retorna el mismo valor si es válido."""
+    if not value:
+        return None
+    raw = str(value).strip()
+    if not raw:
+        return None
+    try:
+        datetime.strptime(raw, "%Y-%m-%d")
+        return raw
+    except ValueError:
+        raise ValueError(f"{field_name} debe tener formato YYYY-MM-DD.")
+
+
+def _normalizar_campos_dashboard_actividad(datos: dict) -> tuple[dict, str | None]:
+    """Normaliza y valida campos extendidos de actividad para dashboard."""
+    datos["friendly_name"] = (datos.get("friendly_name") or "").strip() or None
+
+    try:
+        datos["fecha_inicio"] = _parse_iso_date(datos.get("fecha_inicio"), "Fecha de inicio")
+        datos["fecha_fin_est"] = _parse_iso_date(datos.get("fecha_fin_est"), "Fecha fin estimada")
+        datos["fecha_fin_real"] = _parse_iso_date(datos.get("fecha_fin_real"), "Fecha fin real")
+    except ValueError as exc:
+        return datos, str(exc)
+
+    dias_acordados = (datos.get("dias_acordados") or "").strip()
+    avance_pct = (datos.get("avance_pct") or "").strip()
+
+    if datos.get("fecha_inicio") and datos.get("fecha_fin_est"):
+        f_inicio = datetime.strptime(datos["fecha_inicio"], "%Y-%m-%d").date()
+        f_fin_est = datetime.strptime(datos["fecha_fin_est"], "%Y-%m-%d").date()
+        if f_fin_est < f_inicio:
+            return datos, "La fecha fin estimada no puede ser menor a la fecha de inicio."
+        datos["dias_acordados"] = str((f_fin_est - f_inicio).days + 1)
+    elif dias_acordados:
+        if not dias_acordados.isdigit():
+            return datos, "Los días acordados deben ser un número entero."
+        dias = int(dias_acordados)
+        if dias < 1 or dias > 365:
+            return datos, "Los días acordados deben estar entre 1 y 365."
+        datos["dias_acordados"] = str(dias)
+    else:
+        datos["dias_acordados"] = None
+
+    if avance_pct:
+        if not avance_pct.isdigit():
+            return datos, "El porcentaje de avance debe ser un número entero."
+        avance = int(avance_pct)
+        if avance < 0 or avance > 100:
+            return datos, "El porcentaje de avance debe estar entre 0 y 100."
+        datos["avance_pct"] = str(avance)
+    else:
+        datos["avance_pct"] = "0"
+
+    if datos.get("fecha_inicio") and datos.get("fecha_fin_real"):
+        f_inicio = datetime.strptime(datos["fecha_inicio"], "%Y-%m-%d").date()
+        f_fin_real = datetime.strptime(datos["fecha_fin_real"], "%Y-%m-%d").date()
+        if f_fin_real < f_inicio:
+            return datos, "La fecha fin real no puede ser menor a la fecha de inicio."
+
+    return datos, None
+
+
 def _build_registros_export_context(filtros, filtros_meta, base, actividades=None):
     proyecto_nombre = _catalog_label(
         base["projects"], filtros.get("proyecto_id"), "ID", "NOMBRE_PROYECTO", fallback="Sin proyecto"
@@ -372,9 +436,6 @@ def _guardar_registro_con_evidencia(datos, request_files):
     """
     ok = guardar_registro_actividad(datos)
     if ok:
-        if datos.get("actividad_id") and datos.get("actividad_rapida_creada") != "1":
-            recalcular_avance_actividad(datos.get("actividad_id"))
-
         if datos.get("incluir_evidencia") == "on" and datos.get("actividad_id"):
             actividad_id = datos.get("actividad_id")
             actividad = obtener_actividad_por_id(actividad_id)
@@ -668,6 +729,93 @@ def dashboard_data():
     )
 
 
+@app.route("/api/dashboard_actividades")
+def dashboard_actividades_rapidas():
+    proyecto_id = (request.args.get("proyecto_id") or "").strip() or None
+    estatus_id = (request.args.get("estatus_id") or "").strip() or None
+    q = (request.args.get("q") or "").strip() or None
+    friendly_name_q = (request.args.get("friendly_name_q") or "").strip() or None
+    solo_retraso = str(request.args.get("solo_retraso") or "").strip().lower() in {"1", "true", "si", "yes"}
+    sort_by = (request.args.get("sort") or "recientes").strip().lower()
+
+    try:
+        fecha_desde = _parse_iso_date(request.args.get("fecha_desde"), "fecha_desde")
+        fecha_hasta = _parse_iso_date(request.args.get("fecha_hasta"), "fecha_hasta")
+    except ValueError as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 400
+
+    try:
+        page = max(int(request.args.get("page", 1)), 1)
+        page_size = int(request.args.get("page_size", 50))
+        page_size = max(1, min(page_size, 100))
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "message": "page y page_size deben ser enteros válidos."}), 400
+
+    total = contar_dashboard_actividades(
+        proyecto_id=proyecto_id,
+        estatus_id=estatus_id,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        q=q,
+        friendly_name_q=friendly_name_q,
+        solo_retraso=solo_retraso,
+    )
+    total_pages = max((total + page_size - 1) // page_size, 1)
+    if page > total_pages:
+        page = total_pages
+
+    rows = obtener_dashboard_actividades(
+        proyecto_id=proyecto_id,
+        estatus_id=estatus_id,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        q=q,
+        friendly_name_q=friendly_name_q,
+        solo_retraso=solo_retraso,
+        sort_by=sort_by,
+        page=page,
+        page_size=page_size,
+    )
+
+    return jsonify({
+        "status": "success",
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+        "rows": [
+            {
+                "id": r["ID"],
+                "nombre_actividad": r.get("NOMBRE_ACTIVIDAD") or "",
+                "friendly_name": r.get("FRIENDLY_NAME") or "",
+                "proyecto": r.get("NOMBRE_PROYECTO") or "",
+                "estatus": r.get("ESTATUS") or "",
+                "estatus_color": r.get("ESTATUS_COLOR") or "#94a3b8",
+                "responsables": r.get("RESPONSABLES") or "Sin asignar",
+                "dias_acordados": r.get("DIAS_ACORDADOS"),
+                "fecha_inicio": str(r.get("FECHA_INICIO") or ""),
+                "fecha_fin_est": str(r.get("FECHA_FIN_EST") or ""),
+                "fecha_fin_real": str(r.get("FECHA_FIN_REAL") or ""),
+                "avance_pct": int(r.get("AVANCE_PCT") or 0),
+                "en_retraso": bool(int(r.get("EN_RETRASO") or 0)),
+                "prioridad": int(r.get("PRIORIDAD") or 2),
+            }
+            for r in rows
+        ],
+    })
+
+
+@app.route("/dashboard-actividades")
+def dashboard_actividades_view():
+    base = _catalogo_base()
+    return render_template(
+        "dashboard_actividades.html",
+        page_title="Plan de trabajo",
+        projects=base["projects"],
+        estatus_list=obtener_estatus_actividad(),
+    )
+
+
 # ── ACTIVIDADES ────────────────────────────────────────────────────────────
 
 
@@ -827,6 +975,9 @@ def nueva_actividad():
     datos["descripcion"] = (datos.get("descripcion") or "").strip() or None
     datos["solicitante"] = (datos.get("solicitante") or "").strip() or None
     datos["tipo"] = (datos.get("tipo") or "").strip().upper()
+    datos, error_campos = _normalizar_campos_dashboard_actividad(datos)
+    if error_campos:
+        return jsonify({"status": "error", "message": error_campos}), 400
 
     missing_fields = []
     if not datos.get("id_proyecto"):
@@ -953,11 +1104,15 @@ def api_actividad_detalle(actividad_id):
             "id_proyecto": actividad["ID_PROYECTO"],
             "tipo": (actividad.get("TIPO") or ""),
             "nombre_actividad": actividad["NOMBRE_ACTIVIDAD"] or "",
+            "friendly_name": actividad.get("FRIENDLY_NAME") or "",
             "descripcion": actividad.get("DESCRIPCION") or "",
             "solicitante": actividad.get("SOLICITANTE") or "",
             "fecha_solicitud": str(actividad.get("FECHA_SOLICITUD") or ""),
             "fecha_inicio": str(actividad.get("FECHA_INICIO") or ""),
+            "fecha_fin_est": str(actividad.get("FECHA_FIN_EST") or ""),
             "fecha_fin_real": str(actividad.get("FECHA_FIN_REAL") or ""),
+            "dias_acordados": str(actividad.get("DIAS_ACORDADOS") or ""),
+            "avance_pct": str(actividad.get("AVANCE_PCT") or 0),
             "id_estatus": actividad["ID_ESTATUS"],
             "prioridad": str(actividad.get("PRIORIDAD") or 2),
             "id_actividad_padre": actividad.get("ID_ACTIVIDAD_PADRE") or "",
@@ -972,6 +1127,9 @@ def editar_actividad(actividad_id):
     datos = request.form.to_dict()
     datos["solicitante"] = (datos.get("solicitante") or "").strip() or None
     datos["tipo"] = (datos.get("tipo") or "").strip().upper()
+    datos, error_campos = _normalizar_campos_dashboard_actividad(datos)
+    if error_campos:
+        return jsonify({"status": "error", "message": error_campos}), 400
 
     if not datos.get("tipo"):
         return jsonify({"status": "error", "message": "El tipo es obligatorio."}), 400

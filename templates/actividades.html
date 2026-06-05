@@ -996,6 +996,7 @@
             <a href="/evidencias" class="nav-link-item"><i class="bi bi-images"></i>Evidencias</a>
             <a href="/calendario" class="nav-link-item"><i class="bi bi-calendar3"></i>Calendario</a>
             <a href="/catalogos" class="nav-link-item"><i class="bi bi-sliders"></i>Catálogos</a>
+            <a href="/dashboard-actividades" class="nav-link-item"><i class="bi bi-speedometer2"></i>Plan de trabajo</a>
         </div>
     </nav>
 
@@ -1173,6 +1174,11 @@
                                 placeholder="Ej: Análisis de consumo energético...">
                         </div>
                         <div class="field-group">
+                            <label class="field-label">Friendly name</label>
+                            <input type="text" class="field-input" name="friendly_name"
+                                placeholder="Ej: Plan semanal cliente ACME">
+                        </div>
+                        <div class="field-group">
                             <label class="field-label">Descripción</label>
                             <textarea class="field-input" name="descripcion"
                                 placeholder="Contexto, objetivos, alcance..."></textarea>
@@ -1207,6 +1213,23 @@
                                     <option value="3">🟢 Baja</option>
                                 </select>
                             </div>
+                        </div>
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Fecha fin estimada</label>
+                                <input type="text" class="field-input" id="new-fecha-fin-est" name="fecha_fin_est"
+                                    placeholder="Selecciona fecha" autocomplete="off">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Avance %</label>
+                                <input type="number" class="field-input" id="new-avance-pct" name="avance_pct"
+                                    min="0" max="100" step="1" inputmode="numeric" placeholder="0">
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Días A/T</label>
+                            <input type="number" class="field-input" id="new-dias-acordados" name="dias_acordados"
+                                min="1" max="365" step="1" inputmode="numeric" placeholder="Se calcula con fechas">
                         </div>
                         <div class="field-group">
                             <label class="field-label">Responsable(s)</label>
@@ -1288,6 +1311,11 @@
                             <input type="text" class="field-input" id="quick-edit-nombre" name="nombre_actividad" required>
                         </div>
                         <div class="field-group">
+                            <label class="field-label">Friendly name</label>
+                            <input type="text" class="field-input" id="quick-edit-friendly-name" name="friendly_name"
+                                placeholder="Ej: Plan semanal cliente ACME">
+                        </div>
+                        <div class="field-group">
                             <label class="field-label">Descripción</label>
                             <textarea class="field-input" id="quick-edit-descripcion" name="descripcion"
                                 placeholder="Contexto, objetivos, alcance..."></textarea>
@@ -1315,8 +1343,8 @@
                                     placeholder="Selecciona fecha" autocomplete="off">
                             </div>
                             <div class="field-group">
-                                <label class="field-label">Fecha fin real</label>
-                                <input type="text" class="field-input" id="quick-edit-fecha-fin" name="fecha_fin_real"
+                                <label class="field-label">Fecha fin estimada</label>
+                                <input type="text" class="field-input" id="quick-edit-fecha-fin-est" name="fecha_fin_est"
                                     placeholder="Selecciona fecha" autocomplete="off">
                             </div>
                         </div>
@@ -1337,6 +1365,18 @@
                                     <option value="{{ a.ID }}">{{ a.NOMBRE_ACTIVIDAD }} — {{ a.NOMBRE_PROYECTO }}</option>
                                     {% endfor %}
                                 </select>
+                            </div>
+                        </div>
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Días A/T</label>
+                                <input type="number" class="field-input" id="quick-edit-dias-acordados" name="dias_acordados"
+                                    min="1" max="365" step="1" inputmode="numeric" placeholder="Se calcula con fechas">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Avance %</label>
+                                <input type="number" class="field-input" id="quick-edit-avance-pct" name="avance_pct"
+                                    min="0" max="100" step="1" inputmode="numeric" placeholder="0">
                             </div>
                         </div>
                         <div class="field-group">
@@ -1547,8 +1587,9 @@
             disableMobile: true,
             allowInput: false,
         };
-        flatpickr("#new-fecha-solicitud", fpCfg);
-        flatpickr("#new-fecha-inicio", fpCfg);
+        const newFechaSolicitudPicker = flatpickr("#new-fecha-solicitud", fpCfg);
+        const newFechaInicioPicker = flatpickr("#new-fecha-inicio", fpCfg);
+        const newFechaFinEstPicker = flatpickr("#new-fecha-fin-est", fpCfg);
 
         const filterSubmitCfg = {
             ...filterCfg,
@@ -1659,10 +1700,14 @@
         const quickEditActividadId = document.getElementById('quick-edit-actividad-id');
         const quickEditSolicitante = document.getElementById('quick-edit-solicitante');
         const quickEditPadreField = document.getElementById('quick-edit-padre');
+        const newDiasAcordadosField = document.getElementById('new-dias-acordados');
+        const newAvancePctField = document.getElementById('new-avance-pct');
+        const quickEditDiasAcordadosField = document.getElementById('quick-edit-dias-acordados');
+        const quickEditAvancePctField = document.getElementById('quick-edit-avance-pct');
 
         const quickEditFechaSolicitudPicker = flatpickr("#quick-edit-fecha-solicitud", fpCfg);
         const quickEditFechaInicioPicker = flatpickr("#quick-edit-fecha-inicio", fpCfg);
-        const quickEditFechaFinPicker = flatpickr("#quick-edit-fecha-fin", fpCfg);
+        const quickEditFechaFinEstPicker = flatpickr("#quick-edit-fecha-fin-est", fpCfg);
 
         const quickEditProyectoTs = new TomSelect('#quick-edit-proyecto', tsCfg);
         const quickEditEstatusTs = new TomSelect('#quick-edit-estatus', tsCfg);
@@ -1684,6 +1729,48 @@
                 picker.clear();
             }
         }
+
+        function calcularDiasAcordados(fechaInicio, fechaFin) {
+            const inicio = normalizarFechaInput(fechaInicio);
+            const fin = normalizarFechaInput(fechaFin);
+            if (!inicio || !fin) return null;
+            const inicioDate = new Date(`${inicio}T00:00:00`);
+            const finDate = new Date(`${fin}T00:00:00`);
+            if (Number.isNaN(inicioDate.getTime()) || Number.isNaN(finDate.getTime()) || finDate < inicioDate) {
+                return null;
+            }
+            const diffMs = finDate.getTime() - inicioDate.getTime();
+            return Math.max(1, Math.floor(diffMs / 86400000) + 1);
+        }
+
+        function syncDiasAcordadosField({ startPicker, endPicker, diasInput }) {
+            if (!diasInput) return;
+            const diasCalculados = calcularDiasAcordados(startPicker?.input?.value, endPicker?.input?.value);
+            if (diasCalculados === null) {
+                diasInput.readOnly = false;
+                diasInput.removeAttribute('readonly');
+                return;
+            }
+            diasInput.value = String(diasCalculados);
+            diasInput.readOnly = true;
+            diasInput.setAttribute('readonly', 'readonly');
+        }
+
+        [newFechaInicioPicker?.input, newFechaFinEstPicker?.input].forEach((input) => {
+            input?.addEventListener('change', () => syncDiasAcordadosField({
+                startPicker: newFechaInicioPicker,
+                endPicker: newFechaFinEstPicker,
+                diasInput: newDiasAcordadosField,
+            }));
+        });
+
+        [quickEditFechaInicioPicker?.input, quickEditFechaFinEstPicker?.input].forEach((input) => {
+            input?.addEventListener('change', () => syncDiasAcordadosField({
+                startPicker: quickEditFechaInicioPicker,
+                endPicker: quickEditFechaFinEstPicker,
+                diasInput: quickEditDiasAcordadosField,
+            }));
+        });
 
         function ensureQuickEditSolicitanteOption(nombre) {
             const valor = String(nombre || '').trim();
@@ -1727,11 +1814,19 @@
                 const actividad = payload.actividad;
                 quickEditActividadId.value = actividad.id;
                 quickEditForm.querySelector('[name="nombre_actividad"]').value = actividad.nombre_actividad || '';
+                quickEditForm.querySelector('[name="friendly_name"]').value = actividad.friendly_name || '';
                 quickEditForm.querySelector('[name="descripcion"]').value = actividad.descripcion || '';
                 quickEditForm.querySelector('[name="prioridad"]').value = actividad.prioridad || '2';
                 setPickerDateOrClear(quickEditFechaSolicitudPicker, actividad.fecha_solicitud);
                 setPickerDateOrClear(quickEditFechaInicioPicker, actividad.fecha_inicio);
-                setPickerDateOrClear(quickEditFechaFinPicker, actividad.fecha_fin_real);
+                setPickerDateOrClear(quickEditFechaFinEstPicker, actividad.fecha_fin_est);
+                if (quickEditDiasAcordadosField) quickEditDiasAcordadosField.value = actividad.dias_acordados || '';
+                if (quickEditAvancePctField) quickEditAvancePctField.value = actividad.avance_pct || '0';
+                syncDiasAcordadosField({
+                    startPicker: quickEditFechaInicioPicker,
+                    endPicker: quickEditFechaFinEstPicker,
+                    diasInput: quickEditDiasAcordadosField,
+                });
 
                 ensureQuickEditSolicitanteOption(actividad.solicitante);
                 quickEditSolicitante.value = actividad.solicitante || '';

@@ -1,0 +1,1864 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title or 'Plan de trabajo' }} · Daily Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --primary: #2563eb;
+            --primary-soft: #dbeafe;
+            --primary-hover: #1d4ed8;
+            --surface: #ffffff;
+            --surface-alt: #f8fafc;
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
+            --text-main: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #64748b;
+            --ok: #16a34a;
+            --ok-soft: #ecfdf3;
+            --warn: #ea580c;
+            --warn-soft: #fff7ed;
+            --danger: #dc2626;
+            --radius-sm: 8px;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.04);
+            --shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+            --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.1);
+        }
+
+        html {
+            font-size: 90%;
+            scroll-behavior: smooth;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ─── Nav ─── */
+        .top-nav {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 60px;
+            width: 100%;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 1rem;
+            color: var(--text-main);
+            text-decoration: none;
+            margin-right: 24px;
+            transition: opacity 0.2s;
+        }
+
+        .nav-logo:hover {
+            opacity: 0.7;
+        }
+
+        .nav-logo i {
+            font-size: 1.35rem;
+            color: var(--primary);
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .nav-link-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 16px;
+            border-radius: 99px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-link-item:hover {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .nav-link-item.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .nav-link-item i {
+            font-size: 0.95rem;
+        }
+
+        .nav-hamburger {
+            display: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            color: var(--text-muted);
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-hamburger:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* ─── Layout ─── */
+        .page {
+            width: 96%;
+            max-width: 1900px;
+            margin: 15px auto;
+            padding: 16px;
+        }
+
+        /* ─── Header ─── */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .header-content {
+            flex: 1;
+        }
+
+        .header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0 0 4px 0;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin: 0;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 16px 10px 44px;
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            background-color: var(--bg-main);
+            font-size: 0.85rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .title {
+            margin: 0 0 6px 0;
+            font-size: 1.75rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            margin: 0;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .badge-live {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-soft);
+            border: 1px solid #bfdbfe;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .badge-live i {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        /* ─── Filters ─── */
+        .filters {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .filters-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 16px;
+            align-items: end;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+        }
+
+        .field label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: 0.02em;
+        }
+
+        /* ─── Inputs de texto ─── */
+        .control-input {
+            height: 36px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0 10px;
+            font-family: inherit;
+            font-size: 0.8rem;
+            background: var(--surface);
+            color: var(--text-main);
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .control-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .control-input:hover {
+            border-color: #cbd5e1;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        /* ─── Custom Dropdown ─── */
+        .cd-wrap {
+            position: relative;
+            width: 100%;
+        }
+
+        .cd-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            height: 36px;
+            width: 100%;
+            padding: 0 14px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            font-family: inherit;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            user-select: none;
+        }
+
+        .cd-trigger:hover {
+            border-color: #cbd5e1;
+        }
+
+        .cd-trigger.open,
+        .cd-trigger:focus-visible {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+
+        .cd-trigger-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-main);
+        }
+
+        .cd-trigger-text.placeholder {
+            color: #94a3b8;
+        }
+
+        .cd-chevron {
+            flex-shrink: 0;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        .cd-trigger.open .cd-chevron {
+            transform: rotate(180deg);
+        }
+
+        /* Panel */
+        .cd-panel {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            min-width: 100%;
+            background: var(--surface);
+            border: 1.5px solid #c7d7f0;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 500;
+            overflow: hidden;
+            animation: cdPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes cdPop {
+            from {
+                opacity: 0;
+                transform: translateY(-6px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .cd-panel.open {
+            display: block;
+        }
+
+        .cd-list {
+            max-height: 240px;
+            overflow-y: auto;
+            padding: 6px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        .cd-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .cd-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 99px;
+        }
+
+        .cd-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 9px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: background 0.12s;
+        }
+
+        .cd-option:hover {
+            background: var(--surface-alt);
+        }
+
+        .cd-option.selected {
+            background: var(--primary-soft);
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .cd-check {
+            font-size: 0.8rem;
+            color: var(--primary);
+            flex-shrink: 0;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .cd-option.selected .cd-check {
+            opacity: 1;
+        }
+
+        .cd-hidden {
+            display: none;
+        }
+
+        /* ─── Toggle ─── */
+        .toggle-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            height: 42px;
+            cursor: pointer;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        }
+
+        .toggle-switch.active {
+            background: var(--warn);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(20px);
+        }
+
+        .toggle-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            user-select: none;
+        }
+
+        /* ─── Actions ─── */
+        .actions {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: var(--radius);
+            padding: 0 18px;
+            height: 42px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.83rem;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-muted {
+            background: var(--surface-alt);
+            color: var(--text-secondary);
+            border: 1.5px solid var(--border);
+        }
+
+        .btn-muted:hover {
+            background: var(--border-light);
+            border-color: #cbd5e1;
+        }
+
+        .btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ─── KPI Grid ─── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .kpi {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.25s ease;
+        }
+
+        .kpi:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .kpi-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .kpi-icon.blue {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .kpi-icon.orange {
+            background: var(--warn-soft);
+            color: var(--warn);
+        }
+
+        .kpi-icon.green {
+            background: var(--ok-soft);
+            color: var(--ok);
+        }
+
+        .kpi-icon.slate {
+            background: var(--surface-alt);
+            color: var(--text-muted);
+        }
+
+        .kpi-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .kpi-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 6px;
+        }
+
+        .kpi-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .kpi-value.warn {
+            color: var(--warn);
+        }
+
+        .kpi-value.ok {
+            color: var(--ok);
+        }
+
+        .kpi-value.mono {
+            font-family: 'DM Mono', monospace;
+            font-size: 1.4rem;
+        }
+
+        /* ─── Table ─── */
+        .table-shell {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        .table-wrap::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .table-wrap::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .table-wrap::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .table-wrap::-webkit-scrollbar-thumb:hover {
+            background: #cbd5e1;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        th,
+        td {
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 0.72rem;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--border-light);
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        th:nth-child(6),
+        td:nth-child(6),
+        th:nth-child(7),
+        td:nth-child(7) {
+            white-space: nowrap !important;
+        }
+
+        /* Centramos los títulos y celdas de las columnas de métricas, fechas y estatus */
+        th:nth-child(n+4),
+        td:nth-child(n+4) {
+            text-align: center;
+        }
+
+        th {
+            background-color: var(--bg-main);
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        tbody tr:hover td {
+            background: #fafbfc;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .mono {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.82rem;
+        }
+
+        .activity-link {
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .activity-link:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            gap: 4px;
+            white-space: nowrap !important;
+        }
+
+        /* Asegurar que la tabla sea responsiva dentro de su contenedor de tarjeta */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .chip.warn {
+            background: var(--warn-soft);
+            color: #c2410c;
+            border: 1px solid #fed7aa;
+        }
+
+        .chip.ok {
+            background: var(--ok-soft);
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+
+        .progress-container {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: center;
+            vertical-align: middle; /* ← clave para alinear con el texto de la celda */
+        }
+
+        .progress-bar {
+            width: 40px;
+            height: 6px;
+            background: var(--border-light);
+            border-radius: 3px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 2px; /* ← para que el 1% o 10% no desaparezca */
+        }
+
+        .progress-fill.high {
+            background: var(--ok);
+        }
+
+        .progress-fill.medium {
+            background: #eab308;
+        }
+
+        .progress-fill.low {
+            background: var(--warn);
+        }
+
+        .progress-text {
+            font-size: 0.75rem;
+            font-weight: 600;
+            min-width: 32px;
+            text-align: right;
+            line-height: 1;
+        }
+
+        /* ─── Pagination ─── */
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .pagination-info {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .pagination-pages {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .page-btn {
+            min-width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 0 10px;
+        }
+
+        .page-btn:hover:not(:disabled):not(.active) {
+            background: var(--surface-alt);
+            border-color: #cbd5e1;
+        }
+
+        .page-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* ─── Empty / Error ─── */
+        .empty {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty i {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            display: block;
+            opacity: 0.4;
+        }
+
+        .empty-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin: 0 0 6px 0;
+        }
+
+        .empty-desc {
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        /* ─── Skeleton ─── */
+        .skeleton {
+            background: linear-gradient(90deg, var(--border-light) 25%, var(--border) 50%, var(--border-light) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .skeleton-row td {
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .skeleton-text {
+            height: 14px;
+            width: 70%;
+        }
+
+        .skeleton-text.short {
+            width: 40%;
+        }
+
+        .skeleton-text.long {
+            width: 90%;
+        }
+
+        /* ─── Toasts ─── */
+        .toast-container {
+            position: fixed;
+            top: 76px;
+            right: 24px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            max-width: 380px;
+            pointer-events: auto;
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease 4.7s forwards;
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--ok);
+        }
+
+        .toast.info {
+            border-left: 4px solid var(--primary);
+        }
+
+        .toast i {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .toast.error i {
+            color: var(--danger);
+        }
+
+        .toast.success i {
+            color: var(--ok);
+        }
+
+        .toast.info i {
+            color: var(--primary);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 1200px) {
+            .kpi-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 1100px) {
+            .filters-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filters-row-2 {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .actions {
+                grid-column: span 2;
+                justify-content: flex-end;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-nav {
+                padding: 0 16px;
+                height: 56px;
+            }
+
+            .nav-logo-text {
+                display: none;
+            }
+
+            .nav-hamburger {
+                display: inline-flex;
+            }
+
+            .nav-menu {
+                position: absolute;
+                top: calc(100% + 6px);
+                left: 12px;
+                right: 12px;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-lg);
+                padding: 10px;
+                display: none;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+            }
+
+            .top-nav.menu-open .nav-menu {
+                display: flex;
+            }
+
+            .nav-menu .nav-link-item {
+                width: 100%;
+                justify-content: flex-start;
+                padding: 10px 16px;
+            }
+
+            .page {
+                padding: 20px 14px 32px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .title {
+                font-size: 1.45rem;
+            }
+
+            .badge-live {
+                align-self: flex-start;
+            }
+
+            .filters {
+                padding: 18px;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
+                margin-bottom: 14px;
+            }
+
+            .filters-row-2 {
+                grid-template-columns: 1fr;
+                gap: 14px;
+            }
+
+            .actions {
+                grid-column: span 1;
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .kpi {
+                padding: 16px;
+            }
+
+            .kpi-value {
+                font-size: 1.4rem;
+            }
+
+            .pagination {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .pagination-info {
+                order: -1;
+            }
+
+            .toast-container {
+                left: 14px;
+                right: 14px;
+                top: 66px;
+            }
+
+            .toast {
+                max-width: none;
+            }
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+    </style>
+    <base target="_blank">
+</head>
+
+<body>
+    <nav class="top-nav" id="top-nav">
+        <a href="/" class="nav-logo">
+            <i class="bi bi-layers-half"></i>
+            <span class="nav-logo-text">Dream Team Daily Tracker</span>
+        </a>
+        <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Abrir menú de navegación"
+            aria-expanded="false" aria-controls="nav-menu">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="nav-menu" id="nav-menu">
+            <a href="/" class="nav-link-item"><i class="bi bi-house"></i>Inicio</a>
+            <a href="/actividades" class="nav-link-item"><i class="bi bi-kanban"></i>Actividades</a>
+            <a href="/registros" class="nav-link-item"><i class="bi bi-clock-history"></i>Registros</a>
+            <a href="/evidencias" class="nav-link-item"><i class="bi bi-images"></i>Evidencias</a>
+            <a href="/calendario" class="nav-link-item"><i class="bi bi-calendar3"></i>Calendario</a>
+            <a href="/catalogos" class="nav-link-item"><i class="bi bi-sliders"></i>Catálogos</a>
+            <a href="/dashboard-actividades" class="nav-link-item active">
+                <i class="bi bi-speedometer2"></i>Plan de trabajo
+            </a>
+        </div>
+    </nav>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <div class="page">
+        <div class="header">
+            <div class="header-content">
+                <h1 class="title">Plan de trabajo</h1>
+                <p class="subtitle">Visión operativa con foco en retrasos, compromisos y avance.</p>
+            </div>
+            <span class="badge-live">
+                <i class="bi bi-broadcast"></i>Datos en tiempo real
+            </span>
+        </div>
+
+        <!-- Filters -->
+        <form class="filters" id="filters-form">
+            <div class="filters-grid">
+
+                <!-- PROYECTO -->
+                <div class="field">
+                    <label>Proyecto</label>
+                    <div class="cd-wrap" id="cd-proyecto">
+                        <button type="button" class="cd-trigger" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="cd-trigger-text placeholder">Todos los proyectos</span>
+                            <i class="bi bi-chevron-down cd-chevron"></i>
+                        </button>
+                        <div class="cd-panel" role="listbox">
+                            <div class="cd-list">
+                                <div class="cd-option selected" data-value="">
+                                    Todos los proyectos
+                                    <i class="bi bi-check2 cd-check"></i>
+                                </div>
+                                {% for p in projects %}
+                                <div class="cd-option" data-value="{{ p.ID }}">
+                                    {{ p.NOMBRE_PROYECTO }}
+                                    <i class="bi bi-check2 cd-check"></i>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <input type="hidden" class="cd-hidden" name="proyecto_id" value="">
+                    </div>
+                </div>
+
+                <!-- ESTATUS -->
+                <div class="field">
+                    <label>Estatus</label>
+                    <div class="cd-wrap" id="cd-estatus">
+                        <button type="button" class="cd-trigger" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="cd-trigger-text placeholder">Todos los estatus</span>
+                            <i class="bi bi-chevron-down cd-chevron"></i>
+                        </button>
+                        <div class="cd-panel" role="listbox">
+                            <div class="cd-list">
+                                <div class="cd-option selected" data-value="">
+                                    Todos los estatus
+                                    <i class="bi bi-check2 cd-check"></i>
+                                </div>
+                                {% for e in estatus_list %}
+                                <div class="cd-option" data-value="{{ e.ID }}">
+                                    {{ e.DESCRIPCION }}
+                                    <i class="bi bi-check2 cd-check"></i>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <input type="hidden" class="cd-hidden" name="estatus_id" value="">
+                    </div>
+                </div>
+
+                <!-- BÚSQUEDA -->
+                <div class="field">
+                    <label for="f-q">Búsqueda por actividad</label>
+                    <input class="control-input" id="f-q" name="q" type="text" placeholder="Escribe para buscar...">
+                </div>
+            </div>
+
+            <div class="filters-row-2">
+                <!-- FRIENDLY NAME -->
+                <div class="field">
+                    <label for="f-friendly">Friendly name</label>
+                    <input class="control-input" id="f-friendly" name="friendly_name_q" type="text"
+                        placeholder="Buscar por friendly name">
+                </div>
+
+                <!-- ORDEN -->
+                <div class="field">
+                    <label>Ordenar por</label>
+                    <div class="cd-wrap" id="cd-sort">
+                        <button type="button" class="cd-trigger" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="cd-trigger-text">Más recientes</span>
+                            <i class="bi bi-chevron-down cd-chevron"></i>
+                        </button>
+                        <div class="cd-panel" role="listbox">
+                            <div class="cd-list">
+                                <div class="cd-option selected" data-value="recientes">
+                                    Más recientes <i class="bi bi-check2 cd-check"></i>
+                                </div>
+                                <div class="cd-option" data-value="retraso">
+                                    Mayor riesgo <i class="bi bi-check2 cd-check"></i>
+                                </div>
+                                <div class="cd-option" data-value="avance">
+                                    Menor avance <i class="bi bi-check2 cd-check"></i>
+                                </div>
+                                <div class="cd-option" data-value="nombre">
+                                    Nombre A-Z <i class="bi bi-check2 cd-check"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" class="cd-hidden" name="sort" value="recientes">
+                    </div>
+                </div>
+
+                <!-- ACTIONS -->
+                <div class="actions">
+                    <div class="toggle-wrap" id="toggle-retraso" role="button" tabindex="0" aria-pressed="false">
+                        <div class="toggle-switch" id="toggle-switch"></div>
+                        <span class="toggle-label">Solo retraso</span>
+                        <input type="checkbox" id="f-retraso" name="solo_retraso" value="1" style="display:none;">
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel"></i>Aplicar
+                    </button>
+                    <button type="button" id="btn-clear" class="btn btn-muted">
+                        <i class="bi bi-arrow-counterclockwise"></i>Limpiar
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- KPIs -->
+        <div class="kpi-grid">
+            <div class="kpi">
+                <div class="kpi-icon blue"><i class="bi bi-list-check"></i></div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Total actividades</div>
+                    <div class="kpi-value" id="kpi-total">—</div>
+                </div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-icon orange"><i class="bi bi-exclamation-triangle"></i></div>
+                <div class="kpi-content">
+                    <div class="kpi-label">En retraso</div>
+                    <div class="kpi-value warn" id="kpi-retraso">—</div>
+                </div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-icon green"><i class="bi bi-graph-up-arrow"></i></div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Promedio avance</div>
+                    <div class="kpi-value ok" id="kpi-avance">—</div>
+                </div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-icon slate"><i class="bi bi-file-earmark-text"></i></div>
+                <div class="kpi-content">
+                    <div class="kpi-label">Página</div>
+                    <div class="kpi-value mono" id="kpi-page">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <section class="table-shell">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:10%;">Actividad</th>
+                            <th style="width:10%;">Friendly name</th>
+                            <th style="width:6%;">Proyecto</th>
+                            <th style="width:6%;">Estatus</th>
+                            <th style="width:7%;">Responsables</th>
+                            <th style="width:2%;">Días</th>
+                            <th style="width:5%;">Inicio</th>
+                            <th style="width:5%;">Fin</th>
+                            <th style="width:8%;">Avance</th>
+                            <th style="width:7%;">Riesgo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rows">
+                        <!-- Skeleton inicial -->
+                        <tr class="skeleton-row">
+                            <td>
+                                <div class="skeleton skeleton-text long"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td>
+                                <div class="skeleton skeleton-text long"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td>
+                                <div class="skeleton skeleton-text long"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td>
+                                <div class="skeleton skeleton-text long"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                        </tr>
+                        <tr class="skeleton-row">
+                            <td>
+                                <div class="skeleton skeleton-text long"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text"></div>
+                            </td>
+                            <td>
+                                <div class="skeleton skeleton-text short"></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            <div class="pagination-info" id="pagination-text">Cargando datos...</div>
+            <div class="pagination-pages" id="pagination-pages">
+                <button type="button" class="page-btn" id="btn-prev" disabled>
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button type="button" class="page-btn active">1</button>
+                <button type="button" class="page-btn" id="btn-next" disabled>
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ═══════════════════════════════════
+           CUSTOM DROPDOWNS
+        ═══════════════════════════════════ */
+        function initDropdowns() {
+            document.querySelectorAll('.cd-wrap').forEach(wrap => {
+                const trigger = wrap.querySelector('.cd-trigger');
+                const panel = wrap.querySelector('.cd-panel');
+                const list = wrap.querySelector('.cd-list');
+                const hidden = wrap.querySelector('.cd-hidden');
+                const trigText = wrap.querySelector('.cd-trigger-text');
+
+                trigger.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const isOpen = panel.classList.contains('open');
+                    closeAllDropdowns();
+                    if (!isOpen) {
+                        panel.classList.add('open');
+                        trigger.classList.add('open');
+                        trigger.setAttribute('aria-expanded', 'true');
+                    }
+                });
+
+                list.addEventListener('click', e => {
+                    const opt = e.target.closest('.cd-option');
+                    if (!opt) return;
+                    list.querySelectorAll('.cd-option').forEach(o => o.classList.remove('selected'));
+                    opt.classList.add('selected');
+
+                    const val = opt.dataset.value;
+                    const label = opt.childNodes[0].textContent.trim();
+                    hidden.value = val;
+                    trigText.textContent = label;
+                    trigText.classList.toggle('placeholder', val === '');
+
+                    closeAllDropdowns();
+                });
+            });
+
+            document.addEventListener('click', closeAllDropdowns);
+        }
+
+        function closeAllDropdowns() {
+            document.querySelectorAll('.cd-panel.open').forEach(p => {
+                p.classList.remove('open');
+                const t = p.closest('.cd-wrap').querySelector('.cd-trigger');
+                t.classList.remove('open');
+                t.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        function resetDropdowns() {
+            document.querySelectorAll('.cd-wrap').forEach(wrap => {
+                const opts = wrap.querySelectorAll('.cd-option');
+                const hidden = wrap.querySelector('.cd-hidden');
+                const trigText = wrap.querySelector('.cd-trigger-text');
+                if (!opts.length) return;
+
+                opts.forEach(o => o.classList.remove('selected'));
+                opts[0].classList.add('selected');
+                hidden.value = opts[0].dataset.value || '';
+                trigText.textContent = opts[0].childNodes[0].textContent.trim();
+                trigText.classList.toggle('placeholder', hidden.value === '');
+            });
+        }
+
+        /* ═══════════════════════════════════
+           TOGGLE SWITCH
+        ═══════════════════════════════════ */
+        const toggleWrap = document.getElementById('toggle-retraso');
+        const toggleSwitch = document.getElementById('toggle-switch');
+        const toggleCheckbox = document.getElementById('f-retraso');
+
+        toggleWrap.addEventListener('click', () => {
+            const active = toggleSwitch.classList.toggle('active');
+            toggleCheckbox.checked = active;
+            toggleWrap.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+
+        toggleWrap.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleWrap.click(); }
+        });
+
+        /* ═══════════════════════════════════
+           TOASTS
+        ═══════════════════════════════════ */
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { error: 'bi-exclamation-circle-fill', success: 'bi-check-circle-fill', info: 'bi-info-circle-fill' };
+            toast.innerHTML = `<i class="bi ${icons[type] || icons.info}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        /* ═══════════════════════════════════
+           ESTADO Y DATOS
+        ═══════════════════════════════════ */
+        const state = { page: 1, totalPages: 1, pageSize: 50, isLoading: false };
+
+        function toText(v) { return (v === null || v === undefined || v === '') ? '—' : String(v); }
+        function formatDate(v) { const r = toText(v); return r === '—' ? r : r.slice(0, 10); }
+        function pickFechaFin(row) { return row.fecha_fin_real || row.fecha_fin_est || ''; }
+
+        /* ═══════════════════════════════════
+           BARRA DE PROGRESO (CORREGIDA)
+        ═══════════════════════════════════ */
+        function renderProgressBar(pct) {
+            const n = Number(pct || 0);
+            const cls = n >= 75 ? 'high' : n >= 40 ? 'medium' : 'low';
+            return `<div class="progress-container">
+                        <div class="progress-bar"><div class="progress-fill ${cls}" style="width:${n}%"></div></div>
+                        <span class="progress-text">${n}%</span>
+                    </div>`;
+        }
+
+        function renderSkeleton() {
+            document.getElementById('rows').innerHTML = Array(5).fill(0).map(() => `
+                <tr class="skeleton-row">
+                    <td><div class="skeleton skeleton-text long"></div></td>
+                    <td><div class="skeleton skeleton-text"></div></td>
+                    <td><div class="skeleton skeleton-text short"></div></td>
+                    <td><div class="skeleton skeleton-text short"></div></td>
+                    <td><div class="skeleton skeleton-text"></div></td>
+                    <td><div class="skeleton skeleton-text short"></div></td>
+                    <td><div class="skeleton skeleton-text"></div></td>
+                    <td><div class="skeleton skeleton-text"></div></td>
+                    <td><div class="skeleton skeleton-text"></div></td>
+                    <td><div class="skeleton skeleton-text short"></div></td>
+                </tr>`).join('');
+        }
+
+        function renderRows(rows) {
+            const tbody = document.getElementById('rows');
+            if (!rows.length) {
+                tbody.innerHTML = `<tr><td colspan="10" class="empty">
+                    <i class="bi bi-inbox"></i>
+                    <p class="empty-title">No se encontraron actividades</p>
+                    <p class="empty-desc">Prueba ajustando los filtros para ver más resultados.</p>
+                </td></tr>`;
+                return;
+            }
+            tbody.innerHTML = rows.map(row => {
+                const retraso = row.en_retraso
+                    ? '<span class="chip warn"><i class="bi bi-exclamation-triangle-fill"></i>Retraso</span>'
+                    : '<span class="chip ok"><i class="bi bi-check-circle-fill"></i>En control</span>';
+                const ec = row.estatus_color || '#94a3b8';
+                return `<tr>
+                    <td><a href="/actividades/${row.id}" class="activity-link" title="${toText(row.nombre_actividad)}">${toText(row.nombre_actividad)}</a></td>
+                    <td title="${toText(row.friendly_name)}">${toText(row.friendly_name)}</td>
+                    <td title="${toText(row.proyecto)}">${toText(row.proyecto)}</td>
+                    <td><span class="chip" style="background:${ec}18;color:${ec};border:1px solid ${ec}44;">${toText(row.estatus)}</span></td>
+                    <td title="${toText(row.responsables)}">${toText(row.responsables)}</td>
+                    <td class="mono">${toText(row.dias_acordados)}</td>
+                    <td class="mono">${formatDate(row.fecha_inicio)}</td>
+                    <td class="mono">${formatDate(pickFechaFin(row))}</td>
+                    <td>${renderProgressBar(row.avance_pct)}</td>
+                    <td>${retraso}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderPagination() {
+            const pages = document.getElementById('pagination-pages');
+            const maxV = 5;
+            let start = Math.max(1, state.page - Math.floor(maxV / 2));
+            let end = Math.min(state.totalPages, start + maxV - 1);
+            if (end - start < maxV - 1) start = Math.max(1, end - maxV + 1);
+
+            let html = `<button type="button" class="page-btn" id="btn-prev" ${state.page <= 1 ? 'disabled' : ''}><i class="bi bi-chevron-left"></i></button>`;
+
+            if (start > 1) {
+                html += `<button type="button" class="page-btn" data-page="1">1</button>`;
+                if (start > 2) html += `<span class="page-btn" style="cursor:default;border:none;">…</span>`;
+            }
+            for (let i = start; i <= end; i++) {
+                html += `<button type="button" class="page-btn ${i === state.page ? 'active' : ''}" data-page="${i}">${i}</button>`;
+            }
+            if (end < state.totalPages) {
+                if (end < state.totalPages - 1) html += `<span class="page-btn" style="cursor:default;border:none;">…</span>`;
+                html += `<button type="button" class="page-btn" data-page="${state.totalPages}">${state.totalPages}</button>`;
+            }
+            html += `<button type="button" class="page-btn" id="btn-next" ${state.page >= state.totalPages ? 'disabled' : ''}><i class="bi bi-chevron-right"></i></button>`;
+
+            pages.innerHTML = html;
+
+            pages.querySelectorAll('[data-page]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const p = parseInt(btn.dataset.page);
+                    if (p !== state.page) { state.page = p; fetchRows(); }
+                });
+            });
+            pages.querySelector('#btn-prev')?.addEventListener('click', () => {
+                if (state.page > 1) { state.page--; fetchRows(); }
+            });
+            pages.querySelector('#btn-next')?.addEventListener('click', () => {
+                if (state.page < state.totalPages) { state.page++; fetchRows(); }
+            });
+        }
+
+        function updateKpis(payload) {
+            const rows = payload.rows || [];
+            const retraso = rows.filter(r => r.en_retraso).length;
+            const avg = rows.length
+                ? Math.round(rows.reduce((a, r) => a + Number(r.avance_pct || 0), 0) / rows.length)
+                : 0;
+            document.getElementById('kpi-total').textContent = String(payload.total || 0);
+            document.getElementById('kpi-retraso').textContent = String(retraso);
+            document.getElementById('kpi-avance').textContent = `${avg}%`;
+            document.getElementById('kpi-page').textContent = `${state.page}/${state.totalPages}`;
+            document.getElementById('pagination-text').textContent =
+                `Mostrando ${rows.length} de ${payload.total || 0} actividades`;
+        }
+
+        function currentFilters() {
+            const form = document.getElementById('filters-form');
+            const data = new FormData(form);
+            const params = new URLSearchParams();
+            for (const [key, value] of data.entries()) {
+                const val = String(value || '').trim();
+                if (!val || key === 'solo_retraso') continue;
+                params.set(key, val);
+            }
+            if (toggleCheckbox.checked) params.set('solo_retraso', '1');
+            params.set('page', String(state.page));
+            params.set('page_size', String(state.pageSize));
+            return params;
+        }
+
+        async function fetchRows() {
+            if (state.isLoading) return;
+            state.isLoading = true;
+            renderSkeleton();
+            try {
+                const params = currentFilters();
+                const response = await fetch(`/api/dashboard_actividades?${params.toString()}`);
+                const payload = await response.json();
+                if (!response.ok || payload.status !== 'success')
+                    throw new Error(payload.message || 'No se pudo cargar el dashboard.');
+                state.totalPages = Number(payload.total_pages || 1);
+                renderRows(payload.rows || []);
+                updateKpis(payload);
+                renderPagination();
+            } catch (err) {
+                showToast(err.message, 'error');
+                document.getElementById('rows').innerHTML = `<tr><td colspan="10" class="empty">
+                    <i class="bi bi-wifi-off"></i>
+                    <p class="empty-title">Error de conexión</p>
+                    <p class="empty-desc">${err.message}</p>
+                </td></tr>`;
+            } finally {
+                state.isLoading = false;
+            }
+        }
+
+        document.getElementById('filters-form').addEventListener('submit', e => {
+            e.preventDefault();
+            state.page = 1;
+            fetchRows();
+        });
+
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            document.getElementById('filters-form').reset();
+            resetDropdowns();
+            toggleSwitch.classList.remove('active');
+            toggleCheckbox.checked = false;
+            toggleWrap.setAttribute('aria-pressed', 'false');
+            state.page = 1;
+            fetchRows();
+        });
+
+        /* ─── Mobile Nav ─── */
+        const topNav = document.getElementById('top-nav');
+        const hamburger = document.getElementById('nav-hamburger');
+        const navMenu = document.getElementById('nav-menu');
+        if (hamburger) {
+            hamburger.addEventListener('click', () => {
+                const open = topNav.classList.toggle('menu-open');
+                hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+            document.addEventListener('click', e => {
+                if (!topNav.classList.contains('menu-open') || e.target.closest('#top-nav')) return;
+                topNav.classList.remove('menu-open');
+                hamburger.setAttribute('aria-expanded', 'false');
+            });
+            navMenu.addEventListener('click', e => {
+                if (!e.target.closest('a')) return;
+                topNav.classList.remove('menu-open');
+                hamburger.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        /* ─── Init ─── */
+        initDropdowns();
+        fetchRows();
+    </script>
+</body>
+
+</html>

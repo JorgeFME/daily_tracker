@@ -331,6 +331,7 @@ def _obtener_estatus_id(cur, *descripciones):
 
 def _crear_actividad_rapida_desde_registro(cur, datos):
     solicitante = (datos.get("quick_solicitante") or "").strip()
+    friendly_name = (datos.get("quick_friendly_name") or "").strip() or None
     prioridad_raw = str(datos.get("quick_prioridad") or "").strip()
     recursos = list(dict.fromkeys(
         str(recurso).strip() for recurso in (datos.get("quick_recursos") or []) if str(recurso).strip()
@@ -381,7 +382,7 @@ def _crear_actividad_rapida_desde_registro(cur, datos):
         """
             INSERT INTO "ACTIVIDADES"
                 ("ID","ID_PROYECTO","NOMBRE_ACTIVIDAD","DESCRIPCION",
-                 "FECHA_SOLICITUD","SOLICITANTE","FECHA_INICIO","FECHA_FIN_REAL",
+                 "FECHA_SOLICITUD","SOLICITANTE","FRIENDLY_NAME","FECHA_INICIO","FECHA_FIN_REAL",
                  "ID_ESTATUS","PRIORIDAD","TIPO","CREADO_EN","CREADO_POR")
             VALUES (SYSUUID,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)
         """,
@@ -391,6 +392,7 @@ def _crear_actividad_rapida_desde_registro(cur, datos):
             descripcion,
             fecha_base,
             solicitante,
+            friendly_name,
             fecha_base,
             fecha_base,
             estatus_completado_id,
@@ -812,9 +814,10 @@ def obtener_actividades(
         offset = (safe_page - 1) * safe_page_size
         pagination_sql = f' LIMIT {safe_page_size} OFFSET {offset}'
 
-    sql = f"""SELECT A."ID", A."NOMBRE_ACTIVIDAD", A."DESCRIPCION",
+    sql = f"""SELECT A."ID", A."NOMBRE_ACTIVIDAD", A."FRIENDLY_NAME", A."DESCRIPCION",
                      A."FECHA_SOLICITUD", A."SOLICITANTE",
-                     A."FECHA_INICIO", A."FECHA_FIN_REAL",
+                     A."FECHA_INICIO", A."FECHA_FIN_EST", A."FECHA_FIN_REAL",
+                     A."DIAS_ACORDADOS", A."AVANCE_PCT",
                      A."PRIORIDAD", A."CREADO_EN",
                      P."NOMBRE_PROYECTO",
                      E."DESCRIPCION" as "ESTATUS", E."COLOR_HEX" as "ESTATUS_COLOR",
@@ -883,9 +886,10 @@ def obtener_catalogo_actividades(proyecto_id=None):
 
 
 def _base_select_actividades():
-    return '''SELECT A."ID", A."NOMBRE_ACTIVIDAD", A."DESCRIPCION",
+    return '''SELECT A."ID", A."NOMBRE_ACTIVIDAD", A."FRIENDLY_NAME", A."DESCRIPCION",
                      A."FECHA_SOLICITUD", A."SOLICITANTE",
-                     A."FECHA_INICIO", A."FECHA_FIN_REAL",
+                     A."FECHA_INICIO", A."FECHA_FIN_EST", A."FECHA_FIN_REAL",
+                     A."DIAS_ACORDADOS", A."AVANCE_PCT",
                      A."PRIORIDAD", A."CREADO_EN",
                      P."NOMBRE_PROYECTO",
                      E."DESCRIPCION" as "ESTATUS", E."COLOR_HEX" as "ESTATUS_COLOR",
@@ -958,9 +962,10 @@ def contar_actividades_default_mes(mes_inicio, fecha_hasta):
 
 
 def obtener_actividad_por_id(actividad_id):
-    sql = """SELECT A."ID", A."NOMBRE_ACTIVIDAD", A."DESCRIPCION",
+    sql = """SELECT A."ID", A."NOMBRE_ACTIVIDAD", A."FRIENDLY_NAME", A."DESCRIPCION",
                     A."FECHA_SOLICITUD", A."SOLICITANTE",
-                    A."FECHA_INICIO", A."FECHA_FIN_REAL",
+                    A."FECHA_INICIO", A."FECHA_FIN_EST", A."FECHA_FIN_REAL",
+                    A."DIAS_ACORDADOS", A."AVANCE_PCT",
                     A."PRIORIDAD", A."TIPO",
                     A."ID_PROYECTO", A."ID_ESTATUS",
                     A."ID_ACTIVIDAD_PADRE",
@@ -1016,15 +1021,20 @@ def obtener_actividad_nombre(actividad_id):
 def crear_actividad(datos):
     sql = """INSERT INTO "ACTIVIDADES"
                  ("ID","ID_PROYECTO","NOMBRE_ACTIVIDAD","DESCRIPCION",
-                  "FECHA_SOLICITUD","SOLICITANTE","FECHA_INICIO",
-                  "ID_ESTATUS","PRIORIDAD","TIPO","ID_ACTIVIDAD_PADRE",
+               "FECHA_SOLICITUD","SOLICITANTE","FECHA_INICIO","FECHA_FIN_EST",
+               "FECHA_FIN_REAL","AVANCE_PCT","FRIENDLY_NAME",
+               "DIAS_ACORDADOS","ID_ESTATUS","PRIORIDAD","TIPO","ID_ACTIVIDAD_PADRE",
                   "CREADO_EN","CREADO_POR")
-             VALUES (SYSUUID,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)"""
+           VALUES (SYSUUID,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)"""
     return ejecutar_dml(sql, (
         datos.get('id_proyecto'), datos.get('nombre_actividad'),
         datos.get('descripcion') or None,
         datos.get('fecha_solicitud') or None, datos.get('solicitante') or None,
-        datos.get('fecha_inicio') or None,
+        datos.get('fecha_inicio') or None, datos.get('fecha_fin_est') or None,
+        datos.get('fecha_fin_real') or None,
+        int(datos.get('avance_pct') or 0),
+        datos.get('friendly_name') or None,
+        int(datos['dias_acordados']) if datos.get('dias_acordados') else None,
         datos.get('id_estatus'), int(datos.get('prioridad', 2)),
         datos.get('tipo'),
         datos.get('id_actividad_padre') or None,
@@ -1035,23 +1045,181 @@ def crear_actividad(datos):
 def actualizar_actividad(actividad_id, datos):
     sql = """UPDATE "ACTIVIDADES" SET
                  "ID_PROYECTO"=?,
-                 "NOMBRE_ACTIVIDAD"=?, "DESCRIPCION"=?,
+                 "NOMBRE_ACTIVIDAD"=?, "FRIENDLY_NAME"=?, "DESCRIPCION"=?,
                  "FECHA_SOLICITUD"=?, "SOLICITANTE"=?,
-                 "FECHA_INICIO"=?, "FECHA_FIN_REAL"=?,
+                 "FECHA_INICIO"=?, "FECHA_FIN_EST"=?, "FECHA_FIN_REAL"=?,
+                 "DIAS_ACORDADOS"=?, "AVANCE_PCT"=?,
                  "ID_ESTATUS"=?, "PRIORIDAD"=?, "TIPO"=?,
                  "ID_ACTIVIDAD_PADRE"=?,
                  "ACTUALIZADO_EN"=CURRENT_TIMESTAMP, "ACTUALIZADO_POR"=?
              WHERE "ID"=?"""
     return ejecutar_dml(sql, (
         datos.get('id_proyecto'),
-        datos.get('nombre_actividad'), datos.get('descripcion') or None,
+        datos.get('nombre_actividad'),
+        datos.get('friendly_name') or None,
+        datos.get('descripcion') or None,
         datos.get('fecha_solicitud') or None, datos.get('solicitante') or None,
-        datos.get('fecha_inicio') or None, datos.get('fecha_fin_real') or None,
+        datos.get('fecha_inicio') or None,
+        datos.get('fecha_fin_est') or None,
+        datos.get('fecha_fin_real') or None,
+        int(datos['dias_acordados']) if datos.get('dias_acordados') else None,
+        int(datos.get('avance_pct') or 0),
         datos.get('id_estatus'), int(datos.get('prioridad', 2)),
         datos.get('tipo'),
         datos.get('id_actividad_padre') or None,
         datos.get('actualizado_por', 'SISTEMA'), actividad_id,
     ))
+
+
+def _filtros_dashboard_actividades_sql(
+    proyecto_id=None,
+    estatus_id=None,
+    fecha_desde=None,
+    fecha_hasta=None,
+    q=None,
+    friendly_name_q=None,
+    solo_retraso=False,
+):
+    filtros = [
+        'UPPER(COALESCE(A."NOMBRE_ACTIVIDAD", \'\')) NOT LIKE ?'
+    ]
+    params = []
+    params.append('⚡ %')
+
+    if proyecto_id:
+        filtros.append('A."ID_PROYECTO" = ?')
+        params.append(proyecto_id)
+    if estatus_id:
+        filtros.append('A."ID_ESTATUS" = ?')
+        params.append(estatus_id)
+    if fecha_desde:
+        filtros.append('A."FECHA_INICIO" >= ?')
+        params.append(fecha_desde)
+    if fecha_hasta:
+        filtros.append('COALESCE(A."FECHA_FIN_EST", A."FECHA_FIN_REAL") <= ?')
+        params.append(fecha_hasta)
+    if q:
+        q_norm = f"%{q.strip().upper()}%"
+        filtros.append('''(
+            UPPER(COALESCE(A."NOMBRE_ACTIVIDAD", '')) LIKE ?
+            OR UPPER(COALESCE(A."FRIENDLY_NAME", '')) LIKE ?
+        )''')
+        params.extend([q_norm, q_norm])
+    if friendly_name_q:
+        filtros.append('UPPER(COALESCE(A."FRIENDLY_NAME", \'\')) LIKE ?')
+        params.append(f"%{friendly_name_q.strip().upper()}%")
+    if solo_retraso:
+        filtros.append('''(
+            A."DIAS_ACORDADOS" IS NOT NULL
+            AND A."FECHA_INICIO" IS NOT NULL
+            AND DAYS_BETWEEN(A."FECHA_INICIO", CURRENT_DATE) > A."DIAS_ACORDADOS"
+            AND UPPER(E."DESCRIPCION") NOT IN ('COMPLETADO', 'CANCELADO', 'ESPERANDO APROBACIÓN')
+        )''')
+
+    return 'WHERE ' + ' AND '.join(filtros), params
+
+
+def obtener_dashboard_actividades(
+    proyecto_id=None,
+    estatus_id=None,
+    fecha_desde=None,
+    fecha_hasta=None,
+    q=None,
+    friendly_name_q=None,
+    solo_retraso=False,
+    sort_by='recientes',
+    page=1,
+    page_size=50,
+):
+    where, params = _filtros_dashboard_actividades_sql(
+        proyecto_id=proyecto_id,
+        estatus_id=estatus_id,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        q=q,
+        friendly_name_q=friendly_name_q,
+        solo_retraso=solo_retraso,
+    )
+
+    sort_map = {
+        'retraso': '"EN_RETRASO" DESC, "AVANCE_PCT" ASC, A."PRIORIDAD" ASC, A."CREADO_EN" DESC',
+        'avance': '"AVANCE_PCT" ASC, A."PRIORIDAD" ASC, A."CREADO_EN" DESC',
+        'recientes': 'A."CREADO_EN" DESC',
+        'nombre': 'A."NOMBRE_ACTIVIDAD" ASC',
+    }
+    order_by = sort_map.get(sort_by, sort_map['recientes'])
+
+    safe_page = max(int(page), 1)
+    safe_page_size = max(min(int(page_size), 100), 1)
+    offset = (safe_page - 1) * safe_page_size
+
+    sql = f"""
+        SELECT
+            A."ID",
+            A."NOMBRE_ACTIVIDAD",
+            A."FRIENDLY_NAME",
+            P."ID" AS "ID_PROYECTO",
+            P."NOMBRE_PROYECTO",
+            A."ID_ESTATUS",
+            E."DESCRIPCION" AS "ESTATUS",
+            E."COLOR_HEX" AS "ESTATUS_COLOR",
+            A."DIAS_ACORDADOS",
+            A."FECHA_INICIO",
+            A."FECHA_FIN_EST",
+            A."FECHA_FIN_REAL",
+            A."AVANCE_PCT",
+            A."PRIORIDAD",
+            A."CREADO_EN",
+            CASE
+                WHEN A."DIAS_ACORDADOS" IS NOT NULL
+                     AND A."FECHA_INICIO" IS NOT NULL
+                     AND DAYS_BETWEEN(A."FECHA_INICIO", CURRENT_DATE) > A."DIAS_ACORDADOS"
+                     AND UPPER(E."DESCRIPCION") NOT IN ('COMPLETADO', 'CANCELADO', 'ESPERANDO APROBACIÓN')
+                THEN 1
+                ELSE 0
+            END AS "EN_RETRASO",
+            COALESCE((
+                SELECT STRING_AGG(U2."NOMBRE_COMPLETO", ', ')
+                FROM "ACTIVIDAD_RESPONSABLES" AR
+                JOIN "USUARIOS" U2 ON AR."ID_USUARIO" = U2."ID"
+                WHERE AR."ID_ACTIVIDAD" = A."ID"
+            ), 'Sin asignar') AS "RESPONSABLES"
+        FROM "ACTIVIDADES" A
+        JOIN "PROYECTOS" P ON A."ID_PROYECTO" = P."ID"
+        JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS" = E."ID"
+        {where}
+        ORDER BY {order_by}
+        LIMIT {safe_page_size} OFFSET {offset}
+    """
+    return ejecutar_query(sql, tuple(params) if params else None)
+
+
+def contar_dashboard_actividades(
+    proyecto_id=None,
+    estatus_id=None,
+    fecha_desde=None,
+    fecha_hasta=None,
+    q=None,
+    friendly_name_q=None,
+    solo_retraso=False,
+):
+    where, params = _filtros_dashboard_actividades_sql(
+        proyecto_id=proyecto_id,
+        estatus_id=estatus_id,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        q=q,
+        friendly_name_q=friendly_name_q,
+        solo_retraso=solo_retraso,
+    )
+    sql = f"""
+        SELECT COUNT(*) AS "TOTAL"
+        FROM "ACTIVIDADES" A
+        JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS" = E."ID"
+        {where}
+    """
+    rows = ejecutar_query(sql, tuple(params) if params else None)
+    return int(rows[0]["TOTAL"]) if rows else 0
 
 
 def guardar_responsables_actividad(actividad_id, ids_usuarios):

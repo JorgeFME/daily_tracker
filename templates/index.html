@@ -1850,6 +1850,9 @@
             <a href="/catalogos" class="nav-link-pill">
                 <i class="bi bi-sliders"></i><span>Catálogos</span>
             </a>
+            <a href="/dashboard-actividades" class="nav-link-pill">
+                <i class="bi bi-speedometer2"></i><span>Plan de trabajo</span>
+            </a>
         </div>
     </nav>
 
@@ -2055,6 +2058,14 @@
                                             <option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>
                                             {% endfor %}
                                         </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="field-label">Friendly name</label>
+                                    <div class="input-wrap">
+                                        <span class="input-icon"><i class="bi bi-card-heading"></i></span>
+                                        <input type="text" class="field-input" id="quick-friendly-name" name="quick_friendly_name"
+                                            placeholder="Ej: Junta seguimiento ACME" disabled>
                                     </div>
                                 </div>
                                 <div>
@@ -2663,6 +2674,7 @@
         const detailsInput = document.querySelector('textarea[name="details"]');
         const quickActivityPanel = document.getElementById('quick-activity-panel');
         const quickSolicitanteInput = document.getElementById('quick-solicitante');
+        const quickFriendlyNameInput = document.getElementById('quick-friendly-name');
         const quickPrioridadInput = document.getElementById('quick-prioridad');
         const activityActionLabel = document.getElementById('activity-action-label');
         const detailsLabel = document.getElementById('details-label');
@@ -2837,6 +2849,7 @@
             quickActivityPanel.classList.toggle('visible', isQuickActivity);
             quickSolicitanteInput.required = isQuickActivity;
             quickPrioridadInput.required = isQuickActivity;
+            if (quickFriendlyNameInput) quickFriendlyNameInput.disabled = !isQuickActivity;
 
             if (isQuickActivity) {
                 quickSolicitanteSelect.enable();
@@ -2875,6 +2888,7 @@
             quickSolicitanteSelect.setValue('', true);
             quickPrioridadSelect.setValue('2', true);
             quickActivityResourcesSelect.clear(true);
+            if (quickFriendlyNameInput) quickFriendlyNameInput.value = '';
             updateQuickActivityPanel();
         }
 
