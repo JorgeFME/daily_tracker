@@ -790,7 +790,8 @@
             align-items: center;
             gap: 6px;
             justify-content: center;
-            vertical-align: middle; /* ← clave para alinear con el texto de la celda */
+            vertical-align: middle;
+            /* ← clave para alinear con el texto de la celda */
         }
 
         .progress-bar {
@@ -806,7 +807,8 @@
             height: 100%;
             border-radius: 3px;
             transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            min-width: 2px; /* ← para que el 1% o 10% no desaparezca */
+            min-width: 2px;
+            /* ← para que el 1% o 10% no desaparezca */
         }
 
         .progress-fill.high {
@@ -1175,33 +1177,45 @@
             border-width: 0;
         }
     </style>
-    <base target="_blank">
+
 </head>
 
 <body>
     <nav class="top-nav" id="top-nav">
         <a href="/" class="nav-logo">
-            <i class="bi bi-layers-half"></i>
+            <i class="bi bi-layers-half" style="color:#2563eb;font-size:1.2rem;flex-shrink:0;"></i>
             <span class="nav-logo-text">Dream Team Daily Tracker</span>
         </a>
+
         <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Abrir menú de navegación"
             aria-expanded="false" aria-controls="nav-menu">
             <i class="bi bi-list"></i>
         </button>
+
         <div class="nav-menu" id="nav-menu">
-            <a href="/" class="nav-link-item"><i class="bi bi-house"></i>Inicio</a>
-            <a href="/actividades" class="nav-link-item"><i class="bi bi-kanban"></i>Actividades</a>
-            <a href="/registros" class="nav-link-item"><i class="bi bi-clock-history"></i>Registros</a>
-            <a href="/evidencias" class="nav-link-item"><i class="bi bi-images"></i>Evidencias</a>
-            <a href="/calendario" class="nav-link-item"><i class="bi bi-calendar3"></i>Calendario</a>
-            <a href="/catalogos" class="nav-link-item"><i class="bi bi-sliders"></i>Catálogos</a>
+            <a href="/" class="nav-link-item">
+                <i class="bi bi-house"></i><span>Inicio</span>
+            </a>
+            <a href="/actividades" class="nav-link-item">
+                <i class="bi bi-kanban"></i><span>Actividades</span>
+            </a>
+            <a href="/registros" class="nav-link-item">
+                <i class="bi bi-clock-history"></i><span>Registros</span>
+            </a>
+            <a href="/evidencias" class="nav-link-item">
+                <i class="bi bi-images"></i><span>Evidencias</span>
+            </a>
+            <a href="/calendario" class="nav-link-item">
+                <i class="bi bi-calendar3"></i><span>Calendario</span>
+            </a>
+            <a href="/catalogos" class="nav-link-item">
+                <i class="bi bi-sliders"></i><span>Catálogos</span>
+            </a>
             <a href="/dashboard-actividades" class="nav-link-item active">
-                <i class="bi bi-speedometer2"></i>Plan de trabajo
+                <i class="bi bi-speedometer2"></i><span>Plan de trabajo</span>
             </a>
         </div>
     </nav>
-
-    <div class="toast-container" id="toast-container"></div>
 
     <div class="page">
         <div class="header">
@@ -1798,7 +1812,7 @@
             renderSkeleton();
             try {
                 const params = currentFilters();
-                const response = await fetch(`/api/dashboard_actividades?${params.toString()}`);
+                const response = await fetch(`/api/plan_de_trabajo?${params.toString()}`);
                 const payload = await response.json();
                 if (!response.ok || payload.status !== 'success')
                     throw new Error(payload.message || 'No se pudo cargar el dashboard.');

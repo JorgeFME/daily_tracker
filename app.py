@@ -62,8 +62,8 @@ from db import (
     contar_actividades_default_mes,
     reasignar_registros_proyecto,
     contar_actividades,
-    obtener_dashboard_actividades,
-    contar_dashboard_actividades,
+    obtener_plan_de_trabajo,
+    contar_plan_de_trabajo,
 )
 
 load_env_from_dotenv()
@@ -729,8 +729,8 @@ def dashboard_data():
     )
 
 
-@app.route("/api/dashboard_actividades")
-def dashboard_actividades_rapidas():
+@app.route("/api/plan_de_trabajo")
+def plan_de_trabajo_rapidas():
     proyecto_id = (request.args.get("proyecto_id") or "").strip() or None
     estatus_id = (request.args.get("estatus_id") or "").strip() or None
     q = (request.args.get("q") or "").strip() or None
@@ -751,7 +751,7 @@ def dashboard_actividades_rapidas():
     except (TypeError, ValueError):
         return jsonify({"status": "error", "message": "page y page_size deben ser enteros válidos."}), 400
 
-    total = contar_dashboard_actividades(
+    total = contar_plan_de_trabajo(
         proyecto_id=proyecto_id,
         estatus_id=estatus_id,
         fecha_desde=fecha_desde,
@@ -764,7 +764,7 @@ def dashboard_actividades_rapidas():
     if page > total_pages:
         page = total_pages
 
-    rows = obtener_dashboard_actividades(
+    rows = obtener_plan_de_trabajo(
         proyecto_id=proyecto_id,
         estatus_id=estatus_id,
         fecha_desde=fecha_desde,
@@ -806,10 +806,10 @@ def dashboard_actividades_rapidas():
 
 
 @app.route("/dashboard-actividades")
-def dashboard_actividades_view():
+def plan_de_trabajo_view():
     base = _catalogo_base()
     return render_template(
-        "dashboard_actividades.html",
+        "plan_de_trabajo.html",
         page_title="Plan de trabajo",
         projects=base["projects"],
         estatus_list=obtener_estatus_actividad(),

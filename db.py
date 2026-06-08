@@ -1071,7 +1071,7 @@ def actualizar_actividad(actividad_id, datos):
     ))
 
 
-def _filtros_dashboard_actividades_sql(
+def _filtros_plan_de_trabajo_sql(
     proyecto_id=None,
     estatus_id=None,
     fecha_desde=None,
@@ -1119,7 +1119,7 @@ def _filtros_dashboard_actividades_sql(
     return 'WHERE ' + ' AND '.join(filtros), params
 
 
-def obtener_dashboard_actividades(
+def obtener_plan_de_trabajo(
     proyecto_id=None,
     estatus_id=None,
     fecha_desde=None,
@@ -1131,7 +1131,7 @@ def obtener_dashboard_actividades(
     page=1,
     page_size=50,
 ):
-    where, params = _filtros_dashboard_actividades_sql(
+    where, params = _filtros_plan_de_trabajo_sql(
         proyecto_id=proyecto_id,
         estatus_id=estatus_id,
         fecha_desde=fecha_desde,
@@ -1194,7 +1194,7 @@ def obtener_dashboard_actividades(
     return ejecutar_query(sql, tuple(params) if params else None)
 
 
-def contar_dashboard_actividades(
+def contar_plan_de_trabajo(
     proyecto_id=None,
     estatus_id=None,
     fecha_desde=None,
@@ -1203,7 +1203,7 @@ def contar_dashboard_actividades(
     friendly_name_q=None,
     solo_retraso=False,
 ):
-    where, params = _filtros_dashboard_actividades_sql(
+    where, params = _filtros_plan_de_trabajo_sql(
         proyecto_id=proyecto_id,
         estatus_id=estatus_id,
         fecha_desde=fecha_desde,
