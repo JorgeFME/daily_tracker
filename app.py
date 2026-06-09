@@ -51,6 +51,7 @@ from db import (
     eliminar_evidencia,
     # Catálogos
     obtener_estatus_actividad,
+    obtener_entregables,
     obtener_tipos_evidencia,
     obtener_tipos_actividad,
     obtener_recursos,
@@ -595,6 +596,7 @@ def index():
         projects=base["projects"],
         solicitantes=base["solicitantes"],
         estatus_list=obtener_estatus_actividad(),
+        lista_entregables=obtener_entregables(),
         recursos=obtener_recursos(),
         tipos_actividad=obtener_tipos_actividad(),
         tipos_evidencia=obtener_tipos_evidencia(),
@@ -837,6 +839,9 @@ def actividades():
         page = 1
     page_size    = 24
     estatus_list = obtener_estatus_actividad()
+    
+
+
 
     def _estatus_id_por_desc(*targets):
         targets_up = {t.upper() for t in targets}
@@ -965,6 +970,7 @@ def actividades():
         todas_actividades=obtener_actividades(),
         recursos=obtener_recursos(),
         **template_context,
+        entregables_list = obtener_entregables(),
     )
 
 
@@ -1118,6 +1124,7 @@ def api_actividad_detalle(actividad_id):
             "id_actividad_padre": actividad.get("ID_ACTIVIDAD_PADRE") or "",
             "responsables": [item["ID"] for item in responsables],
             "recursos": [item["ID"] for item in recursos],
+            "id_entregable": actividad.get("ID_ENTREGABLE"),
         },
     })
 
@@ -1125,11 +1132,23 @@ def api_actividad_detalle(actividad_id):
 @app.route("/actividades/<actividad_id>/editar", methods=["POST"])
 def editar_actividad(actividad_id):
     datos = request.form.to_dict()
+    # LOG TEMPORAL
+    app.logger.info(f"=== EDITAR ACTIVIDAD {actividad_id} ===")
+    app.logger.info(f"Form data: {request.form.to_dict()}")
+    app.logger.info(f"id_entregable recibido: {request.form.get('id_entregable')}")
     datos["solicitante"] = (datos.get("solicitante") or "").strip() or None
     datos["tipo"] = (datos.get("tipo") or "").strip().upper()
+    
+    # 1. Normalizar el campo id_entregable (si viene vacío o con espacios, guardarlo como None)
+    datos["id_entregable"] = (datos.get("id_entregable") or "").strip() or None
+
     datos, error_campos = _normalizar_campos_dashboard_actividad(datos)
     if error_campos:
         return jsonify({"status": "error", "message": error_campos}), 400
+
+    # 2. Validar que el tipo de entregable sea obligatorio al editar
+    if not datos.get("id_entregable"):
+        return jsonify({"status": "error", "message": "El tipo de entregable es obligatorio."}), 400
 
     if not datos.get("tipo"):
         return jsonify({"status": "error", "message": "El tipo es obligatorio."}), 400
@@ -1151,6 +1170,8 @@ def editar_actividad(actividad_id):
         and str(actividad_actual["ID_PROYECTO"]) != str(nuevo_proyecto)
     )
 
+    
+    # y la función de BD lo mapeará sin problemas al UPDATE de SAP HANA
     if actualizar_actividad(actividad_id, datos):
         if proyecto_cambio:
             reasignar_registros_proyecto(actividad_id, nuevo_proyecto)

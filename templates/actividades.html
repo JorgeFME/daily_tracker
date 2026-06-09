@@ -512,6 +512,7 @@
         }
 
         @media (max-width: 1100px) {
+
             .filter-field,
             .filter-field-wide,
             .filter-field-dates {
@@ -1012,117 +1013,130 @@
         </div>
 
         <div class="scope-chips" role="tablist" aria-label="Filtro rapido por estado">
-            <button type="button" class="scope-chip {% if filtro_scope == 'all' %}active{% endif %}" data-scope="all">Todas</button>
-            <button type="button" class="scope-chip {% if filtro_scope == 'active' %}active{% endif %}" data-scope="active">Activas</button>
-            <button type="button" class="scope-chip {% if filtro_scope == 'completed' %}active{% endif %}" data-scope="completed">Completadas</button>
-            <button type="button" class="scope-chip {% if filtro_scope == 'canceled' %}active{% endif %}" data-scope="canceled">Canceladas</button>
+            <button type="button" class="scope-chip {% if filtro_scope == 'all' %}active{% endif %}"
+                data-scope="all">Todas</button>
+            <button type="button" class="scope-chip {% if filtro_scope == 'active' %}active{% endif %}"
+                data-scope="active">Activas</button>
+            <button type="button" class="scope-chip {% if filtro_scope == 'completed' %}active{% endif %}"
+                data-scope="completed">Completadas</button>
+            <button type="button" class="scope-chip {% if filtro_scope == 'canceled' %}active{% endif %}"
+                data-scope="canceled">Canceladas</button>
         </div>
 
         <div class="filter-hint" id="scope-hint">
             <i class="bi bi-funnel"></i>
             <span>Vista actual: <strong>{{ scope_label }}</strong>.</span>
             {% if filtro_scope != 'all' %}
-            <span class="filter-disabled-note">El filtro manual de estatus se bloquea mientras uses un chip rápido.</span>
+            <span class="filter-disabled-note">El filtro manual de estatus se bloquea mientras uses un chip
+                rápido.</span>
             {% elif filtro_estatus %}
-            <span class="filter-disabled-note">El alcance rápido está en Todas y el estatus manual define el subconjunto.</span>
+            <span class="filter-disabled-note">El alcance rápido está en Todas y el estatus manual define el
+                subconjunto.</span>
             {% endif %}
         </div>
 
         <!-- Filtros -->
         <div class="filters-bar">
             <div class="filters-panel">
-            <form method="GET" id="form-filtros">
-                <input type="hidden" name="page" id="filter-page" value="{{ page }}">
-                <input type="hidden" name="scope" id="filter-scope" value="{{ filtro_scope or 'all' }}">
+                <form method="GET" id="form-filtros">
+                    <input type="hidden" name="page" id="filter-page" value="{{ page }}">
+                    <input type="hidden" name="scope" id="filter-scope" value="{{ filtro_scope or 'all' }}">
 
-                <div class="filters-grid">
-                    <div class="filter-field filter-field-wide">
-                        <label class="filter-field-label" for="filter-q">Buscar actividad</label>
-                        <input
-                            type="search"
-                            id="filter-q"
-                            name="q"
-                            class="filter-search"
-                            placeholder="Buscar por nombre o descripcion..."
-                            value="{{ filtro_q or '' }}">
-                    </div>
+                    <div class="filters-grid">
+                        <div class="filter-field filter-field-wide">
+                            <label class="filter-field-label" for="filter-q">Buscar actividad</label>
+                            <input type="search" id="filter-q" name="q" class="filter-search"
+                                placeholder="Buscar por nombre o descripcion..." value="{{ filtro_q or '' }}">
+                        </div>
 
-                    <div class="filter-field">
-                        <label class="filter-field-label" for="filter-sort">Ordenar por</label>
-                        <select id="filter-sort" name="sort">
-                            <option value="prioridad" {% if filtro_sort == 'prioridad' %}selected{% endif %}>Prioridad</option>
-                            <option value="recientes" {% if filtro_sort == 'recientes' %}selected{% endif %}>Mas recientes</option>
-                            <option value="nombre" {% if filtro_sort == 'nombre' %}selected{% endif %}>Nombre A-Z</option>
-                            <option value="horas" {% if filtro_sort == 'horas' %}selected{% endif %}>Mas horas</option>
-                        </select>
-                    </div>
+                        <div class="filter-field">
+                            <label class="filter-field-label" for="filter-sort">Ordenar por</label>
+                            <select id="filter-sort" name="sort">
+                                <option value="prioridad" {% if filtro_sort=='prioridad' %}selected{% endif %}>Prioridad
+                                </option>
+                                <option value="recientes" {% if filtro_sort=='recientes' %}selected{% endif %}>Mas
+                                    recientes</option>
+                                <option value="nombre" {% if filtro_sort=='nombre' %}selected{% endif %}>Nombre A-Z
+                                </option>
+                                <option value="horas" {% if filtro_sort=='horas' %}selected{% endif %}>Mas horas
+                                </option>
+                            </select>
+                        </div>
 
-                    <div class="filter-field">
-                        <label class="filter-field-label" for="filter-proyecto">Proyecto</label>
-                        <select id="filter-proyecto" name="proyecto">
-                            <option value="">Todos los proyectos</option>
-                            {% for p in projects %}
-                            <option value="{{ p.ID }}" {% if filtro_proyecto|string == p.ID|string %}selected{% endif %}>{{ p.NOMBRE_PROYECTO }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                        <div class="filter-field">
+                            <label class="filter-field-label" for="filter-proyecto">Proyecto</label>
+                            <select id="filter-proyecto" name="proyecto">
+                                <option value="">Todos los proyectos</option>
+                                {% for p in projects %}
+                                <option value="{{ p.ID }}" {% if filtro_proyecto|string==p.ID|string %}selected{% endif
+                                    %}>{{ p.NOMBRE_PROYECTO }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
 
-                    <div class="filter-field">
-                        <label class="filter-field-label" for="filter-estatus">Estatus</label>
-                        <select id="filter-estatus" name="estatus">
-                            <option value="">Todos los estatus</option>
-                            {% for e in estatus_list %}
-                            <option value="{{ e.ID }}" {% if filtro_estatus|string == e.ID|string %}selected{% endif %}>{{ e.DESCRIPCION }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                        <div class="filter-field">
+                            <label class="filter-field-label" for="filter-estatus">Estatus</label>
+                            <select id="filter-estatus" name="estatus">
+                                <option value="">Todos los estatus</option>
+                                {% for e in estatus_list %}
+                                <option value="{{ e.ID }}" {% if filtro_estatus|string==e.ID|string %}selected{% endif
+                                    %}>{{ e.DESCRIPCION }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
 
-                    <div class="filter-field">
-                        <label class="filter-field-label" for="filter-tipo">Tipo</label>
-                        <select id="filter-tipo" name="tipo">
-                            <option value="">Todos los tipos</option>
-                            <option value="DESARROLLO" {% if (filtro_tipo or '') == 'DESARROLLO' %}selected{% endif %}>DESARROLLO</option>
-                            <option value="TAREA" {% if (filtro_tipo or '') == 'TAREA' %}selected{% endif %}>TAREA</option>
-                        </select>
-                    </div>
+                        <div class="filter-field">
+                            <label class="filter-field-label" for="filter-tipo">Tipo</label>
+                            <select id="filter-tipo" name="tipo">
+                                <option value="">Todos los tipos</option>
+                                <option value="DESARROLLO" {% if (filtro_tipo or '' )=='DESARROLLO' %}selected{% endif
+                                    %}>DESARROLLO</option>
+                                <option value="TAREA" {% if (filtro_tipo or '' )=='TAREA' %}selected{% endif %}>TAREA
+                                </option>
+                            </select>
+                        </div>
 
-                    <div class="filter-field">
-                        <label class="filter-field-label" for="filter-usuario">Responsable</label>
-                        <select id="filter-usuario" name="usuario">
-                            <option value="">Todos los responsables</option>
-                            {% for u in users %}
-                            <option value="{{ u.ID }}" {% if filtro_usuario|string == u.ID|string %}selected{% endif %}>{{ u.NOMBRE_COMPLETO }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                        <div class="filter-field">
+                            <label class="filter-field-label" for="filter-usuario">Responsable</label>
+                            <select id="filter-usuario" name="usuario">
+                                <option value="">Todos los responsables</option>
+                                {% for u in users %}
+                                <option value="{{ u.ID }}" {% if filtro_usuario|string==u.ID|string %}selected{% endif
+                                    %}>{{ u.NOMBRE_COMPLETO }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
 
-                    <div class="filter-field">
-                        <label class="filter-field-label" for="filter-solicitante">Solicitante</label>
-                        <select id="filter-solicitante" name="solicitante">
-                            <option value="">Todos los solicitantes</option>
-                            {% for s in solicitantes %}
-                            <option value="{{ s.NOMBRE }}" {% if (filtro_solicitante or '') == s.NOMBRE %}selected{% endif %}>{{ s.NOMBRE }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                        <div class="filter-field">
+                            <label class="filter-field-label" for="filter-solicitante">Solicitante</label>
+                            <select id="filter-solicitante" name="solicitante">
+                                <option value="">Todos los solicitantes</option>
+                                {% for s in solicitantes %}
+                                <option value="{{ s.NOMBRE }}" {% if (filtro_solicitante or '' )==s.NOMBRE %}selected{%
+                                    endif %}>{{ s.NOMBRE }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
 
-                    <div class="filter-field filter-field-dates">
-                        <span class="filter-field-label">Rango de fechas</span>
-                        <div class="filter-date-range">
-                            <input type="text" id="filter-fecha-desde" name="fecha_desde" value="{{ filtro_fecha_desde or '' }}"
-                                placeholder="Desde" autocomplete="off" class="filter-date">
-                            <input type="text" id="filter-fecha-hasta" name="fecha_hasta" value="{{ filtro_fecha_hasta or '' }}"
-                                placeholder="Hasta" autocomplete="off" class="filter-date">
+                        <div class="filter-field filter-field-dates">
+                            <span class="filter-field-label">Rango de fechas</span>
+                            <div class="filter-date-range">
+                                <input type="text" id="filter-fecha-desde" name="fecha_desde"
+                                    value="{{ filtro_fecha_desde or '' }}" placeholder="Desde" autocomplete="off"
+                                    class="filter-date">
+                                <input type="text" id="filter-fecha-hasta" name="fecha_hasta"
+                                    value="{{ filtro_fecha_hasta or '' }}" placeholder="Hasta" autocomplete="off"
+                                    class="filter-date">
+                            </div>
+                        </div>
+
+                        <div class="filter-actions" id="filter-actions" {% if not has_filters %}hidden{% endif %}>
+                            <a href="/actividades" class="filter-clear" id="filter-clear-link">
+                                <i class="bi bi-x-circle"></i> Limpiar filtros
+                            </a>
                         </div>
                     </div>
-
-                    <div class="filter-actions" id="filter-actions" {% if not has_filters %}hidden{% endif %}>
-                        <a href="/actividades" class="filter-clear" id="filter-clear-link">
-                            <i class="bi bi-x-circle"></i> Limpiar filtros
-                        </a>
-                    </div>
-                </div>
-            </form>
+                </form>
             </div>
         </div>
 
@@ -1169,6 +1183,15 @@
                             </select>
                         </div>
                         <div class="field-group">
+                            <label class="field-label">Entregable tipo</label>
+                            <select class="field-input" name="id_entregable" id="sel-entregable" required>
+                                <option value="" disabled selected>Selecciona un tipo de entregable...</option>
+                                {% for e in entregables_list %}
+                                <option value="{{ e.ID }}">{{ e.NOMBRE }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field-group">
                             <label class="field-label">Nombre de la actividad *</label>
                             <input type="text" class="field-input" name="nombre_actividad" required
                                 placeholder="Ej: Análisis de consumo energético...">
@@ -1178,6 +1201,7 @@
                             <input type="text" class="field-input" name="friendly_name"
                                 placeholder="Ej: Plan semanal cliente ACME">
                         </div>
+
                         <div class="field-group">
                             <label class="field-label">Descripción</label>
                             <textarea class="field-input" name="descripcion"
@@ -1187,7 +1211,8 @@
                             <div class="field-group">
                                 <label class="field-label">Solicitante (contacto cliente)</label>
                                 <select class="field-input" name="solicitante">
-                                    <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero registra solicitantes en Catálogos' }}</option>
+                                    <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero
+                                        registra solicitantes en Catálogos' }}</option>
                                     {% for s in solicitantes %}
                                     <option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>
                                     {% endfor %}
@@ -1222,8 +1247,8 @@
                             </div>
                             <div class="field-group">
                                 <label class="field-label">Avance %</label>
-                                <input type="number" class="field-input" id="new-avance-pct" name="avance_pct"
-                                    min="0" max="100" step="1" inputmode="numeric" placeholder="0">
+                                <input type="number" class="field-input" id="new-avance-pct" name="avance_pct" min="0"
+                                    max="100" step="1" inputmode="numeric" placeholder="0">
                             </div>
                         </div>
                         <div class="field-group">
@@ -1248,7 +1273,8 @@
                             </select>
                         </div>
                         <div class="field-group">
-                            <label class="field-label">Se desprende de <span style="font-weight:400;color:var(--text-muted);font-size:.8em;">(opcional)</span></label>
+                            <label class="field-label">Se desprende de <span
+                                    style="font-weight:400;color:var(--text-muted);font-size:.8em;">(opcional)</span></label>
                             <select id="sel-actividad-padre" name="id_actividad_padre">
                                 <option value="">Sin actividad origen</option>
                                 {% for a in todas_actividades %}
@@ -1286,7 +1312,8 @@
                                 <p
                                     style="font-size:.7rem;color:#f59e0b;margin:5px 0 0;display:flex;align-items:center;gap:4px;">
                                     <i class="bi bi-exclamation-triangle-fill"></i>
-                                    Al cambiar el proyecto, las horas registradas se reasignarán automáticamente al nuevo proyecto.
+                                    Al cambiar el proyecto, las horas registradas se reasignarán automáticamente al
+                                    nuevo proyecto.
                                 </p>
                             </div>
                             <div class="field-group">
@@ -1308,12 +1335,22 @@
                         </div>
                         <div class="field-group">
                             <label class="field-label">Nombre de la actividad *</label>
-                            <input type="text" class="field-input" id="quick-edit-nombre" name="nombre_actividad" required>
+                            <input type="text" class="field-input" id="quick-edit-nombre" name="nombre_actividad"
+                                required>
                         </div>
                         <div class="field-group">
                             <label class="field-label">Friendly name</label>
                             <input type="text" class="field-input" id="quick-edit-friendly-name" name="friendly_name"
                                 placeholder="Ej: Plan semanal cliente ACME">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Entregable tipo</label>
+                            <select class="field-input" name="id_entregable" id="quick-edit-entregable" required>
+                                <option value="" disabled>Selecciona un tipo de entregable...</option>
+                                {% for e in entregables_list %}
+                                <option value="{{ e.ID }}">{{ e.NOMBRE }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="field-group">
                             <label class="field-label">Descripción</label>
@@ -1324,7 +1361,8 @@
                             <div class="field-group">
                                 <label class="field-label">Solicitante</label>
                                 <select class="field-input" id="quick-edit-solicitante" name="solicitante">
-                                    <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero registra solicitantes en Catálogos' }}</option>
+                                    <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero
+                                        registra solicitantes en Catálogos' }}</option>
                                     {% for s in solicitantes %}
                                     <option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>
                                     {% endfor %}
@@ -1332,8 +1370,9 @@
                             </div>
                             <div class="field-group">
                                 <label class="field-label">Fecha de solicitud *</label>
-                                <input type="text" class="field-input" id="quick-edit-fecha-solicitud" name="fecha_solicitud"
-                                    placeholder="Selecciona fecha" autocomplete="off" required aria-required="true">
+                                <input type="text" class="field-input" id="quick-edit-fecha-solicitud"
+                                    name="fecha_solicitud" placeholder="Selecciona fecha" autocomplete="off" required
+                                    aria-required="true">
                             </div>
                         </div>
                         <div class="row-2">
@@ -1344,8 +1383,8 @@
                             </div>
                             <div class="field-group">
                                 <label class="field-label">Fecha fin estimada</label>
-                                <input type="text" class="field-input" id="quick-edit-fecha-fin-est" name="fecha_fin_est"
-                                    placeholder="Selecciona fecha" autocomplete="off">
+                                <input type="text" class="field-input" id="quick-edit-fecha-fin-est"
+                                    name="fecha_fin_est" placeholder="Selecciona fecha" autocomplete="off">
                             </div>
                         </div>
                         <div class="row-2">
@@ -1358,11 +1397,13 @@
                                 </select>
                             </div>
                             <div class="field-group">
-                                <label class="field-label">Se desprende de <span style="font-weight:400;color:var(--text-muted);font-size:.8em;">(opcional)</span></label>
+                                <label class="field-label">Se desprende de <span
+                                        style="font-weight:400;color:var(--text-muted);font-size:.8em;">(opcional)</span></label>
                                 <select id="quick-edit-padre" name="id_actividad_padre">
                                     <option value="">Sin actividad origen</option>
                                     {% for a in todas_actividades %}
-                                    <option value="{{ a.ID }}">{{ a.NOMBRE_ACTIVIDAD }} — {{ a.NOMBRE_PROYECTO }}</option>
+                                    <option value="{{ a.ID }}">{{ a.NOMBRE_ACTIVIDAD }} — {{ a.NOMBRE_PROYECTO }}
+                                    </option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -1370,8 +1411,9 @@
                         <div class="row-2">
                             <div class="field-group">
                                 <label class="field-label">Días A/T</label>
-                                <input type="number" class="field-input" id="quick-edit-dias-acordados" name="dias_acordados"
-                                    min="1" max="365" step="1" inputmode="numeric" placeholder="Se calcula con fechas">
+                                <input type="number" class="field-input" id="quick-edit-dias-acordados"
+                                    name="dias_acordados" min="1" max="365" step="1" inputmode="numeric"
+                                    placeholder="Se calcula con fechas">
                             </div>
                             <div class="field-group">
                                 <label class="field-label">Avance %</label>
@@ -1409,6 +1451,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+
+
     <script>
         const topNav = document.getElementById('top-nav');
         const navHamburger = document.getElementById('nav-hamburger');
@@ -1518,9 +1562,7 @@
             const params = new URLSearchParams(new FormData(filtrosForm));
             const requestUrl = `/actividades?${params.toString()}`;
 
-            if (filtersRequestController) {
-                filtersRequestController.abort();
-            }
+            if (filtersRequestController) filtersRequestController.abort();
             const controller = new AbortController();
             filtersRequestController = controller;
             resultsContainer.setAttribute('aria-busy', 'true');
@@ -1530,17 +1572,13 @@
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     signal: controller.signal,
                 });
-                if (!response.ok) {
-                    throw new Error(`No se pudo actualizar la vista (${response.status})`);
-                }
+                if (!response.ok) throw new Error(`No se pudo actualizar la vista (${response.status})`);
                 resultsContainer.innerHTML = await response.text();
                 history.replaceState({}, '', requestUrl);
                 bindViewControls();
                 updateFilterActionsVisibility();
             } catch (error) {
-                if (error.name !== 'AbortError') {
-                    window.location.assign(requestUrl);
-                }
+                if (error.name !== 'AbortError') window.location.assign(requestUrl);
             } finally {
                 if (filtersRequestController === controller) {
                     filtersRequestController = null;
@@ -1560,15 +1598,12 @@
             btn.addEventListener('click', () => {
                 if (!scopeInput) return;
                 scopeInput.value = btn.dataset.scope;
-                if (window.filterEstatusTs) {
-                    window.filterEstatusTs.setValue('', true);
-                }
+                if (window.filterEstatusTs) window.filterEstatusTs.setValue('', true);
                 syncStatusFilterState();
                 submitFiltros(true);
             });
         });
 
-        // Filtros con Tom Select — submit automático al cambiar
         const filterCfg = {
             create: false,
             onChange: function () { submitFiltros(true); },
@@ -1578,7 +1613,6 @@
             }
         };
 
-        // ── Flatpickr — campos de fecha ──────────────────────────────────
         const fpCfg = {
             locale: "es",
             altInput: true,
@@ -1587,6 +1621,7 @@
             disableMobile: true,
             allowInput: false,
         };
+
         const newFechaSolicitudPicker = flatpickr("#new-fecha-solicitud", fpCfg);
         const newFechaInicioPicker = flatpickr("#new-fecha-inicio", fpCfg);
         const newFechaFinEstPicker = flatpickr("#new-fecha-fin-est", fpCfg);
@@ -1596,23 +1631,19 @@
             dropdownParent: 'body',
             onChange: () => submitFiltros(true)
         };
+
         if (searchInput) {
             let searchDebounceTimer = null;
             let lastSubmittedSearch = (searchInput.value || '').trim();
 
             const returnToInitialView = () => {
-                if (window.location.pathname === '/actividades' && window.location.search === '') {
-                    return;
-                }
+                if (window.location.pathname === '/actividades' && window.location.search === '') return;
                 window.location.assign('/actividades');
             };
 
             const triggerSearchSubmit = ({ force = false } = {}) => {
                 const currentSearch = (searchInput.value || '').trim();
-                if (currentSearch.length === 0) {
-                    returnToInitialView();
-                    return;
-                }
+                if (currentSearch.length === 0) { returnToInitialView(); return; }
                 if (!force) {
                     if (currentSearch.length === 1) return;
                     if (currentSearch === lastSubmittedSearch) return;
@@ -1624,10 +1655,7 @@
             searchInput.addEventListener('input', () => {
                 clearTimeout(searchDebounceTimer);
                 const nextSearch = (searchInput.value || '').trim();
-                if (nextSearch.length === 0) {
-                    returnToInitialView();
-                    return;
-                }
+                if (nextSearch.length === 0) { returnToInitialView(); return; }
                 if (nextSearch.length === 1) return;
                 searchDebounceTimer = setTimeout(() => triggerSearchSubmit(), 300);
             });
@@ -1646,9 +1674,7 @@
         window.filterEstatusTs = new TomSelect('#filter-estatus', {
             ...filterSubmitCfg,
             onChange: () => {
-                if (scopeInput) {
-                    scopeInput.value = 'all';
-                }
+                if (scopeInput) scopeInput.value = 'all';
                 syncStatusFilterState();
                 submitFiltros(true);
             }
@@ -1658,7 +1684,6 @@
         new TomSelect('#filter-solicitante', filterSubmitCfg);
         syncStatusFilterState();
 
-        // Flatpickr rango de fechas
         const fpFiltro = {
             locale: "es",
             altInput: true,
@@ -1687,13 +1712,17 @@
         });
         bindViewControls();
 
+        // ── TomSelect modales ─────────────────────────────────────────────────────────
+        // IMPORTANTE: cada ID debe inicializarse UNA SOLA VEZ
         new TomSelect('#sel-proyecto', tsCfg);
         new TomSelect('#sel-estatus', tsCfg);
         new TomSelect('#sel-tipo', tsCfg);
+        new TomSelect('#sel-entregable', tsCfg);
         new TomSelect('#sel-responsable', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona responsables...' });
         new TomSelect('#sel-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
         new TomSelect('#sel-actividad-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
 
+        // ── Quick Edit modal ──────────────────────────────────────────────────────────
         const quickEditModalEl = document.getElementById('modalEditarActividadRapida');
         const quickEditModal = quickEditModalEl ? new bootstrap.Modal(quickEditModalEl) : null;
         const quickEditForm = document.getElementById('form-editar-actividad-rapida');
@@ -1709,13 +1738,16 @@
         const quickEditFechaInicioPicker = flatpickr("#quick-edit-fecha-inicio", fpCfg);
         const quickEditFechaFinEstPicker = flatpickr("#quick-edit-fecha-fin-est", fpCfg);
 
+        // Una sola inicialización por campo — sin duplicados
         const quickEditProyectoTs = new TomSelect('#quick-edit-proyecto', tsCfg);
         const quickEditEstatusTs = new TomSelect('#quick-edit-estatus', tsCfg);
         const quickEditTipoTs = new TomSelect('#quick-edit-tipo', tsCfg);
         const quickEditResponsablesTs = new TomSelect('#quick-edit-responsables', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona responsables...' });
         const quickEditRecursosTs = new TomSelect('#quick-edit-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
         const quickEditPadreTs = new TomSelect('#quick-edit-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
+        const quickEditEntregableTs = new TomSelect('#quick-edit-entregable', tsCfg);  // ← única inicialización
 
+        // ── Helpers ───────────────────────────────────────────────────────────────────
         function normalizarFechaInput(value) {
             return String(value || '').trim().slice(0, 10);
         }
@@ -1723,11 +1755,8 @@
         function setPickerDateOrClear(picker, value) {
             const fecha = normalizarFechaInput(value);
             if (!picker) return;
-            if (fecha) {
-                picker.setDate(fecha, true);
-            } else {
-                picker.clear();
-            }
+            if (fecha) picker.setDate(fecha, true);
+            else picker.clear();
         }
 
         function calcularDiasAcordados(fechaInicio, fechaFin) {
@@ -1736,11 +1765,8 @@
             if (!inicio || !fin) return null;
             const inicioDate = new Date(`${inicio}T00:00:00`);
             const finDate = new Date(`${fin}T00:00:00`);
-            if (Number.isNaN(inicioDate.getTime()) || Number.isNaN(finDate.getTime()) || finDate < inicioDate) {
-                return null;
-            }
-            const diffMs = finDate.getTime() - inicioDate.getTime();
-            return Math.max(1, Math.floor(diffMs / 86400000) + 1);
+            if (Number.isNaN(inicioDate.getTime()) || Number.isNaN(finDate.getTime()) || finDate < inicioDate) return null;
+            return Math.max(1, Math.floor((finDate - inicioDate) / 86400000) + 1);
         }
 
         function syncDiasAcordadosField({ startPicker, endPicker, diasInput }) {
@@ -1775,10 +1801,10 @@
         function ensureQuickEditSolicitanteOption(nombre) {
             const valor = String(nombre || '').trim();
             Array.from(quickEditSolicitante.options)
-                .filter((option) => option.dataset.legacyOption === '1')
-                .forEach((option) => option.remove());
+                .filter((o) => o.dataset.legacyOption === '1')
+                .forEach((o) => o.remove());
             if (!valor) return;
-            const existente = Array.from(quickEditSolicitante.options).some((option) => option.value === valor);
+            const existente = Array.from(quickEditSolicitante.options).some((o) => o.value === valor);
             if (existente) return;
             const option = document.createElement('option');
             option.value = valor;
@@ -1791,13 +1817,12 @@
             Array.from(quickEditPadreField.options).forEach((option) => {
                 const isSelf = option.value && option.value === activityId;
                 option.disabled = isSelf;
-                if (isSelf && option.selected) {
-                    option.selected = false;
-                }
+                if (isSelf && option.selected) option.selected = false;
             });
             quickEditPadreTs.refreshOptions(false);
         }
 
+        // ── Abrir modal edición rápida ────────────────────────────────────────────────
         async function abrirEdicionRapidaActividad(event, actividadId) {
             event?.preventDefault();
             event?.stopPropagation();
@@ -1812,16 +1837,21 @@
                 }
 
                 const actividad = payload.actividad;
+                console.log('id_entregable recibido:', actividad.id_entregable); // ← temporal
+                console.log('Opciones disponibles en entregable:', quickEditEntregableTs.options);
                 quickEditActividadId.value = actividad.id;
                 quickEditForm.querySelector('[name="nombre_actividad"]').value = actividad.nombre_actividad || '';
                 quickEditForm.querySelector('[name="friendly_name"]').value = actividad.friendly_name || '';
                 quickEditForm.querySelector('[name="descripcion"]').value = actividad.descripcion || '';
                 quickEditForm.querySelector('[name="prioridad"]').value = actividad.prioridad || '2';
+
                 setPickerDateOrClear(quickEditFechaSolicitudPicker, actividad.fecha_solicitud);
                 setPickerDateOrClear(quickEditFechaInicioPicker, actividad.fecha_inicio);
                 setPickerDateOrClear(quickEditFechaFinEstPicker, actividad.fecha_fin_est);
+
                 if (quickEditDiasAcordadosField) quickEditDiasAcordadosField.value = actividad.dias_acordados || '';
                 if (quickEditAvancePctField) quickEditAvancePctField.value = actividad.avance_pct || '0';
+
                 syncDiasAcordadosField({
                     startPicker: quickEditFechaInicioPicker,
                     endPicker: quickEditFechaFinEstPicker,
@@ -1830,9 +1860,11 @@
 
                 ensureQuickEditSolicitanteOption(actividad.solicitante);
                 quickEditSolicitante.value = actividad.solicitante || '';
+
                 quickEditProyectoTs.setValue(actividad.id_proyecto || '', true);
                 quickEditEstatusTs.setValue(actividad.id_estatus || '', true);
                 quickEditTipoTs.setValue(actividad.tipo || '', true);
+                quickEditEntregableTs.setValue(actividad.id_entregable || '', true);  // ← línea añadida
                 quickEditResponsablesTs.setValue(Array.isArray(actividad.responsables) ? actividad.responsables : [], true);
                 quickEditRecursosTs.setValue(Array.isArray(actividad.recursos) ? actividad.recursos : [], true);
                 syncQuickEditPadreOptions(actividad.id);
@@ -1845,27 +1877,21 @@
             }
         }
 
+        // ── Submit nueva actividad ────────────────────────────────────────────────────
         document.getElementById('form-nueva-actividad').addEventListener('submit', async function (e) {
             e.preventDefault();
             const fechaSolicitudField = document.getElementById('new-fecha-solicitud');
             if (!fechaSolicitudField?.value?.trim()) {
                 const visibleDateInput = fechaSolicitudField?._flatpickr?.altInput || fechaSolicitudField;
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Fecha requerida',
-                    text: 'La fecha de solicitud es obligatoria por el momento.',
-                }).then(() => visibleDateInput?.focus());
+                Swal.fire({ icon: 'warning', title: 'Fecha requerida', text: 'La fecha de solicitud es obligatoria.' })
+                    .then(() => visibleDateInput?.focus());
                 return;
             }
             Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             const fd = new FormData(this);
             const tipo = String(fd.get('tipo') || '').trim();
             if (!tipo) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Tipo requerido',
-                    text: 'Selecciona el tipo de actividad (DESARROLLO o TAREA).',
-                });
+                Swal.fire({ icon: 'warning', title: 'Tipo requerido', text: 'Selecciona el tipo de actividad (DESARROLLO o TAREA).' });
                 return;
             }
             try {
@@ -1880,6 +1906,7 @@
             }
         });
 
+        // ── Submit edición rápida ─────────────────────────────────────────────────────
         quickEditForm?.addEventListener('submit', async function (e) {
             e.preventDefault();
             const actividadId = quickEditActividadId.value;
@@ -1888,11 +1915,8 @@
             const fechaSolicitudField = document.getElementById('quick-edit-fecha-solicitud');
             if (!fechaSolicitudField?.value?.trim()) {
                 const visibleDateInput = fechaSolicitudField?._flatpickr?.altInput || fechaSolicitudField;
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Fecha requerida',
-                    text: 'La fecha de solicitud es obligatoria por el momento.',
-                }).then(() => visibleDateInput?.focus());
+                Swal.fire({ icon: 'warning', title: 'Fecha requerida', text: 'La fecha de solicitud es obligatoria.' })
+                    .then(() => visibleDateInput?.focus());
                 return;
             }
 
@@ -1900,11 +1924,7 @@
             const fd = new FormData(this);
             const tipo = String(fd.get('tipo') || '').trim();
             if (!tipo) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Tipo requerido',
-                    text: 'Selecciona el tipo de actividad (DESARROLLO o TAREA).',
-                });
+                Swal.fire({ icon: 'warning', title: 'Tipo requerido', text: 'Selecciona el tipo de actividad (DESARROLLO o TAREA).' });
                 return;
             }
             fd.delete('actividad_id');
@@ -1920,6 +1940,7 @@
             }
         });
 
+        // ── Eliminar actividad ────────────────────────────────────────────────────────
         async function eliminarActividad(e, id, nombre) {
             e.preventDefault();
             e.stopPropagation();
@@ -1946,6 +1967,8 @@
             }
         }
     </script>
+
+
 </body>
 
 </html>

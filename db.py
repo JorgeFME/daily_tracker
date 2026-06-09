@@ -969,6 +969,7 @@ def obtener_actividad_por_id(actividad_id):
                     A."PRIORIDAD", A."TIPO",
                     A."ID_PROYECTO", A."ID_ESTATUS",
                     A."ID_ACTIVIDAD_PADRE",
+                    A."ID_ENTREGABLE",
                     A."CREADO_EN", A."ACTUALIZADO_EN",
                     P."NOMBRE_PROYECTO",
                     E."DESCRIPCION" as "ESTATUS", E."COLOR_HEX" as "ESTATUS_COLOR",
@@ -1024,8 +1025,10 @@ def crear_actividad(datos):
                "FECHA_SOLICITUD","SOLICITANTE","FECHA_INICIO","FECHA_FIN_EST",
                "FECHA_FIN_REAL","AVANCE_PCT","FRIENDLY_NAME",
                "DIAS_ACORDADOS","ID_ESTATUS","PRIORIDAD","TIPO","ID_ACTIVIDAD_PADRE",
-                  "CREADO_EN","CREADO_POR")
-           VALUES (SYSUUID,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)"""
+               "CREADO_POR", "ID_ENTREGABLE", "CREADO_EN") -- Pasamos CREADO_EN al final
+           VALUES (SYSUUID,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)""" 
+           # Mantenemos exactamente 17 signos '?' seguidos y al final dejamos que HANA maneje el TIMESTAMP solo.
+           
     return ejecutar_dml(sql, (
         datos.get('id_proyecto'), datos.get('nombre_actividad'),
         datos.get('descripcion') or None,
@@ -1038,7 +1041,8 @@ def crear_actividad(datos):
         datos.get('id_estatus'), int(datos.get('prioridad', 2)),
         datos.get('tipo'),
         datos.get('id_actividad_padre') or None,
-        datos.get('creado_por', 'SISTEMA'),
+        datos.get('creado_por', 'SISTEMA'), # Se empareja con el penúltimo '?' (columna CREADO_POR)
+        datos.get('id_entregable') or None  # Se empareja con el último '?' (columna ID_ENTREGABLE)
     ))
 
 
@@ -1051,23 +1055,29 @@ def actualizar_actividad(actividad_id, datos):
                  "DIAS_ACORDADOS"=?, "AVANCE_PCT"=?,
                  "ID_ESTATUS"=?, "PRIORIDAD"=?, "TIPO"=?,
                  "ID_ACTIVIDAD_PADRE"=?,
+                 "ID_ENTREGABLE"=?,
                  "ACTUALIZADO_EN"=CURRENT_TIMESTAMP, "ACTUALIZADO_POR"=?
              WHERE "ID"=?"""
+
     return ejecutar_dml(sql, (
         datos.get('id_proyecto'),
         datos.get('nombre_actividad'),
         datos.get('friendly_name') or None,
         datos.get('descripcion') or None,
-        datos.get('fecha_solicitud') or None, datos.get('solicitante') or None,
+        datos.get('fecha_solicitud') or None,
+        datos.get('solicitante') or None,
         datos.get('fecha_inicio') or None,
         datos.get('fecha_fin_est') or None,
         datos.get('fecha_fin_real') or None,
         int(datos['dias_acordados']) if datos.get('dias_acordados') else None,
         int(datos.get('avance_pct') or 0),
-        datos.get('id_estatus'), int(datos.get('prioridad', 2)),
+        datos.get('id_estatus'),
+        int(datos.get('prioridad', 2)),
         datos.get('tipo'),
         datos.get('id_actividad_padre') or None,
-        datos.get('actualizado_por', 'SISTEMA'), actividad_id,
+        datos.get('id_entregable') or None,
+        datos.get('actualizado_por', 'SISTEMA'),
+        actividad_id,
     ))
 
 
@@ -1504,6 +1514,12 @@ def obtener_solicitantes():
         'SELECT "ID","NOMBRE","ACTIVO" FROM "CAT_SOLICITANTES" WHERE "ACTIVO"=1 ORDER BY "NOMBRE"'
     )
 
+def obtener_entregables():
+    return _cached_query(
+        "cat_entregables",
+        'SELECT "ID","NOMBRE", "ACTIVO" FROM "CAT_ENTREGABLES" WHERE "ACTIVO"=1 ORDER BY "NOMBRE"'
+    )
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  ACTIVIDADES POR PROYECTO
@@ -1853,8 +1869,9 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
             A."SOLICITANTE",
             A."ID_ACTIVIDAD_PADRE",
             PADRE."NOMBRE_ACTIVIDAD" AS "NOMBRE_ACTIVIDAD_PADRE",
-            E."DESCRIPCION"  AS "ESTATUS",
+            E."DESCRIPCION"   AS "ESTATUS",
             P."NOMBRE_PROYECTO",
+            COALESCE(CAT."NOMBRE", '—') AS "NOMBRE_ENTREGABLE",
             COALESCE((SELECT SUM(R."HORAS") FROM "REGISTRO_ACTIVIDADES" R
                        WHERE R."ID_ACTIVIDAD" = A."ID" AND """ + where_registros_sql + """), 0) AS "HORAS_TOTALES",
             (SELECT STRING_AGG(U2."NOMBRE_COMPLETO", ' / ')
@@ -1874,6 +1891,7 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
         JOIN "PROYECTOS" P ON A."ID_PROYECTO" = P."ID"
         JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS" = E."ID"
         LEFT JOIN "ACTIVIDADES" PADRE ON A."ID_ACTIVIDAD_PADRE" = PADRE."ID"
+        LEFT JOIN "CAT_ENTREGABLES" CAT ON A."ID_ENTREGABLE" = CAT."ID"
         WHERE A."ID_PROYECTO" = ?
           AND EXISTS (
               SELECT 1
@@ -1882,6 +1900,7 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
           )
         ORDER BY A."FECHA_SOLICITUD" ASC, A."CREADO_EN" ASC
     """
+    
     sql_evs = """
         SELECT
             EV."ID_ACTIVIDAD",

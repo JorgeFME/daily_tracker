@@ -397,6 +397,7 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
 
     headers = [
         ("Nombre de la actividad", 36),
+        ("Tipo de Entregable", 20),  # <-- COLOCADO COMO SEGUNDA COLUMNA (Ancho 20)
         ("Recursos utilizados", 22),
         ("Estatus", 16),
         ("Fecha solicitud", 14),
@@ -443,6 +444,7 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
 
         row_data = [
             _safe(actividad.get("NOMBRE_ACTIVIDAD")),
+            _safe(actividad.get("NOMBRE_ENTREGABLE")),  # <-- COLOCADO EN LA SEGUNDA POSICIÓN
             _safe(actividad.get("RECURSOS")),
             estatus_texto,
             _fecha(actividad.get("FECHA_SOLICITUD")),
