@@ -1,0 +1,2 @@
+from web_app.modules.reports.excel_reporte import generar_reporte as generar_reporte_proyecto_xlsx
+from web_app.modules.reports.excel_ausencias_reporte import generar_reporte_ausencias

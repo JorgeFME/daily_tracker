@@ -1,0 +1,2117 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actividades · Daily Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #dbeafe;
+            --primary-glow: rgba(37, 99, 235, .15);
+            --surface: #fff;
+            --surface-alt: #f8fafd;
+            --border: #e8edf5;
+            --text-main: #1e293b;
+            --text-muted: #94a3b8;
+            --text-secondary: #64748b;
+            --radius-card: 20px;
+            --radius-input: 12px;
+            --shadow-card: 0 4px 24px rgba(15, 23, 42, .06), 0 1px 4px rgba(15, 23, 42, .04);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f0f4fb;
+            background-image: radial-gradient(ellipse at 20% 0%, rgba(37, 99, 235, .06) 0%, transparent 60%);
+            min-height: 100vh;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-main);
+        }
+
+        /* NAV */
+        .top-nav {
+            background: #fff;
+            border-bottom: 1px solid var(--border);
+            padding: 0 28px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 56px;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            box-shadow: 0 1px 8px rgba(15, 23, 42, .05);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: .95rem;
+            color: var(--text-main);
+            text-decoration: none;
+            margin-right: 16px;
+        }
+
+        .nav-logo i {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        .nav-link-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 99px;
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all .2s;
+        }
+
+        .nav-link-item:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .nav-link-item.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .nav-hamburger {
+            display: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            color: var(--text-secondary);
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        /* PAGE */
+        .page-wrap {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 28px 24px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 24px;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -.4px;
+            margin: 0;
+        }
+
+        .page-subtitle {
+            font-size: .82rem;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        /* FILTERS */
+        .filters-bar {
+            margin-bottom: 20px;
+        }
+
+        .filters-panel {
+            background: linear-gradient(180deg, rgba(248, 250, 253, .96), rgba(240, 244, 251, .92));
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: var(--shadow-card);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), var(--shadow-card);
+            backdrop-filter: blur(6px);
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 12px;
+            align-items: end;
+        }
+
+        .filter-field {
+            grid-column: span 3;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .filter-field-wide {
+            grid-column: span 6;
+        }
+
+        .filter-field-dates {
+            grid-column: span 4;
+        }
+
+        .filter-actions {
+            grid-column: span 2;
+            display: flex;
+            justify-content: flex-end;
+            align-items: end;
+            min-height: 100%;
+        }
+
+        .filter-field-label {
+            font-size: .72rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: .02em;
+            padding-left: 2px;
+        }
+
+        .filter-date-range {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        /* Tom Select filtros */
+        .filters-bar .ts-wrapper {
+            width: 100%;
+            min-width: 0;
+            max-width: none;
+            border: 1.5px solid var(--border) !important;
+            border-radius: var(--radius-input) !important;
+            background: var(--surface) !important;
+            box-shadow: var(--shadow-card) !important;
+        }
+
+        .filters-bar .ts-wrapper.focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px var(--primary-glow) !important;
+        }
+
+        .filters-bar .ts-control {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 8px 12px !important;
+            font-size: .83rem !important;
+            font-family: 'DM Sans', sans-serif !important;
+            min-height: 40px !important;
+            cursor: pointer !important;
+        }
+
+        /* Date inputs in filters bar */
+        .filter-date {
+            width: 100%;
+            min-width: 0;
+            max-width: none;
+            height: 40px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-input);
+            padding: 0 12px;
+            font-size: .83rem;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-main);
+            background: var(--surface);
+            box-shadow: var(--shadow-card);
+            cursor: pointer;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+            white-space: nowrap;
+        }
+
+        .filter-date:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .filter-date.flatpickr-input.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        /* Hide the real input, style only the altInput */
+        .filter-date[type="hidden"] {
+            display: none;
+        }
+
+        .filter-clear {
+            min-height: 40px;
+            white-space: nowrap;
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: .82rem;
+            font-weight: 700;
+            padding: 0 14px;
+            border: 1.5px dashed var(--border);
+            border-radius: 12px;
+            background: #fff;
+            width: 100%;
+        }
+
+        .filter-clear:hover {
+            border-color: #fecaca;
+            background: #fff7f7;
+            color: var(--danger);
+        }
+
+        .filter-search {
+            width: 100%;
+            min-width: 0;
+            max-width: none;
+            height: 40px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-input);
+            padding: 0 12px;
+            font-size: .83rem;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-main);
+            background: var(--surface);
+            box-shadow: var(--shadow-card);
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .filter-search:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        .results-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .results-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: .8rem;
+        }
+
+        .scope-pill {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            border-radius: 99px;
+            padding: 3px 10px;
+            font-size: .72rem;
+            font-weight: 700;
+        }
+
+        .scope-chips {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .scope-chip {
+            border: 1.5px solid var(--border);
+            border-radius: 99px;
+            background: #fff;
+            color: var(--text-secondary);
+            font-size: .74rem;
+            font-weight: 700;
+            padding: 5px 10px;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .scope-chip.active {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .filter-hint {
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid #dbeafe;
+            background: #f8fbff;
+            color: #1e3a8a;
+            font-size: .78rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-hint strong {
+            font-weight: 800;
+        }
+
+        .filter-disabled-note {
+            color: var(--text-muted);
+            font-size: .72rem;
+            font-weight: 600;
+        }
+
+        .filters-bar .ts-wrapper.disabled,
+        .filters-bar .ts-wrapper.locked {
+            opacity: .55;
+            pointer-events: none;
+            background: #f8fafc !important;
+        }
+
+        .filters-bar .ts-wrapper.disabled .ts-control,
+        .filters-bar .ts-wrapper.locked .ts-control {
+            cursor: not-allowed !important;
+        }
+
+        .view-switch {
+            display: inline-flex;
+            gap: 6px;
+        }
+
+        .view-btn {
+            height: 34px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            background: #fff;
+            color: var(--text-secondary);
+            font-size: .78rem;
+            font-weight: 700;
+            padding: 0 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .view-btn.active {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .table-shell {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow-x: auto;
+            box-shadow: var(--shadow-card);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .actividades-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 760px;
+        }
+
+        .actividades-table th,
+        .actividades-table td {
+            padding: 11px 12px;
+            font-size: .79rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .actividades-table th {
+            background: var(--surface-alt);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            font-size: .67rem;
+            font-weight: 700;
+        }
+
+        .actividades-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-title-link {
+            text-decoration: none;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .table-title-link:hover {
+            color: var(--primary);
+        }
+
+        .pagination-wrap {
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-btn {
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            background: #fff;
+            color: var(--text-secondary);
+            font-size: .78rem;
+            font-weight: 700;
+            padding: 7px 12px;
+            cursor: pointer;
+        }
+
+        .pagination-btn:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        .pagination-text {
+            font-size: .78rem;
+            color: var(--text-muted);
+        }
+
+        [data-view-target] {
+            display: none;
+        }
+
+        [data-view-target].active {
+            display: block;
+        }
+
+        @media (max-width: 1100px) {
+
+            .filter-field,
+            .filter-field-wide,
+            .filter-field-dates {
+                grid-column: span 6;
+            }
+
+            .filter-actions {
+                grid-column: span 12;
+                justify-content: stretch;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                overflow-x: hidden;
+            }
+
+            .top-nav {
+                padding: 0 14px;
+                gap: 8px;
+                overflow: visible;
+            }
+
+            .nav-logo {
+                margin-right: 0;
+                min-width: 0;
+                flex: 1;
+            }
+
+            .nav-logo-text {
+                display: block;
+                flex: 1;
+                text-align: center;
+                padding-right: 10px;
+                font-size: .78rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .nav-hamburger {
+                display: inline-flex;
+                margin-left: 0;
+            }
+
+            .nav-menu {
+                position: absolute;
+                top: calc(100% + 8px);
+                left: 12px;
+                right: 12px;
+                display: none;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 8px;
+                box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+                z-index: 210;
+            }
+
+            .top-nav.menu-open .nav-menu {
+                display: flex;
+            }
+
+            .nav-menu .nav-link-item {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .page-wrap {
+                padding: 22px 16px;
+            }
+
+            .filters-panel {
+                padding: 14px;
+            }
+
+            .filter-field,
+            .filter-field-wide,
+            .filter-field-dates,
+            .filter-actions {
+                grid-column: span 12;
+            }
+
+            .filter-date-range {
+                grid-template-columns: 1fr;
+            }
+
+            .results-meta {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+        }
+
+        /* CARDS GRID */
+        .actividades-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        .act-card {
+            background: var(--surface);
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: transform .2s, box-shadow .2s;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+        }
+
+        .act-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(15, 23, 42, .1);
+        }
+
+        .act-card-top {
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .act-card-badges {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .badge-estatus {
+            padding: 3px 10px;
+            border-radius: 99px;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .4px;
+        }
+
+        .badge-prioridad {
+            padding: 3px 10px;
+            border-radius: 99px;
+            font-size: .68rem;
+            font-weight: 700;
+        }
+
+        .prio-1 {
+            background: #fff1f2;
+            color: #ef4444;
+        }
+
+        .prio-2 {
+            background: #fefce8;
+            color: #ca8a04;
+        }
+
+        .prio-3 {
+            background: #f0fdf4;
+            color: #059669;
+        }
+
+        .act-nombre {
+            font-size: .98rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0 0 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .act-proyecto {
+            font-size: .75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .act-card-body {
+            padding: 14px 20px;
+        }
+
+        .act-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .act-meta-item {
+            font-size: .75rem;
+        }
+
+        .act-meta-label {
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            display: block;
+        }
+
+        .act-meta-val {
+            color: var(--text-main);
+            font-weight: 500;
+            font-family: 'DM Mono', monospace;
+            font-size: .78rem;
+        }
+
+        /* JERARQUÍA PADRE/HIJA */
+        .act-family-group {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .act-family-children {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 12px;
+            margin-left: 20px;
+            padding-left: 16px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .act-card-wrap--hija .act-card {
+            border-color: #c7d2fe;
+            background: #fafbff;
+        }
+
+        .act-card-wrap--hija .act-card-top {
+            padding: 14px 18px 12px;
+        }
+
+        .act-card-wrap--hija .act-nombre {
+            font-size: .92rem;
+        }
+
+        .badge-hijas {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 99px;
+            font-size: .67rem;
+            font-weight: 700;
+            letter-spacing: .3px;
+            background: #eef2ff;
+            color: #4f46e5;
+            border: 1px solid #c7d2fe;
+            text-decoration: none;
+            transition: background .15s;
+            cursor: pointer;
+        }
+
+        .badge-hijas:hover {
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+
+        .badge-hija-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 99px;
+            font-size: .67rem;
+            font-weight: 700;
+            background: #f5f3ff;
+            color: #7c3aed;
+            border: 1px solid #ddd6fe;
+        }
+
+        .act-padre-link {
+            margin: 8px 0 0;
+            font-size: .72rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .act-padre-link a,
+        .act-padre-link-target {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .act-padre-link a:hover,
+        .act-padre-link-target:hover {
+            text-decoration: underline;
+        }
+
+        .act-row--hija td {
+            background: #fafbff;
+        }
+
+        .act-row--hija td:first-child {
+            padding-left: 28px;
+        }
+
+        .act-table-name {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .act-tree-icon {
+            color: #7c3aed;
+            font-weight: 700;
+            font-size: .85rem;
+            flex-shrink: 0;
+        }
+
+        .act-table-padre-link,
+        .act-table-hijas-link {
+            margin-top: 3px;
+            font-size: .72rem;
+        }
+
+        .act-table-padre-link {
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .act-table-padre-link a,
+        .act-table-hijas-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .act-table-padre-link a:hover,
+        .act-table-hijas-link a:hover {
+            text-decoration: underline;
+        }
+
+        .act-table-hijas-link a {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .progress-wrap {
+            margin-top: 4px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: .7rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .progress-bar-track {
+            height: 6px;
+            background: #f1f5f9;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: var(--primary);
+            transition: width .4s ease;
+        }
+
+        /* EMPTY */
+        .empty-page {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .empty-page i {
+            font-size: 3rem;
+            color: var(--text-muted);
+            opacity: .4;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .empty-page p {
+            color: var(--text-muted);
+            font-size: .9rem;
+        }
+
+        /* BTN */
+        .btn-delete-act {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: none;
+            background: #fff1f2;
+            color: #ef4444;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .8rem;
+            opacity: 0;
+            transition: all .2s;
+        }
+
+        .btn-edit-act {
+            position: absolute;
+            top: 10px;
+            right: 46px;
+            z-index: 10;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: none;
+            background: #eff6ff;
+            color: #2563eb;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .8rem;
+            opacity: 0;
+            transition: all .2s;
+        }
+
+        .act-card-wrap:hover .btn-edit-act,
+        .act-card-wrap:hover .btn-delete-act {
+            opacity: 1;
+        }
+
+        .btn-edit-act:hover {
+            background: #2563eb;
+            color: #fff;
+            transform: scale(1.1);
+        }
+
+        .btn-delete-act:hover {
+            background: #ef4444;
+            color: #fff;
+            transform: scale(1.1);
+        }
+
+        .btn-new {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 10px 20px;
+            border-radius: var(--radius-input);
+            border: none;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #fff;
+            font-weight: 700;
+            font-size: .88rem;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, .3);
+            transition: all .2s;
+        }
+
+        .btn-new:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, .4);
+        }
+
+        /* MODAL */
+        .modal-content {
+            border: none !important;
+            border-radius: 20px !important;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, .15) !important;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .modal-header {
+            padding: 24px 28px 16px;
+            border-bottom: 1px solid var(--border) !important;
+        }
+
+        .modal-body {
+            padding: 20px 28px;
+        }
+
+        .modal-footer {
+            padding: 16px 28px 24px;
+            border-top: none !important;
+        }
+
+        .modal-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+
+        .field-group {
+            margin-bottom: 18px;
+        }
+
+        .field-label {
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .field-input {
+            width: 100%;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-input);
+            padding: 10px 14px;
+            font-size: .9rem;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-main);
+            outline: none;
+            background: var(--surface-alt);
+            transition: all .2s;
+        }
+
+        .field-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+            background: #fff;
+        }
+
+        textarea.field-input {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .ts-control {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 10px 14px !important;
+            font-size: .9rem !important;
+            min-height: 44px !important;
+        }
+
+        .ts-wrapper {
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-input);
+            background: var(--surface-alt);
+        }
+
+        .ts-wrapper.focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px var(--primary-glow) !important;
+        }
+
+        .ts-dropdown {
+            border-radius: 14px !important;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, .12) !important;
+            border: 1px solid var(--border) !important;
+            padding: 8px !important;
+            margin-top: 6px !important;
+        }
+
+        .ts-dropdown .option {
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: .88rem;
+        }
+
+        .ts-dropdown .option:hover,
+        .ts-dropdown .option.active {
+            background: var(--primary-light) !important;
+            color: var(--primary) !important;
+        }
+
+        .btn-submit-modal {
+            width: 100%;
+            padding: 13px;
+            border-radius: var(--radius-input);
+            border: none;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #fff;
+            font-weight: 700;
+            font-size: .9rem;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, .3);
+            transition: all .2s;
+        }
+
+        .btn-submit-modal:hover {
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAV -->
+    <nav class="top-nav" id="top-nav">
+        <a href="/" class="nav-logo">
+            <i class="bi bi-layers-half"></i><span class="nav-logo-text">Dream Team Daily Tracker</span>
+        </a>
+        <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Abrir menú de navegación"
+            aria-expanded="false" aria-controls="nav-menu">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="nav-menu" id="nav-menu">
+            <a href="/" class="nav-link-item"><i class="bi bi-house"></i>Inicio</a>
+            <a href="/actividades" class="nav-link-item active"><i class="bi bi-kanban"></i>Actividades</a>
+            <a href="/registros" class="nav-link-item"><i class="bi bi-clock-history"></i>Registros</a>
+            <a href="/evidencias" class="nav-link-item"><i class="bi bi-images"></i>Evidencias</a>
+            <a href="/calendario" class="nav-link-item"><i class="bi bi-calendar3"></i>Calendario</a>
+            <a href="/catalogos" class="nav-link-item"><i class="bi bi-sliders"></i>Catálogos</a>
+            <a href="/dashboard-actividades" class="nav-link-item"><i class="bi bi-speedometer2"></i>Plan de trabajo</a>
+        </div>
+    </nav>
+
+    <div class="page-wrap">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Actividades</h1>
+                <p class="page-subtitle">Gestión de solicitudes y proyectos del cliente</p>
+            </div>
+            <button class="btn-new" data-bs-toggle="modal" data-bs-target="#modalNuevaActividad">
+                <i class="bi bi-plus-lg"></i> Nueva Actividad
+            </button>
+        </div>
+
+        <div class="scope-chips" role="tablist" aria-label="Filtro rapido por estado">
+            <button type="button" class="scope-chip {% if filtro_scope == 'all' %}active{% endif %}"
+                data-scope="all">Todas</button>
+            <button type="button" class="scope-chip {% if filtro_scope == 'active' %}active{% endif %}"
+                data-scope="active">Activas</button>
+            <button type="button" class="scope-chip {% if filtro_scope == 'completed' %}active{% endif %}"
+                data-scope="completed">Completadas</button>
+            <button type="button" class="scope-chip {% if filtro_scope == 'canceled' %}active{% endif %}"
+                data-scope="canceled">Canceladas</button>
+        </div>
+
+        <div class="filter-hint" id="scope-hint">
+            <i class="bi bi-funnel"></i>
+            <span>Vista actual: <strong>{{ scope_label }}</strong>.</span>
+            {% if filtro_scope != 'all' %}
+            <span class="filter-disabled-note">El filtro manual de estatus se bloquea mientras uses un chip
+                rápido.</span>
+            {% elif filtro_estatus %}
+            <span class="filter-disabled-note">El alcance rápido está en Todas y el estatus manual define el
+                subconjunto.</span>
+            {% endif %}
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters-bar">
+            <div class="filters-panel">
+                <form method="GET" id="form-filtros">
+                    <input type="hidden" name="page" id="filter-page" value="{{ page }}">
+                    <input type="hidden" name="scope" id="filter-scope" value="{{ filtro_scope or 'all' }}">
+
+                    <div class="filters-grid">
+                        <div class="filter-field filter-field-wide">
+                            <label class="filter-field-label" for="filter-q">Buscar actividad</label>
+                            <input type="search" id="filter-q" name="q" class="filter-search"
+                                placeholder="Buscar por nombre o descripcion..." value="{{ filtro_q or '' }}">
+                        </div>
+
+                        <div class="filter-field">
+                            <label class="filter-field-label" for="filter-sort">Ordenar por</label>
+                            <select id="filter-sort" name="sort">
+                                <option value="prioridad" {% if filtro_sort=='prioridad' %}selected{% endif %}>Prioridad
+                                </option>
+                                <option value="recientes" {% if filtro_sort=='recientes' %}selected{% endif %}>Mas
+                                    recientes</option>
+                                <option value="nombre" {% if filtro_sort=='nombre' %}selected{% endif %}>Nombre A-Z
+                                </option>
+                                <option value="horas" {% if filtro_sort=='horas' %}selected{% endif %}>Mas horas
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="filter-field">
+                            <label class="filter-field-label" for="filter-proyecto">Proyecto</label>
+                            <select id="filter-proyecto" name="proyecto">
+                                <option value="">Todos los proyectos</option>
+                                {% for p in projects %}
+                                <option value="{{ p.ID }}" {% if filtro_proyecto|string==p.ID|string %}selected{% endif
+                                    %}>{{ p.NOMBRE_PROYECTO }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="filter-field">
+                            <label class="filter-field-label" for="filter-estatus">Estatus</label>
+                            <select id="filter-estatus" name="estatus">
+                                <option value="">Todos los estatus</option>
+                                {% for e in estatus_list %}
+                                <option value="{{ e.ID }}" {% if filtro_estatus|string==e.ID|string %}selected{% endif
+                                    %}>{{ e.DESCRIPCION }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="filter-field">
+                            <label class="filter-field-label" for="filter-tipo">Tipo</label>
+                            <select id="filter-tipo" name="tipo">
+                                <option value="">Todos los tipos</option>
+                                <option value="DESARROLLO" {% if (filtro_tipo or '' )=='DESARROLLO' %}selected{% endif
+                                    %}>DESARROLLO</option>
+                                <option value="TAREA" {% if (filtro_tipo or '' )=='TAREA' %}selected{% endif %}>TAREA
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="filter-field">
+                            <label class="filter-field-label" for="filter-usuario">Responsable</label>
+                            <select id="filter-usuario" name="usuario">
+                                <option value="">Todos los responsables</option>
+                                {% for u in users %}
+                                <option value="{{ u.ID }}" {% if filtro_usuario|string==u.ID|string %}selected{% endif
+                                    %}>{{ u.NOMBRE_COMPLETO }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="filter-field">
+                            <label class="filter-field-label" for="filter-solicitante">Solicitante</label>
+                            <select id="filter-solicitante" name="solicitante">
+                                <option value="">Todos los solicitantes</option>
+                                {% for s in solicitantes %}
+                                <option value="{{ s.NOMBRE }}" {% if (filtro_solicitante or '' )==s.NOMBRE %}selected{%
+                                    endif %}>{{ s.NOMBRE }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="filter-field filter-field-dates">
+                            <span class="filter-field-label">Rango de fechas</span>
+                            <div class="filter-date-range">
+                                <input type="text" id="filter-fecha-desde" name="fecha_desde"
+                                    value="{{ filtro_fecha_desde or '' }}" placeholder="Desde" autocomplete="off"
+                                    class="filter-date">
+                                <input type="text" id="filter-fecha-hasta" name="fecha_hasta"
+                                    value="{{ filtro_fecha_hasta or '' }}" placeholder="Hasta" autocomplete="off"
+                                    class="filter-date">
+                            </div>
+                        </div>
+
+                        <div class="filter-actions" id="filter-actions" {% if not has_filters %}hidden{% endif %}>
+                            <a href="/actividades" class="filter-clear" id="filter-clear-link">
+                                <i class="bi bi-x-circle"></i> Limpiar filtros
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="actividades-results">
+            {% include 'partials/actividades_resultados.html' %}
+        </div>
+    </div>
+
+    <!-- MODAL NUEVA ACTIVIDAD -->
+    <div class="modal fade" id="modalNuevaActividad" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle me-2 text-primary"></i>Nueva Actividad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-nueva-actividad">
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Proyecto *</label>
+                                <select id="sel-proyecto" name="id_proyecto" required>
+                                    <option value="">Selecciona...</option>
+                                    {% for p in projects %}
+                                    <option value="{{ p.ID }}">{{ p.NOMBRE_PROYECTO }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Estatus *</label>
+                                <select id="sel-estatus" name="id_estatus" required>
+                                    {% for e in estatus_list %}
+                                    <option value="{{ e.ID }}">{{ e.DESCRIPCION }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Tipo *</label>
+                            <select id="sel-tipo" name="tipo" required>
+                                <option value="">Selecciona...</option>
+                                <option value="DESARROLLO">DESARROLLO</option>
+                                <option value="TAREA">TAREA</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Entregable tipo</label>
+                            <select class="field-input" name="id_entregable" id="sel-entregable" required>
+                                <option value="" disabled selected>Selecciona un tipo de entregable...</option>
+                                {% for e in entregables_list %}
+                                <option value="{{ e.ID }}">{{ e.NOMBRE }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Nombre de la actividad *</label>
+                            <input type="text" class="field-input" name="nombre_actividad" required
+                                placeholder="Ej: Análisis de consumo energético...">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Friendly name</label>
+                            <input type="text" class="field-input" name="friendly_name"
+                                placeholder="Ej: Plan semanal cliente ACME">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Descripción</label>
+                            <textarea class="field-input" name="descripcion"
+                                placeholder="Contexto, objetivos, alcance..."></textarea>
+                        </div>
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Solicitante (contacto cliente)</label>
+                                <select class="field-input" name="solicitante">
+                                    <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero
+                                        registra solicitantes en Catálogos' }}</option>
+                                    {% for s in solicitantes %}
+                                    <option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Fecha de solicitud *</label>
+                                <input type="text" class="field-input" id="new-fecha-solicitud" name="fecha_solicitud"
+                                    placeholder="Selecciona fecha" autocomplete="off" required aria-required="true">
+                            </div>
+                        </div>
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Fecha inicio</label>
+                                <input type="text" class="field-input" id="new-fecha-inicio" name="fecha_inicio"
+                                    placeholder="Selecciona fecha" autocomplete="off">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Prioridad</label>
+                                <select class="field-input" name="prioridad">
+                                    <option value="1">🔴 Alta</option>
+                                    <option value="2" selected>🟡 Media</option>
+                                    <option value="3">🟢 Baja</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Fecha fin estimada</label>
+                                <input type="text" class="field-input" id="new-fecha-fin-est" name="fecha_fin_est"
+                                    placeholder="Selecciona fecha" autocomplete="off">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Avance %</label>
+                                <input type="number" class="field-input" id="new-avance-pct" name="avance_pct" min="0"
+                                    max="100" step="1" inputmode="numeric" placeholder="0">
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Días A/T</label>
+                            <input type="number" class="field-input" id="new-dias-acordados" name="dias_acordados"
+                                min="1" max="365" step="1" inputmode="numeric" placeholder="Se calcula con fechas">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Responsable(s)</label>
+                            <select id="sel-responsable" name="responsables" multiple>
+                                {% for u in users %}
+                                <option value="{{ u.ID }}">{{ u.NOMBRE_COMPLETO }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Recursos utilizados</label>
+                            <select id="sel-recursos" name="recursos" multiple>
+                                {% for r in recursos %}
+                                <option value="{{ r.ID }}">{{ r.NOMBRE }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Se desprende de <span
+                                    style="font-weight:400;color:var(--text-muted);font-size:.8em;">(opcional)</span></label>
+                            <select id="sel-actividad-padre" name="id_actividad_padre">
+                                <option value="">Sin actividad origen</option>
+                                {% for a in todas_actividades %}
+                                <option value="{{ a.ID }}">{{ a.NOMBRE_ACTIVIDAD }} — {{ a.NOMBRE_PROYECTO }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-submit-modal">
+                            <i class="bi bi-check2-circle me-2"></i>Crear Actividad
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+<!-- MODAL EDITAR ACTIVIDAD COMPLETO -->
+    <div class="modal fade" id="modalEditarActividadRapida" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2 text-primary"></i>Editar Actividad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-editar-actividad-rapida">
+                        <input type="hidden" name="actividad_id" id="quick-edit-actividad-id">
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Proyecto *</label>
+                                <select id="quick-edit-proyecto" name="id_proyecto" required>
+                                    {% for p in projects %}
+                                    <option value="{{ p.ID }}">{{ p.NOMBRE_PROYECTO }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p
+                                    style="font-size:.7rem;color:#f59e0b;margin:5px 0 0;display:flex;align-items:center;gap:4px;">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    Al cambiar el proyecto, las horas registradas se reasignarán automáticamente al
+                                    nuevo proyecto.
+                                </p>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Estatus *</label>
+                                <select id="quick-edit-estatus" name="id_estatus" required>
+                                    {% for e in estatus_list %}
+                                    <option value="{{ e.ID }}">{{ e.DESCRIPCION }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Tipo *</label>
+                            <select id="quick-edit-tipo" name="tipo" required>
+                                <option value="">Selecciona...</option>
+                                <option value="DESARROLLO">DESARROLLO</option>
+                                <option value="TAREA">TAREA</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Nombre de la actividad *</label>
+                            <input type="text" class="field-input" id="quick-edit-nombre" name="nombre_actividad"
+                                required>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Friendly name</label>
+                            <input type="text" class="field-input" id="quick-edit-friendly-name" name="friendly_name"
+                                placeholder="Ej: Plan semanal cliente ACME">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Entregable tipo</label>
+                            <select class="field-input" name="id_entregable" id="quick-edit-entregable" required>
+                                <option value="" disabled>Selecciona un tipo de entregable...</option>
+                                {% for e in entregables_list %}
+                                <option value="{{ e.ID }}">{{ e.NOMBRE }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Descripción</label>
+                            <textarea class="field-input" id="quick-edit-descripcion" name="descripcion"
+                                placeholder="Contexto, objetivos, alcance..."></textarea>
+                        </div>
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Solicitante</label>
+                                <select class="field-input" id="quick-edit-solicitante" name="solicitante">
+                                    <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero
+                                        registra solicitantes en Catálogos' }}</option>
+                                    {% for s in solicitantes %}
+                                    <option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Fecha de solicitud *</label>
+                                <input type="text" class="field-input" id="quick-edit-fecha-solicitud"
+                                    name="fecha_solicitud" placeholder="Selecciona fecha" autocomplete="off" required
+                                    aria-required="true">
+                            </div>
+                        </div>
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Fecha inicio</label>
+                                <input type="text" class="field-input" id="quick-edit-fecha-inicio" name="fecha_inicio"
+                                    placeholder="Selecciona fecha" autocomplete="off">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Fecha fin estimada</label>
+                                <input type="text" class="field-input" id="quick-edit-fecha-fin-est"
+                                    name="fecha_fin_est" placeholder="Selecciona fecha" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Prioridad</label>
+                                <select class="field-input" id="quick-edit-prioridad" name="prioridad">
+                                    <option value="1">🔴 Alta</option>
+                                    <option value="2">🟡 Media</option>
+                                    <option value="3">🟢 Baja</option>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Se desprende de <span
+                                        style="font-weight:400;color:var(--text-muted);font-size:.8em;">(opcional)</span></label>
+                                <select id="quick-edit-padre" name="id_actividad_padre">
+                                    <option value="">Sin actividad origen</option>
+                                    {% for a in todas_actividades %}
+                                    <option value="{{ a.ID }}">{{ a.NOMBRE_ACTIVIDAD }} — {{ a.NOMBRE_PROYECTO }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Días A/T</label>
+                                <input type="number" class="field-input" id="quick-edit-dias-acordados"
+                                    name="dias_acordados" min="1" max="365" step="1" inputmode="numeric"
+                                    placeholder="Se calcula con fechas">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Avance %</label>
+                                <input type="number" class="field-input" id="quick-edit-avance-pct" name="avance_pct"
+                                    min="0" max="100" step="1" inputmode="numeric" placeholder="0">
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Responsable(s)</label>
+                            <select id="quick-edit-responsables" name="responsables" multiple>
+                                {% for u in users %}
+                                <option value="{{ u.ID }}">{{ u.NOMBRE_COMPLETO }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Recursos utilizados</label>
+                            <select id="quick-edit-recursos" name="recursos" multiple>
+                                {% for r in recursos %}
+                                <option value="{{ r.ID }}">{{ r.NOMBRE }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-submit-modal">
+                            <i class="bi bi-check2-circle me-2"></i>Guardar cambios
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+
+
+    <script>
+        const topNav = document.getElementById('top-nav');
+        const navHamburger = document.getElementById('nav-hamburger');
+        const navMenu = document.getElementById('nav-menu');
+
+        function closeMobileNav() {
+            topNav.classList.remove('menu-open');
+            navHamburger.setAttribute('aria-expanded', 'false');
+            navHamburger.innerHTML = '<i class="bi bi-list"></i>';
+        }
+
+        function toggleMobileNav(event) {
+            event?.preventDefault();
+            event?.stopPropagation();
+            if (window.innerWidth > 768) return;
+            const open = topNav.classList.toggle('menu-open');
+            navHamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            navHamburger.innerHTML = open ? '<i class="bi bi-x-lg"></i>' : '<i class="bi bi-list"></i>';
+        }
+
+        navHamburger?.addEventListener('click', (event) => toggleMobileNav(event));
+        navMenu?.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) closeMobileNav();
+            });
+        });
+
+        document.addEventListener('click', (event) => {
+            if (window.innerWidth > 768) return;
+            const clickedInsideNav = event.target.closest('#top-nav');
+            if (!clickedInsideNav) closeMobileNav();
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) closeMobileNav();
+        });
+
+        const tsCfg = { create: false, sortField: { field: 'text', direction: 'asc' } };
+
+        const filtrosForm = document.getElementById('form-filtros');
+        const pageInput = document.getElementById('filter-page');
+        const scopeInput = document.getElementById('filter-scope');
+        const scopeHint = document.getElementById('scope-hint');
+        const resultsContainer = document.getElementById('actividades-results');
+        const filterActions = document.getElementById('filter-actions');
+        const searchInput = document.getElementById('filter-q');
+        let filtersRequestController = null;
+
+        function getScopeLabel(scope) {
+            if (scope === 'active') return 'Actividades activas';
+            if (scope === 'completed') return 'Actividades completadas';
+            if (scope === 'canceled') return 'Actividades canceladas';
+            return 'Todas las actividades';
+        }
+
+        function setActiveScopeChip(scope) {
+            document.querySelectorAll('[data-scope]').forEach((btn) => {
+                btn.classList.toggle('active', btn.dataset.scope === scope);
+            });
+        }
+
+        function updateFilterActionsVisibility() {
+            if (!filterActions || !filtrosForm) return;
+            const formData = new FormData(filtrosForm);
+            const hasActiveFilters = Array.from(formData.entries()).some(([key, value]) => {
+                if (key === 'page') return false;
+                if (key === 'scope') return value && value !== 'all';
+                return String(value || '').trim() !== '';
+            });
+            filterActions.hidden = !hasActiveFilters;
+        }
+
+        function updateScopeHint(scope, hasManualStatus = false) {
+            if (!scopeHint) return;
+            const lockedByScope = scope && scope !== 'all';
+            const extra = lockedByScope
+                ? '<span class="filter-disabled-note">El filtro manual de estatus se bloquea mientras uses un chip rápido.</span>'
+                : hasManualStatus
+                    ? '<span class="filter-disabled-note">El alcance rápido está en Todas y el estatus manual define el subconjunto.</span>'
+                    : '';
+            scopeHint.innerHTML = `<i class="bi bi-funnel"></i><span>Vista actual: <strong>${getScopeLabel(scope)}</strong>.</span>${extra}`;
+        }
+
+        function syncStatusFilterState() {
+            const lockedByScope = scopeInput && scopeInput.value !== 'all';
+            if (window.filterEstatusTs?.wrapper) {
+                window.filterEstatusTs.wrapper.classList.toggle('locked', lockedByScope);
+            }
+            const statusHasValue = !!window.filterEstatusTs?.getValue();
+            updateScopeHint(scopeInput ? scopeInput.value : 'all', statusHasValue);
+            setActiveScopeChip(scopeInput ? scopeInput.value : 'all');
+            updateFilterActionsVisibility();
+        }
+
+        function bindViewControls() {
+            const currentView = sessionStorage.getItem('actividades_view') || 'cards';
+            document.querySelectorAll('[data-view-btn]').forEach((btn) => {
+                btn.onclick = () => applyView(btn.dataset.viewBtn);
+            });
+            applyView(currentView);
+        }
+
+        async function submitFiltros(resetPage = false) {
+            if (!filtrosForm || !resultsContainer) return;
+            if (resetPage && pageInput) pageInput.value = '1';
+
+            const params = new URLSearchParams(new FormData(filtrosForm));
+            const requestUrl = `/actividades?${params.toString()}`;
+
+            if (filtersRequestController) filtersRequestController.abort();
+            const controller = new AbortController();
+            filtersRequestController = controller;
+            resultsContainer.setAttribute('aria-busy', 'true');
+
+            try {
+                const response = await fetch(requestUrl, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    signal: controller.signal,
+                });
+                if (!response.ok) throw new Error(`No se pudo actualizar la vista (${response.status})`);
+                resultsContainer.innerHTML = await response.text();
+                history.replaceState({}, '', requestUrl);
+                bindViewControls();
+                updateFilterActionsVisibility();
+            } catch (error) {
+                if (error.name !== 'AbortError') window.location.assign(requestUrl);
+            } finally {
+                if (filtersRequestController === controller) {
+                    filtersRequestController = null;
+                    resultsContainer.removeAttribute('aria-busy');
+                }
+            }
+        }
+
+        function goToPage(page) {
+            if (!pageInput || page < 1) return;
+            pageInput.value = String(page);
+            submitFiltros();
+        }
+
+        const scopeButtons = document.querySelectorAll('[data-scope]');
+        scopeButtons.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                if (!scopeInput) return;
+                scopeInput.value = btn.dataset.scope;
+                if (window.filterEstatusTs) window.filterEstatusTs.setValue('', true);
+                syncStatusFilterState();
+                submitFiltros(true);
+            });
+        });
+
+        const filterCfg = {
+            create: false,
+            onChange: function () { submitFiltros(true); },
+            render: {
+                option: (data, escape) => `<div class="option">${escape(data.text)}</div>`,
+                item: (data, escape) => `<div class="item">${escape(data.text)}</div>`,
+            }
+        };
+
+        const fpCfg = {
+            locale: "es",
+            altInput: true,
+            altFormat: "j F, Y",
+            dateFormat: "Y-m-d",
+            disableMobile: true,
+            allowInput: false,
+        };
+
+        const newFechaSolicitudPicker = flatpickr("#new-fecha-solicitud", fpCfg);
+        const newFechaInicioPicker = flatpickr("#new-fecha-inicio", fpCfg);
+        const newFechaFinEstPicker = flatpickr("#new-fecha-fin-est", fpCfg);
+
+        const filterSubmitCfg = {
+            ...filterCfg,
+            dropdownParent: 'body',
+            onChange: () => submitFiltros(true)
+        };
+
+        if (searchInput) {
+            let searchDebounceTimer = null;
+            let lastSubmittedSearch = (searchInput.value || '').trim();
+
+            const returnToInitialView = () => {
+                if (window.location.pathname === '/actividades' && window.location.search === '') return;
+                window.location.assign('/actividades');
+            };
+
+            const triggerSearchSubmit = ({ force = false } = {}) => {
+                const currentSearch = (searchInput.value || '').trim();
+                if (currentSearch.length === 0) { returnToInitialView(); return; }
+                if (!force) {
+                    if (currentSearch.length === 1) return;
+                    if (currentSearch === lastSubmittedSearch) return;
+                }
+                lastSubmittedSearch = currentSearch;
+                submitFiltros(true);
+            };
+
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchDebounceTimer);
+                const nextSearch = (searchInput.value || '').trim();
+                if (nextSearch.length === 0) { returnToInitialView(); return; }
+                if (nextSearch.length === 1) return;
+                searchDebounceTimer = setTimeout(() => triggerSearchSubmit(), 300);
+            });
+
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    clearTimeout(searchDebounceTimer);
+                    triggerSearchSubmit({ force: true });
+                }
+            });
+        }
+
+        new TomSelect('#filter-sort', filterSubmitCfg);
+        new TomSelect('#filter-proyecto', filterSubmitCfg);
+        window.filterEstatusTs = new TomSelect('#filter-estatus', {
+            ...filterSubmitCfg,
+            onChange: () => {
+                if (scopeInput) scopeInput.value = 'all';
+                syncStatusFilterState();
+                submitFiltros(true);
+            }
+        });
+        new TomSelect('#filter-tipo', filterSubmitCfg);
+        new TomSelect('#filter-usuario', filterSubmitCfg);
+        new TomSelect('#filter-solicitante', filterSubmitCfg);
+        syncStatusFilterState();
+
+        const fpFiltro = {
+            locale: "es",
+            altInput: true,
+            altFormat: "j M Y",
+            dateFormat: "Y-m-d",
+            disableMobile: true,
+            allowInput: false,
+            onClose: () => submitFiltros(true),
+        };
+        flatpickr("#filter-fecha-desde", fpFiltro);
+        flatpickr("#filter-fecha-hasta", fpFiltro);
+
+        function applyView(view) {
+            document.querySelectorAll('[data-view-btn]').forEach((btn) => {
+                btn.classList.toggle('active', btn.dataset.viewBtn === view);
+            });
+            document.querySelectorAll('[data-view-target]').forEach((target) => {
+                target.classList.toggle('active', target.dataset.viewTarget === view);
+            });
+            sessionStorage.setItem('actividades_view', view);
+        }
+
+        filtrosForm?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            submitFiltros();
+        });
+        bindViewControls();
+
+        // ── TomSelect modales ─────────────────────────────────────────────────────────
+        // IMPORTANTE: cada ID debe inicializarse UNA SOLA VEZ
+        new TomSelect('#sel-proyecto', tsCfg);
+        new TomSelect('#sel-estatus', tsCfg);
+        new TomSelect('#sel-tipo', tsCfg);
+        new TomSelect('#sel-entregable', tsCfg);
+        new TomSelect('#sel-responsable', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona responsables...' });
+        new TomSelect('#sel-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
+        new TomSelect('#sel-actividad-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
+
+        // ── Quick Edit modal ──────────────────────────────────────────────────────────
+        const quickEditModalEl = document.getElementById('modalEditarActividadRapida');
+        const quickEditModal = quickEditModalEl ? new bootstrap.Modal(quickEditModalEl) : null;
+        const quickEditForm = document.getElementById('form-editar-actividad-rapida');
+        const quickEditActividadId = document.getElementById('quick-edit-actividad-id');
+        const quickEditSolicitante = document.getElementById('quick-edit-solicitante');
+        const quickEditPadreField = document.getElementById('quick-edit-padre');
+        const newDiasAcordadosField = document.getElementById('new-dias-acordados');
+        const newAvancePctField = document.getElementById('new-avance-pct');
+        const quickEditDiasAcordadosField = document.getElementById('quick-edit-dias-acordados');
+        const quickEditAvancePctField = document.getElementById('quick-edit-avance-pct');
+
+        const quickEditFechaSolicitudPicker = flatpickr("#quick-edit-fecha-solicitud", fpCfg);
+        const quickEditFechaInicioPicker = flatpickr("#quick-edit-fecha-inicio", fpCfg);
+        const quickEditFechaFinEstPicker = flatpickr("#quick-edit-fecha-fin-est", fpCfg);
+
+        // Una sola inicialización por campo — sin duplicados
+        const quickEditProyectoTs = new TomSelect('#quick-edit-proyecto', tsCfg);
+        const quickEditEstatusTs = new TomSelect('#quick-edit-estatus', tsCfg);
+        const quickEditTipoTs = new TomSelect('#quick-edit-tipo', tsCfg);
+        const quickEditResponsablesTs = new TomSelect('#quick-edit-responsables', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona responsables...' });
+        const quickEditRecursosTs = new TomSelect('#quick-edit-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
+        const quickEditPadreTs = new TomSelect('#quick-edit-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
+        const quickEditEntregableTs = new TomSelect('#quick-edit-entregable', tsCfg);  // ← única inicialización
+
+        // ── Helpers ───────────────────────────────────────────────────────────────────
+        function normalizarFechaInput(value) {
+            return String(value || '').trim().slice(0, 10);
+        }
+
+        function setPickerDateOrClear(picker, value) {
+            const fecha = normalizarFechaInput(value);
+            if (!picker) return;
+            if (fecha) picker.setDate(fecha, true);
+            else picker.clear();
+        }
+
+        function calcularDiasAcordados(fechaInicio, fechaFin) {
+            const inicio = normalizarFechaInput(fechaInicio);
+            const fin = normalizarFechaInput(fechaFin);
+            if (!inicio || !fin) return null;
+            const inicioDate = new Date(`${inicio}T00:00:00`);
+            const finDate = new Date(`${fin}T00:00:00`);
+            if (Number.isNaN(inicioDate.getTime()) || Number.isNaN(finDate.getTime()) || finDate < inicioDate) return null;
+            return Math.max(1, Math.floor((finDate - inicioDate) / 86400000) + 1);
+        }
+
+        function syncDiasAcordadosField({ startPicker, endPicker, diasInput }) {
+            if (!diasInput) return;
+            const diasCalculados = calcularDiasAcordados(startPicker?.input?.value, endPicker?.input?.value);
+            if (diasCalculados === null) {
+                diasInput.readOnly = false;
+                diasInput.removeAttribute('readonly');
+                return;
+            }
+            diasInput.value = String(diasCalculados);
+            diasInput.readOnly = true;
+            diasInput.setAttribute('readonly', 'readonly');
+        }
+
+        [newFechaInicioPicker?.input, newFechaFinEstPicker?.input].forEach((input) => {
+            input?.addEventListener('change', () => syncDiasAcordadosField({
+                startPicker: newFechaInicioPicker,
+                endPicker: newFechaFinEstPicker,
+                diasInput: newDiasAcordadosField,
+            }));
+        });
+
+        [quickEditFechaInicioPicker?.input, quickEditFechaFinEstPicker?.input].forEach((input) => {
+            input?.addEventListener('change', () => syncDiasAcordadosField({
+                startPicker: quickEditFechaInicioPicker,
+                endPicker: quickEditFechaFinEstPicker,
+                diasInput: quickEditDiasAcordadosField,
+            }));
+        });
+
+        function ensureQuickEditSolicitanteOption(nombre) {
+            const valor = String(nombre || '').trim();
+            Array.from(quickEditSolicitante.options)
+                .filter((o) => o.dataset.legacyOption === '1')
+                .forEach((o) => o.remove());
+            if (!valor) return;
+            const existente = Array.from(quickEditSolicitante.options).some((o) => o.value === valor);
+            if (existente) return;
+            const option = document.createElement('option');
+            option.value = valor;
+            option.textContent = `${valor} (actual, fuera de catálogo)`;
+            option.dataset.legacyOption = '1';
+            quickEditSolicitante.appendChild(option);
+        }
+
+        function syncQuickEditPadreOptions(activityId) {
+            Array.from(quickEditPadreField.options).forEach((option) => {
+                const isSelf = option.value && option.value === activityId;
+                option.disabled = isSelf;
+                if (isSelf && option.selected) option.selected = false;
+            });
+            quickEditPadreTs.refreshOptions(false);
+        }
+
+        // ── Abrir modal edición rápida ────────────────────────────────────────────────
+        async function abrirEdicionRapidaActividad(event, actividadId) {
+            event?.preventDefault();
+            event?.stopPropagation();
+            if (!quickEditModal || !quickEditForm || !actividadId) return;
+
+            Swal.fire({ title: 'Cargando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const response = await fetch(`/api/actividades/${actividadId}`);
+                const payload = await response.json();
+                if (!response.ok || payload.status !== 'success' || !payload.actividad) {
+                    throw new Error(payload.message || 'No se pudo cargar la actividad.');
+                }
+
+                const actividad = payload.actividad;
+                console.log('id_entregable recibido:', actividad.id_entregable); // ← temporal
+                console.log('Opciones disponibles en entregable:', quickEditEntregableTs.options);
+                quickEditActividadId.value = actividad.id;
+                quickEditForm.querySelector('[name="nombre_actividad"]').value = actividad.nombre_actividad || '';
+                quickEditForm.querySelector('[name="friendly_name"]').value = actividad.friendly_name || '';
+                quickEditForm.querySelector('[name="descripcion"]').value = actividad.descripcion || '';
+                quickEditForm.querySelector('[name="prioridad"]').value = actividad.prioridad || '2';
+
+                setPickerDateOrClear(quickEditFechaSolicitudPicker, actividad.fecha_solicitud);
+                setPickerDateOrClear(quickEditFechaInicioPicker, actividad.fecha_inicio);
+                setPickerDateOrClear(quickEditFechaFinEstPicker, actividad.fecha_fin_est);
+
+                if (quickEditDiasAcordadosField) quickEditDiasAcordadosField.value = actividad.dias_acordados || '';
+                if (quickEditAvancePctField) quickEditAvancePctField.value = actividad.avance_pct || '0';
+
+                syncDiasAcordadosField({
+                    startPicker: quickEditFechaInicioPicker,
+                    endPicker: quickEditFechaFinEstPicker,
+                    diasInput: quickEditDiasAcordadosField,
+                });
+
+                ensureQuickEditSolicitanteOption(actividad.solicitante);
+                quickEditSolicitante.value = actividad.solicitante || '';
+
+                quickEditProyectoTs.setValue(actividad.id_proyecto || '', true);
+                quickEditEstatusTs.setValue(actividad.id_estatus || '', true);
+                quickEditTipoTs.setValue(actividad.tipo || '', true);
+                quickEditEntregableTs.setValue(actividad.id_entregable || '', true);  // ← línea añadida
+                quickEditResponsablesTs.setValue(Array.isArray(actividad.responsables) ? actividad.responsables : [], true);
+                quickEditRecursosTs.setValue(Array.isArray(actividad.recursos) ? actividad.recursos : [], true);
+                syncQuickEditPadreOptions(actividad.id);
+                quickEditPadreTs.setValue(actividad.id_actividad_padre || '', true);
+
+                Swal.close();
+                quickEditModal.show();
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Error', text: error.message || 'No se pudo cargar la actividad.' });
+            }
+        }
+
+        // ── Submit nueva actividad ────────────────────────────────────────────────────
+        document.getElementById('form-nueva-actividad').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const fechaSolicitudField = document.getElementById('new-fecha-solicitud');
+            if (!fechaSolicitudField?.value?.trim()) {
+                const visibleDateInput = fechaSolicitudField?._flatpickr?.altInput || fechaSolicitudField;
+                Swal.fire({ icon: 'warning', title: 'Fecha requerida', text: 'La fecha de solicitud es obligatoria.' })
+                    .then(() => visibleDateInput?.focus());
+                return;
+            }
+            Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const fd = new FormData(this);
+            const tipo = String(fd.get('tipo') || '').trim();
+            if (!tipo) {
+                Swal.fire({ icon: 'warning', title: 'Tipo requerido', text: 'Selecciona el tipo de actividad (DESARROLLO o TAREA).' });
+                return;
+            }
+            try {
+                const r = await fetch('/actividades/nueva', { method: 'POST', body: fd });
+                const res = await r.json();
+                if (res.status === 'success') {
+                    Swal.fire({ icon: 'success', title: '¡Creada!', text: res.message, timer: 1800, showConfirmButton: false })
+                        .then(() => location.reload());
+                } else throw new Error(res.message);
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+            }
+        });
+
+        // ── Submit edición rápida ─────────────────────────────────────────────────────
+        quickEditForm?.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const actividadId = quickEditActividadId.value;
+            if (!actividadId) return;
+
+            const fechaSolicitudField = document.getElementById('quick-edit-fecha-solicitud');
+            if (!fechaSolicitudField?.value?.trim()) {
+                const visibleDateInput = fechaSolicitudField?._flatpickr?.altInput || fechaSolicitudField;
+                Swal.fire({ icon: 'warning', title: 'Fecha requerida', text: 'La fecha de solicitud es obligatoria.' })
+                    .then(() => visibleDateInput?.focus());
+                return;
+            }
+
+            Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            const fd = new FormData(this);
+            const tipo = String(fd.get('tipo') || '').trim();
+            if (!tipo) {
+                Swal.fire({ icon: 'warning', title: 'Tipo requerido', text: 'Selecciona el tipo de actividad (DESARROLLO o TAREA).' });
+                return;
+            }
+            fd.delete('actividad_id');
+            try {
+                const r = await fetch(`/actividades/${actividadId}/editar`, { method: 'POST', body: fd });
+                const res = await r.json();
+                if (res.status === 'success') {
+                    Swal.fire({ icon: 'success', title: 'Actualizado', timer: 1500, showConfirmButton: false })
+                        .then(() => location.reload());
+                } else throw new Error(res.message);
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+            }
+        });
+
+        // ── Eliminar actividad ────────────────────────────────────────────────────────
+        async function eliminarActividad(e, id, nombre) {
+            e.preventDefault();
+            e.stopPropagation();
+            const conf = await Swal.fire({
+                title: '¿Eliminar actividad?',
+                html: `<span style="font-weight:600;">${nombre}</span><br><span style="font-size:.85rem;color:#64748b;">Se eliminarán también sus responsables y evidencia. Los registros de horas quedarán pero sin actividad ligada.</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            });
+            if (!conf.isConfirmed) return;
+            Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const r = await fetch(`/actividades/${id}`, { method: 'DELETE' });
+                const res = await r.json();
+                if (res.status === 'success') {
+                    Swal.fire({ icon: 'success', title: 'Eliminada', timer: 1200, showConfirmButton: false })
+                        .then(() => location.reload());
+                } else throw new Error(res.message);
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+            }
+        }
+    </script>
+
+
+</body>
+
+</html>
