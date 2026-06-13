@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ actividad.NOMBRE_ACTIVIDAD }} · Daily Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #dbeafe;
+            --primary-glow: rgba(37, 99, 235, .15);
+            --surface: #fff;
+            --surface-alt: #f8fafd;
+            --border: #e8edf5;
+            --text-main: #1e293b;
+            --text-muted: #94a3b8;
+            --text-secondary: #64748b;
+            --radius-card: 20px;
+            --radius-input: 12px;
+            --shadow-card: 0 4px 24px rgba(15, 23, 42, .06), 0 1px 4px rgba(15, 23, 42, .04);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f0f4fb;
+            min-height: 100vh;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-main);
+        }
+
+        /* NAV */
+        .top-nav {
+            background: #fff;
+            border-bottom: 1px solid var(--border);
+            padding: 0 28px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 56px;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            box-shadow: 0 1px 8px rgba(15, 23, 42, .05);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: .95rem;
+            color: var(--text-main);
+            text-decoration: none;
+            margin-right: 16px;
+        }
+
+        .nav-logo i {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        .nav-link-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 99px;
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all .2s;
+        }
+
+        .nav-link-item:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .nav-link-item.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .nav-hamburger {
+            display: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            color: var(--text-secondary);
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+            font-size: 1.05rem;
+            cursor: pointer;
+        }
+
+        /* PAGE */
+        .page-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 28px 24px;
+        }
+
+        /* BREADCRUMB */
+        .breadcrumb-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 20px;
+            font-size: .8rem;
+            color: var(--text-muted);
+        }
+
+        .breadcrumb-bar a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .breadcrumb-bar a:hover {
+            text-decoration: underline;
+        }
+
+        /* HEADER CARD */
+        .header-card {
+            background: var(--surface);
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+            padding: 26px 28px;
+            margin-bottom: 20px;
+        }
+
+        .hc-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .hc-badges {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .badge-estatus {
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: .72rem;
+            font-weight: 700;
+        }
+
+        .badge-prio {
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: .72rem;
+            font-weight: 700;
+        }
+
+        .prio-1 {
+            background: #fff1f2;
+            color: #ef4444;
+        }
+
+        .prio-2 {
+            background: #fefce8;
+            color: #ca8a04;
+        }
+
+        .prio-3 {
+            background: #f0fdf4;
+            color: #059669;
+        }
+
+        .hc-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: -.3px;
+            margin: 0 0 4px;
+        }
+
+        .hc-project {
+            font-size: .82rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .hc-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid var(--border);
+        }
+
+        .meta-item {}
+
+        .meta-label {
+            font-size: .65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .meta-val {
+            font-size: .85rem;
+            font-weight: 600;
+            color: var(--text-main);
+            font-family: 'DM Mono', monospace;
+        }
+
+        /* AVANCE */
+        .avance-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .avance-bar-track {
+            flex: 1;
+            height: 8px;
+            background: #f1f5f9;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .avance-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width .5s ease;
+        }
+
+        .avance-pct {
+            font-size: .85rem;
+            font-weight: 700;
+            font-family: 'DM Mono', monospace;
+            color: var(--text-main);
+            min-width: 36px;
+            text-align: right;
+        }
+
+        /* EDIT BTN */
+        .btn-edit {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 99px;
+            border: 1.5px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-size: .8rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .btn-edit:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+            border-color: #bfdbfe;
+        }
+
+        /* TABS */
+        .tabs-wrap {
+            display: flex;
+            gap: 4px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 5px;
+            margin-bottom: 20px;
+            width: fit-content;
+        }
+
+        .tab-btn {
+            padding: 8px 20px;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            font-size: .83rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all .2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, .3);
+        }
+
+        .tab-count {
+            background: rgba(255, 255, 255, .25);
+            border-radius: 99px;
+            padding: 1px 7px;
+            font-size: .7rem;
+        }
+
+        .tab-btn:not(.active) .tab-count {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* PANEL CARD */
+        .panel-card {
+            background: var(--surface);
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .panel-head {
+            padding: 18px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-head-title {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        /* DETALLES LIST */
+        .detalle-item {
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            transition: background .15s;
+        }
+
+        .detalle-item:last-child {
+            border-bottom: none;
+        }
+
+        .detalle-item:hover {
+            background: var(--surface-alt);
+        }
+
+        .detalle-check {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .2s;
+        }
+
+        .detalle-check.done {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        .detalle-body {
+            flex: 1;
+        }
+
+        .detalle-desc {
+            font-size: .9rem;
+            font-weight: 500;
+            color: var(--text-main);
+            margin: 0 0 5px;
+        }
+
+        .detalle-desc.done {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .detalle-meta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .detalle-tag {
+            font-size: .72rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .detalle-info {
+            font-size: .72rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .btn-delete-item {
+            background: none;
+            border: none;
+            color: #cbd5e1;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all .2s;
+            margin-left: auto;
+        }
+
+        .btn-delete-item:hover {
+            color: #ef4444;
+            background: #fff1f2;
+        }
+
+        /* EVIDENCIA */
+        .evidencia-item {
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .evidencia-item:last-child {
+            border-bottom: none;
+        }
+
+        .ev-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .ev-body {
+            flex: 1;
+        }
+
+        .ev-titulo {
+            font-size: .9rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin: 0 0 3px;
+        }
+
+        .ev-meta {
+            font-size: .75rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .ev-texto {
+            font-size: .82rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            line-height: 1.5;
+            background: var(--surface-alt);
+            padding: 10px 12px;
+            border-radius: 8px;
+            border-left: 3px solid var(--border);
+        }
+
+        .ev-archivo {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 6px;
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .ev-archivo:hover {
+            text-decoration: underline;
+        }
+
+        /* FORM INLINE */
+        .add-form {
+            padding: 18px 22px;
+            background: var(--surface-alt);
+            border-top: 1px solid var(--border);
+        }
+
+        .field-group {
+            margin-bottom: 14px;
+        }
+
+        .field-label {
+            font-size: .65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .field-input {
+            width: 100%;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-input);
+            padding: 10px 14px;
+            font-size: .88rem;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-main);
+            outline: none;
+            background: var(--surface);
+            transition: all .2s;
+        }
+
+        .field-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+        textarea.field-input {
+            resize: vertical;
+            min-height: 72px;
+        }
+
+        /* FILE PICKER */
+        .file-drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-input);
+            background: var(--surface);
+            transition: all .2s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-drop-zone:hover,
+        .file-drop-zone.dragover {
+            border-color: var(--primary);
+            background: var(--primary-glow, #eff6ff);
+        }
+
+        .file-input-hidden {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .file-drop-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 22px 16px;
+            gap: 4px;
+            pointer-events: none;
+        }
+
+        .ev-upload-icon {
+            font-size: 1.8rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .file-drop-label {
+            font-size: .85rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .file-drop-link {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .file-drop-hint {
+            font-size: .73rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .file-selected-preview {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+        }
+
+        .file-preview-icon {
+            font-size: 1.6rem;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .file-preview-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .file-preview-name {
+            font-size: .85rem;
+            font-weight: 600;
+            color: var(--text-main);
+            word-break: break-all;
+        }
+
+        .file-preview-size {
+            font-size: .72rem;
+            color: var(--text-muted);
+        }
+
+        .file-preview-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 6px;
+            transition: all .15s;
+        }
+
+        .file-preview-remove:hover {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .ev-ext-hint {
+            font-size: .65rem;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+            color: var(--text-muted);
+            margin-left: 4px;
+        }
+
+        .file-drop-zone.disabled {
+            opacity: .45;
+            pointer-events: none;
+        }
+
+        /* STORAGE BADGE */
+        .storage-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .72rem;
+            color: var(--text-muted);
+        }
+
+        .storage-bar-wrap {
+            width: 80px;
+            height: 6px;
+            background: var(--border);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .storage-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: var(--primary);
+            transition: width .4s ease;
+        }
+
+        .storage-bar-fill.warn {
+            background: #f59e0b;
+        }
+
+        .storage-bar-fill.danger {
+            background: #ef4444;
+        }
+
+        .storage-label {
+            white-space: nowrap;
+        }
+
+        .row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-add {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 18px;
+            border-radius: var(--radius-input);
+            border: none;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #fff;
+            font-weight: 700;
+            font-size: .85rem;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-1px);
+        }
+
+        /* TOM SELECT in forms */
+        .ts-control {
+            border: none !important;
+            background: var(--surface) !important;
+            box-shadow: none !important;
+            padding: 10px 14px !important;
+            font-size: .88rem !important;
+            min-height: 44px !important;
+        }
+
+        .ts-wrapper {
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-input);
+            background: var(--surface);
+        }
+
+        .ts-wrapper.focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px var(--primary-glow) !important;
+        }
+
+        .ts-dropdown {
+            border-radius: 14px !important;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, .12) !important;
+            border: 1px solid var(--border) !important;
+            padding: 8px !important;
+        }
+
+        .ts-dropdown .option {
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: .85rem;
+        }
+
+        .ts-dropdown .option:hover,
+        .ts-dropdown .option.active {
+            background: var(--primary-light) !important;
+            color: var(--primary) !important;
+        }
+
+        /* MODAL editar */
+        .modal-content {
+            border: none !important;
+            border-radius: 20px !important;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, .15) !important;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .modal-header {
+            padding: 22px 26px 14px;
+            border-bottom: 1px solid var(--border) !important;
+        }
+
+        .modal-body {
+            padding: 18px 26px;
+        }
+
+        .modal-footer {
+            padding: 14px 26px 22px;
+            border-top: none !important;
+        }
+
+        .btn-submit-modal {
+            width: 100%;
+            padding: 13px;
+            border-radius: var(--radius-input);
+            border: none;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #fff;
+            font-weight: 700;
+            font-size: .9rem;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+        }
+
+        .modal-title {
+            font-weight: 700;
+        }
+
+        /* EV tipo icons */
+        .ev-correo {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .ev-documento {
+            background: #f0fdf4;
+            color: #059669;
+        }
+
+        .ev-captura {
+            background: #fefce8;
+            color: #ca8a04;
+        }
+
+        .ev-nota {
+            background: #faf5ff;
+            color: #7c3aed;
+        }
+
+        .ev-otro {
+            background: #f8fafc;
+            color: #64748b;
+        }
+
+        .empty-section {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-section i {
+            font-size: 2rem;
+            opacity: .35;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .empty-section p {
+            font-size: .85rem;
+            margin: 0;
+        }
+
+        /* ── ACTIVIDADES HIJAS ── */
+        .hija-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 22px;
+            border-bottom: 1px solid var(--border);
+            transition: background .12s;
+            cursor: pointer;
+        }
+        .hija-row:last-child { border-bottom: none; }
+        .hija-row:hover { background: #f8faff; }
+
+        .hija-badge {
+            font-size: .72rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 99px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .hija-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .hija-nombre {
+            font-size: .88rem;
+            font-weight: 600;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .hija-proyecto {
+            font-size: .75rem;
+            color: var(--text-muted);
+        }
+
+        .hija-horas {
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-family: 'DM Mono', monospace;
+            white-space: nowrap;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        @media (max-width: 768px) {
+            body { overflow-x: hidden; }
+
+            .top-nav {
+                padding: 0 14px;
+                gap: 8px;
+                overflow: visible;
+            }
+
+            .nav-logo {
+                margin-right: 0;
+                min-width: 0;
+                flex: 1;
+            }
+
+            .nav-logo-text {
+                display: block;
+                flex: 1;
+                text-align: center;
+                padding-right: 10px;
+                font-size: .78rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .nav-hamburger {
+                display: inline-flex;
+                margin-left: 0;
+            }
+
+            .nav-menu {
+                position: absolute;
+                top: calc(100% + 8px);
+                left: 12px;
+                right: 12px;
+                display: none;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 8px;
+                box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+                z-index: 210;
+            }
+
+            .top-nav.menu-open .nav-menu { display: flex; }
+            .nav-menu .nav-link-item { width: 100%; justify-content: flex-start; }
+
+            .page-wrap { padding: 20px 14px; }
+            .header-card { padding: 18px 16px; }
+            .table-scroll table { min-width: 760px; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAV -->
+    <nav class="top-nav" id="top-nav">
+        <a href="/" class="nav-logo">
+            <i class="bi bi-layers-half"></i><span class="nav-logo-text">Dream Team Daily Tracker</span>
+        </a>
+        <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="nav-menu">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="nav-menu" id="nav-menu">
+            <a href="/" class="nav-link-item"><i class="bi bi-house"></i>Inicio</a>
+            <a href="/actividades" class="nav-link-item active"><i class="bi bi-kanban"></i>Actividades</a>
+            <a href="/registros" class="nav-link-item"><i class="bi bi-clock-history"></i>Registros</a>
+            <a href="/evidencias" class="nav-link-item"><i class="bi bi-images"></i>Evidencias</a>
+            <a href="/calendario" class="nav-link-item"><i class="bi bi-calendar3"></i>Calendario</a>
+            <a href="/catalogos" class="nav-link-item"><i class="bi bi-sliders"></i>Catálogos</a>
+            <a href="/dashboard-actividades" class="nav-link-item"><i class="bi bi-speedometer2"></i>Plan de trabajo</a>
+        </div>
+    </nav>
+
+    <div class="page-wrap">
+
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-bar">
+            <a href="/actividades">Actividades</a>
+            <i class="bi bi-chevron-right" style="font-size:.65rem;"></i>
+            <span>{{ actividad.NOMBRE_ACTIVIDAD }}</span>
+        </div>
+
+        <!-- Header Card -->
+        <div class="header-card">
+            <div class="hc-top">
+                <div style="flex:1;min-width:0;">
+                    <div class="hc-badges">
+                        <span class="badge-estatus"
+                            style="background:{{ actividad.ESTATUS_COLOR }}22;color:{{ actividad.ESTATUS_COLOR }};border:1px solid {{ actividad.ESTATUS_COLOR }}44;">
+                            {{ actividad.ESTATUS }}
+                        </span>
+                        <span class="badge-prio prio-{{ actividad.PRIORIDAD }}">
+                            {% if actividad.PRIORIDAD == 1 %}🔴 Alta{% elif actividad.PRIORIDAD == 2 %}🟡 Media{% else
+                            %}🟢 Baja{% endif %}
+                        </span>
+                    </div>
+                    <h1 class="hc-title">{{ actividad.NOMBRE_ACTIVIDAD }}</h1>
+                    <p class="hc-project"><i class="bi bi-briefcase"></i>{{ actividad.NOMBRE_PROYECTO }}
+                        {% if actividad.SOLICITANTE %}
+                        &nbsp;·&nbsp;<i class="bi bi-person"></i>{{ actividad.SOLICITANTE }}
+                        {% endif %}
+                    </p>
+                    {% if actividad_padre %}
+                    <p style="font-size:.8rem;color:var(--text-muted);margin-top:6px;">
+                        <i class="bi bi-arrow-up-left-circle" style="color:var(--primary);margin-right:4px;"></i>
+                        Se desprende de:
+                        <a href="/actividades/{{ actividad_padre.ID }}"
+                           style="color:var(--primary);font-weight:600;text-decoration:none;">
+                            {{ actividad_padre.NOMBRE_ACTIVIDAD }}
+                        </a>
+                        <span style="color:var(--text-muted);font-size:.75rem;"> — {{ actividad_padre.NOMBRE_PROYECTO }}</span>
+                    </p>
+                    {% endif %}
+                    {% if actividad.DESCRIPCION %}
+                    <p style="font-size:.85rem;color:var(--text-secondary);margin-top:8px;line-height:1.6;">{{
+                        actividad.DESCRIPCION }}</p>
+                    {% endif %}
+                </div>
+                <button class="btn-edit" data-bs-toggle="modal" data-bs-target="#modalEditar">
+                    <i class="bi bi-pencil"></i> Editar
+                </button>
+            </div>
+
+            <!-- Horas invertidas -->
+            <div style="display:flex;align-items:center;gap:10px;margin-top:14px;padding:12px 16px;
+             background:var(--primary-light);border-radius:12px;width:fit-content;">
+                <i class="bi bi-clock-fill" style="color:var(--primary);font-size:1.1rem;"></i>
+                <span style="font-size:1.4rem;font-weight:800;font-family:'DM Mono',monospace;color:var(--primary);">
+                    {{ actividad.HORAS_INVERTIDAS }}h
+                </span>
+                <span style="font-size:.8rem;color:var(--text-secondary);font-weight:600;">horas invertidas</span>
+            </div>
+
+            <!-- Meta grid -->
+            <div class="hc-meta">
+                <div class="meta-item">
+                    <span class="meta-label">Responsable(s)</span>
+                    <span class="meta-val">{{ actividad.RESPONSABLES or '—' }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Solicitud</span>
+                    <span class="meta-val">{{ actividad.FECHA_SOLICITUD or '—' }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Inicio</span>
+                    <span class="meta-val">{{ actividad.FECHA_INICIO or '—' }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Fin Estimado</span>
+                    <span class="meta-val">{{ actividad.FECHA_FIN_EST or '—' }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Fin Real</span>
+                    <span class="meta-val">{{ actividad.FECHA_FIN_REAL or '—' }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Creado</span>
+                    <span class="meta-val">{{ (actividad.CREADO_EN | string)[:10] if actividad.CREADO_EN else '—'
+                        }}</span>
+                </div>
+                {% if actividad.RECURSOS %}
+                <div class="meta-item" style="grid-column:1/-1;">
+                    <span class="meta-label">Recursos utilizados</span>
+                    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;">
+                        {% for rec in actividad.RECURSOS.split(', ') %}
+                        <span
+                            style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:6px;">
+                            <i class="bi bi-cpu" style="margin-right:3px;font-size:.7rem;"></i>{{ rec }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-wrap">
+            <button class="tab-btn active" onclick="switchTab('historial', this)">
+                <i class="bi bi-clock-history"></i> Historial de horas
+                <span class="tab-count">{{ historial|length }}</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('evidencia', this)">
+                <i class="bi bi-paperclip"></i> Evidencia
+                <span class="tab-count">{{ evidencias|length }}</span>
+            </button>
+            {% if actividades_hijas %}
+            <button class="tab-btn" onclick="switchTab('relacionadas', this)">
+                <i class="bi bi-diagram-2"></i> Actividades derivadas
+                <span class="tab-count">{{ actividades_hijas|length }}</span>
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- TAB: HISTORIAL -->
+        <div id="tab-historial" class="tab-panel active">
+            <div class="panel-card">
+                <div class="panel-head">
+                    <span class="panel-head-title"><i class="bi bi-clock-history me-2 text-primary"></i>Historial de
+                        horas registradas</span>
+                    {% if historial %}
+                    <span
+                        style="font-size:.82rem;font-weight:700;font-family:'DM Mono',monospace;color:var(--primary);">
+                        Total: {{ historial|sum(attribute='HORAS')|round(1) }}h
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if historial %}
+                <div class="table-scroll">
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:var(--surface-alt);border-bottom:2px solid var(--border);">
+                            <th
+                                style="padding:10px 22px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);text-align:left;">
+                                Fecha</th>
+                            <th
+                                style="padding:10px 16px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);text-align:left;">
+                                Desarrollador</th>
+                            <th
+                                style="padding:10px 16px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);text-align:left;">
+                                Tipo</th>
+                            <th
+                                style="padding:10px 16px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);text-align:left;">
+                                Acción</th>
+                            <th
+                                style="padding:10px 22px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);text-align:right;">
+                                Horas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in historial %}
+                        <tr style="border-bottom:1px solid var(--border);transition:background .15s;"
+                            onmouseover="this.style.background='var(--surface-alt)'"
+                            onmouseout="this.style.background=''">
+                            <td
+                                style="padding:12px 22px;font-size:.8rem;font-family:'DM Mono',monospace;color:var(--text-secondary);white-space:nowrap;">
+                                {{ r.FECHA }}
+                            </td>
+                            <td style="padding:12px 16px;">
+                                <span
+                                    style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;color:var(--text-main);">
+                                    <span
+                                        style="width:26px;height:26px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:inline-flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;">
+                                        {{ r.USUARIO[0] }}
+                                    </span>
+                                    {{ r.USUARIO }}
+                                </span>
+                            </td>
+                            <td style="padding:12px 16px;">
+                                {% if r.TIPO %}
+                                <span
+                                    style="background:var(--primary-light);color:var(--primary);font-size:.72rem;font-weight:700;padding:3px 8px;border-radius:6px;">
+                                    {{ r.TIPO }}
+                                </span>
+                                {% else %}
+                                <span style="color:var(--text-muted);font-size:.8rem;">—</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding:12px 16px;font-size:.85rem;color:var(--text-main);max-width:280px;">
+                                <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                                    title="{{ r.ACCION }}">
+                                    {{ r.ACCION }}
+                                </div>
+                                {% if r.DETALLES %}
+                                <div style="font-size:.75rem;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                                    title="{{ r.DETALLES }}">
+                                    {{ r.DETALLES }}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td style="padding:12px 22px;text-align:right;">
+                                <span
+                                    style="background:var(--primary-light);color:var(--primary);font-family:'DM Mono',monospace;font-size:.8rem;font-weight:700;padding:3px 10px;border-radius:99px;">
+                                    {{ r.HORAS }}h
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+                {% else %}
+                <div class="empty-section">
+                    <i class="bi bi-clock-history"></i>
+                    <p>Aún no hay horas registradas para esta actividad.</p>
+                    <p style="font-size:.78rem;">Regístralas desde el <a href="/" style="color:var(--primary);">Daily
+                            Tracker</a>.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- TAB: EVIDENCIA -->
+        <div id="tab-evidencia" class="tab-panel">
+            <div class="panel-card">
+                <div class="panel-head">
+                    <span class="panel-head-title"><i class="bi bi-paperclip me-2 text-primary"></i>Evidencia del
+                        cliente</span>
+                    <div id="storage-badge" class="storage-badge" style="display:none;">
+                        <i class="bi bi-hdd"></i>
+                        <div class="storage-bar-wrap">
+                            <div class="storage-bar-fill" id="storage-bar"></div>
+                        </div>
+                        <span id="storage-label" class="storage-label"></span>
+                    </div>
+                </div>
+
+                {% if evidencias %}
+                {% for ev in evidencias %}
+                <div class="evidencia-item" id="ev-{{ ev.ID }}">
+                    <div class="ev-icon
+                    {% if 'correo' in ev.TIPO|lower %}ev-correo
+                    {% elif 'documento' in ev.TIPO|lower %}ev-documento
+                    {% elif 'captura' in ev.TIPO|lower %}ev-captura
+                    {% elif 'nota' in ev.TIPO|lower %}ev-nota
+                    {% else %}ev-otro{% endif %}">
+                        {% if 'correo' in ev.TIPO|lower %}<i class="bi bi-envelope-fill"></i>
+                        {% elif 'documento' in ev.TIPO|lower %}<i class="bi bi-file-earmark-text-fill"></i>
+                        {% elif 'captura' in ev.TIPO|lower %}<i class="bi bi-image-fill"></i>
+                        {% elif 'nota' in ev.TIPO|lower %}<i class="bi bi-sticky-fill"></i>
+                        {% else %}<i class="bi bi-paperclip"></i>{% endif %}
+                    </div>
+                    <div class="ev-body">
+                        <p class="ev-titulo">{{ ev.TITULO or ev.TIPO }}</p>
+                        <div class="ev-meta">
+                            <span><i class="bi bi-tag"></i> {{ ev.TIPO }}</span>
+                            {% if ev.SUBIDO_POR %}<span><i class="bi bi-person"></i> {{ ev.SUBIDO_POR }}</span>{% endif
+                            %}
+                            <span><i class="bi bi-clock"></i> {{ ev.CREADO_EN }}</span>
+                            {% if ev.TAMANO_BYTES %}<span><i class="bi bi-hdd"></i> {{ (ev.TAMANO_BYTES / 1024)|round(1)
+                                }} KB</span>{% endif %}
+                        </div>
+                        {% if ev.CONTENIDO_TEXTO %}
+                        <div class="ev-texto">{{ ev.CONTENIDO_TEXTO }}</div>
+                        {% endif %}
+                        {% if ev.URL_ARCHIVO %}
+                        <a href="{{ ev.URL_ARCHIVO }}" target="_blank" class="ev-archivo">
+                            <i class="bi bi-box-arrow-up-right"></i> {{ ev.NOMBRE_ARCHIVO or 'Ver archivo' }}
+                        </a>
+                        {% endif %}
+                    </div>
+                    <button class="btn-delete-item" onclick="eliminarEvidencia('{{ ev.ID }}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-section">
+                    <i class="bi bi-paperclip"></i>
+                    <p>Sin evidencia registrada. Agrega correos, documentos o notas.</p>
+                </div>
+                {% endif %}
+
+                <!-- Formulario agregar evidencia -->
+                <div class="add-form">
+                    <p
+                        style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:12px;">
+                        <i class="bi bi-plus-circle me-1 text-primary"></i>Agregar evidencia
+                    </p>
+                    <form id="form-evidencia">
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Tipo *</label>
+                                <select id="sel-ev-tipo" name="id_tipo" required>
+                                    {% for t in tipos_evidencia %}
+                                    <option value="{{ t.ID }}">{{ t.DESCRIPCION }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Subido por</label>
+                                <select id="sel-ev-user" name="subido_por">
+                                    <option value="">Sin especificar</option>
+                                    {% for u in users %}
+                                    <option value="{{ u.ID }}">{{ u.NOMBRE_COMPLETO }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Título / Asunto</label>
+                            <input type="text" class="field-input" name="titulo"
+                                placeholder="Ej: Correo solicitud inicial...">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Contenido de texto (correo, nota, etc.)</label>
+                            <textarea class="field-input" name="contenido_texto" rows="4"
+                                placeholder="Pega aquí el cuerpo del correo o escribe la nota..."></textarea>
+                        </div>
+                        <!-- Selector de archivo (se oculta para Nota interna) -->
+                        <div class="field-group" id="grupo-archivo">
+                            <label class="field-label">Archivo <span id="lbl-ext" class="ev-ext-hint"></span></label>
+                            <div class="file-drop-zone" id="file-drop-zone">
+                                <input type="file" id="inp-archivo" name="archivo" class="file-input-hidden">
+                                <div class="file-drop-content" id="file-drop-content">
+                                    <i class="bi bi-cloud-upload ev-upload-icon"></i>
+                                    <p class="file-drop-label">Arrastra el archivo aquí o <span
+                                            class="file-drop-link">haz clic para buscar</span></p>
+                                    <p class="file-drop-hint" id="file-drop-hint">Selecciona primero el tipo de
+                                        evidencia</p>
+                                </div>
+                                <div class="file-selected-preview" id="file-preview" style="display:none;">
+                                    <i class="bi bi-file-earmark-check file-preview-icon"></i>
+                                    <div class="file-preview-info">
+                                        <span class="file-preview-name" id="file-preview-name"></span>
+                                        <span class="file-preview-size" id="file-preview-size"></span>
+                                    </div>
+                                    <button type="button" class="file-preview-remove" id="file-preview-remove"
+                                        title="Quitar archivo">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-add">
+                            <i class="bi bi-plus-lg"></i> Guardar evidencia
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: ACTIVIDADES DERIVADAS -->
+        {% if actividades_hijas %}
+        <div id="tab-relacionadas" class="tab-panel">
+            <div class="panel-card">
+                <div class="panel-head">
+                    <span class="panel-head-title"><i class="bi bi-diagram-2 me-2 text-primary"></i>Actividades derivadas</span>
+                </div>
+                <div style="padding:4px 0;">
+                    {% for h in actividades_hijas %}
+                    <a href="/actividades/{{ h.ID }}" style="text-decoration:none;display:block;">
+                        <div class="hija-row">
+                            <span class="hija-badge" style="background:#{{ h.ESTATUS_COLOR }}22;color:#{{ h.ESTATUS_COLOR }};border:1px solid #{{ h.ESTATUS_COLOR }}44;">
+                                {{ h.ESTATUS }}
+                            </span>
+                            <div class="hija-info">
+                                <span class="hija-nombre">{{ h.NOMBRE_ACTIVIDAD }}</span>
+                                <span class="hija-proyecto"><i class="bi bi-briefcase" style="margin-right:4px;"></i>{{ h.NOMBRE_PROYECTO }}</span>
+                            </div>
+                            <span class="hija-horas"><i class="bi bi-clock" style="margin-right:4px;"></i>{{ h.HORAS_INVERTIDAS }}h</span>
+                            <i class="bi bi-chevron-right" style="color:var(--text-muted);font-size:.8rem;"></i>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- MODAL EDITAR ACTIVIDAD -->
+    <div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil me-2 text-primary"></i>Editar Actividad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-editar">
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Estatus *</label>
+                                <select id="sel-edit-estatus" name="id_estatus" required>
+                                    {% for e in estatus_list %}
+                                    <option value="{{ e.ID }}" {% if e.ID==actividad.ID_ESTATUS %}selected{% endif %}>{{
+                                        e.DESCRIPCION }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Prioridad</label>
+                                <select class="field-input" name="prioridad">
+                                    <option value="1" {% if actividad.PRIORIDAD==1 %}selected{% endif %}>🔴 Alta
+                                    </option>
+                                    <option value="2" {% if actividad.PRIORIDAD==2 %}selected{% endif %}>🟡 Media
+                                    </option>
+                                    <option value="3" {% if actividad.PRIORIDAD==3 %}selected{% endif %}>🟢 Baja
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Tipo *</label>
+                            <select id="sel-edit-tipo" name="tipo" required>
+                                <option value="">Selecciona...</option>
+                                <option value="DESARROLLO" {% if actividad.TIPO == 'DESARROLLO' %}selected{% endif %}>DESARROLLO</option>
+                                <option value="TAREA" {% if actividad.TIPO == 'TAREA' %}selected{% endif %}>TAREA</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Proyecto *</label>
+                            <select id="sel-edit-proyecto" name="id_proyecto" required>
+                                {% for p in projects %}
+                                <option value="{{ p.ID }}" {% if p.ID==actividad.ID_PROYECTO %}selected{% endif %}>
+                                    {{ p.NOMBRE_PROYECTO }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <p
+                                style="font-size:.7rem;color:#f59e0b;margin:5px 0 0;display:flex;align-items:center;gap:4px;">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                Al cambiar el proyecto, las horas registradas se reasignarán automáticamente al nuevo
+                                proyecto.
+                            </p>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Nombre *</label>
+                            <input type="text" class="field-input" name="nombre_actividad" required
+                                value="{{ actividad.NOMBRE_ACTIVIDAD }}">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Descripción</label>
+                            <textarea class="field-input"
+                                name="descripcion">{{ actividad.DESCRIPCION or '' }}</textarea>
+                        </div>
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Solicitante</label>
+                                <select class="field-input" name="solicitante">
+                                    <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero registra solicitantes en Catálogos' }}</option>
+                                    {% for s in solicitantes %}
+                                    <option value="{{ s.NOMBRE }}" {% if s.NOMBRE == (actividad.SOLICITANTE or '') %}selected{% endif %}>
+                                        {{ s.NOMBRE }}{% if s.ES_LEGACY %} (actual, fuera de catálogo){% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Fecha solicitud</label>
+                                <input type="text" class="field-input" id="edit-fecha-solicitud" name="fecha_solicitud"
+                                    value="{{ actividad.FECHA_SOLICITUD or '' }}" placeholder="Selecciona fecha"
+                                    autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="row-2">
+                            <div class="field-group">
+                                <label class="field-label">Fecha inicio</label>
+                                <input type="text" class="field-input" id="edit-fecha-inicio" name="fecha_inicio"
+                                    value="{{ actividad.FECHA_INICIO or '' }}" placeholder="Selecciona fecha"
+                                    autocomplete="off">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Fecha fin real</label>
+                                <input type="text" class="field-input" id="edit-fecha-fin" name="fecha_fin_real"
+                                    value="{{ actividad.FECHA_FIN_REAL or '' }}" placeholder="Selecciona fecha"
+                                    autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Responsable(s)</label>
+                            <select id="sel-edit-resp" name="responsables" multiple>
+                                {% for u in users %}
+                                <option value="{{ u.ID }}" {% if actividad.RESPONSABLES and u.NOMBRE_COMPLETO in
+                                    actividad.RESPONSABLES %}selected{% endif %}>
+                                    {{ u.NOMBRE_COMPLETO }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Recursos utilizados</label>
+                            <select id="sel-edit-recursos" name="recursos" multiple>
+                                {% for r in recursos %}
+                                <option value="{{ r.ID }}" {% if actividad.RECURSOS and r.NOMBRE in actividad.RECURSOS
+                                    %}selected{% endif %}>
+                                    {{ r.NOMBRE }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Se desprende de <span style="font-weight:400;color:var(--text-muted);font-size:.8em;">(opcional)</span></label>
+                            <select id="sel-edit-padre" name="id_actividad_padre">
+                                <option value="">Sin actividad origen</option>
+                                {% for a in todas_actividades %}
+                                {% if a.ID != actividad.ID %}
+                                <option value="{{ a.ID }}" {% if actividad.ID_ACTIVIDAD_PADRE and actividad.ID_ACTIVIDAD_PADRE == a.ID %}selected{% endif %}>
+                                    {{ a.NOMBRE_ACTIVIDAD }} — {{ a.NOMBRE_PROYECTO }}
+                                </option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-submit-modal">
+                            <i class="bi bi-check2-circle me-2"></i>Guardar cambios
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+    <script>
+        const topNav = document.getElementById('top-nav');
+        const navHamburger = document.getElementById('nav-hamburger');
+        const navMenu = document.getElementById('nav-menu');
+
+        function closeMobileNav() {
+            topNav.classList.remove('menu-open');
+            navHamburger.setAttribute('aria-expanded', 'false');
+            navHamburger.innerHTML = '<i class="bi bi-list"></i>';
+        }
+
+        function toggleMobileNav(event) {
+            event?.preventDefault();
+            event?.stopPropagation();
+            if (window.innerWidth > 768) return;
+            const open = topNav.classList.toggle('menu-open');
+            navHamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+            navHamburger.innerHTML = open ? '<i class="bi bi-x-lg"></i>' : '<i class="bi bi-list"></i>';
+        }
+
+        navHamburger?.addEventListener('click', (event) => toggleMobileNav(event));
+        navMenu?.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) closeMobileNav();
+            });
+        });
+
+        document.addEventListener('click', (event) => {
+            if (window.innerWidth > 768) return;
+            const clickedInsideNav = event.target.closest('#top-nav');
+            if (!clickedInsideNav) closeMobileNav();
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) closeMobileNav();
+        });
+
+        const ACT_ID = "{{ actividad.ID }}";
+        const tsCfg = { create: false, sortField: { field: 'text', direction: 'asc' } };
+
+        // subtareas removidas - selector de detalles ya no existe
+        new TomSelect('#sel-ev-tipo', tsCfg);
+        new TomSelect('#sel-ev-user', tsCfg);
+
+        // ── Flatpickr — fechas del modal de edición ───────────────────────
+        const fpCfg = {
+            locale: "es",
+            altInput: true,
+            altFormat: "j F, Y",
+            dateFormat: "Y-m-d",
+            disableMobile: true,
+            allowInput: false,
+        };
+        flatpickr("#edit-fecha-solicitud", fpCfg);
+        flatpickr("#edit-fecha-inicio", fpCfg);
+        flatpickr("#edit-fecha-fin", fpCfg);
+
+        new TomSelect('#sel-edit-proyecto', tsCfg);
+        new TomSelect('#sel-edit-estatus', tsCfg);
+        new TomSelect('#sel-edit-tipo', tsCfg);
+        new TomSelect('#sel-edit-resp', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona responsables...' });
+        new TomSelect('#sel-edit-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
+        new TomSelect('#sel-edit-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
+
+        // ── Tabs ─────────────────────────────────────────────────
+        function switchTab(name, btn) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + name).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        // ── Editar actividad ──────────────────────────────────────
+        document.getElementById('form-editar').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const fd = new FormData(this);
+            const tipo = String(fd.get('tipo') || '').trim();
+            if (!tipo) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Tipo requerido',
+                    text: 'Selecciona el tipo de actividad (DESARROLLO o TAREA).',
+                });
+                return;
+            }
+            Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const r = await fetch(`/actividades/${ACT_ID}/editar`, { method: 'POST', body: fd });
+                const res = await r.json();
+                if (res.status === 'success') {
+                    Swal.fire({ icon: 'success', title: 'Actualizado', timer: 1500, showConfirmButton: false })
+                        .then(() => location.reload());
+                } else throw new Error(res.message);
+            } catch (err) { Swal.fire({ icon: 'error', title: 'Error', text: err.message }); }
+        });
+
+        // ── Storage indicator ─────────────────────────────────────────
+        (async () => {
+            const PROYECTO_ID = "{{ actividad.ID_PROYECTO }}";
+            try {
+                const res = await fetch(`/api/storage/${PROYECTO_ID}`);
+                const d = await res.json();
+                if (d.quota_mb === 0) return;
+                const badge = document.getElementById('storage-badge');
+                const bar = document.getElementById('storage-bar');
+                const lbl = document.getElementById('storage-label');
+                badge.style.display = 'flex';
+                bar.style.width = d.pct + '%';
+                bar.classList.toggle('warn', d.pct >= 70 && d.pct < 90);
+                bar.classList.toggle('danger', d.pct >= 90);
+                const usedStr = d.used_mb < 1 ? `${(d.used_mb * 1024).toFixed(0)} KB` : `${d.used_mb.toFixed(1)} MB`;
+                lbl.textContent = `${usedStr} / ${d.quota_mb} MB`;
+            } catch (e) { /* silencioso */ }
+        })();
+
+        // ── Evidencia: config de tipos ─────────────────────────────
+        // Mapea la descripción del tipo (en minúsculas) a extensiones aceptadas
+        const EV_TIPO_CONFIG = {
+            'captura': { accept: 'image/*,.png,.jpg,.jpeg,.gif,.webp,.bmp', hint: 'PNG, JPG, GIF, WEBP', needsFile: true },
+            'correo': { accept: '.eml,.msg', hint: 'EML, MSG', needsFile: true },
+            'documento': { accept: '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv', hint: 'PDF, Word, Excel, PPT, TXT', needsFile: true },
+            'nota': { accept: '', hint: '', needsFile: false },
+        };
+
+        const MAX_FILE_MB = 20;
+        const selTipo = document.getElementById('sel-ev-tipo');
+        const inpArchivo = document.getElementById('inp-archivo');
+        const dropZone = document.getElementById('file-drop-zone');
+        const grupoArchivo = document.getElementById('grupo-archivo');
+        const filePreview = document.getElementById('file-preview');
+        const dropContent = document.getElementById('file-drop-content');
+        const previewName = document.getElementById('file-preview-name');
+        const previewSize = document.getElementById('file-preview-size');
+        const previewRem = document.getElementById('file-preview-remove');
+        const lblExt = document.getElementById('lbl-ext');
+        const dropHint = document.getElementById('file-drop-hint');
+
+        function _tipoConfig() {
+            const texto = selTipo.options[selTipo.selectedIndex]?.text?.toLowerCase() || '';
+            for (const [key, cfg] of Object.entries(EV_TIPO_CONFIG)) {
+                if (texto.includes(key)) return cfg;
+            }
+            return { accept: '*', hint: 'Cualquier archivo', needsFile: true };
+        }
+
+        function actualizarSelectorArchivo() {
+            const cfg = _tipoConfig();
+            if (!cfg.needsFile) {
+                // Nota interna: ocultar selector
+                grupoArchivo.style.display = 'none';
+                inpArchivo.value = '';
+                _clearPreview();
+                return;
+            }
+            grupoArchivo.style.display = '';
+            inpArchivo.accept = cfg.accept;
+            lblExt.textContent = cfg.hint ? `(${cfg.hint})` : '';
+            dropHint.textContent = cfg.hint ? `Formatos aceptados: ${cfg.hint}` : 'Selecciona un archivo';
+            _clearPreview();
+        }
+
+        function _clearPreview() {
+            inpArchivo.value = '';
+            filePreview.style.display = 'none';
+            dropContent.style.display = 'flex';
+        }
+
+        function _showPreview(file) {
+            previewName.textContent = file.name;
+            previewSize.textContent = file.size < 1024 * 1024
+                ? `${(file.size / 1024).toFixed(1)} KB`
+                : `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+            filePreview.style.display = 'flex';
+            dropContent.style.display = 'none';
+        }
+
+        selTipo.addEventListener('change', actualizarSelectorArchivo);
+        actualizarSelectorArchivo(); // init
+
+        inpArchivo.addEventListener('change', function () {
+            if (!this.files.length) { _clearPreview(); return; }
+            const file = this.files[0];
+            if (file.size > MAX_FILE_MB * 1024 * 1024) {
+                Swal.fire({ icon: 'warning', title: 'Archivo muy grande', text: `El límite es ${MAX_FILE_MB} MB.` });
+                _clearPreview(); return;
+            }
+            _showPreview(file);
+        });
+
+        previewRem.addEventListener('click', _clearPreview);
+
+        // Drag & drop
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (!file) return;
+            if (file.size > MAX_FILE_MB * 1024 * 1024) {
+                Swal.fire({ icon: 'warning', title: 'Archivo muy grande', text: `El límite es ${MAX_FILE_MB} MB.` });
+                return;
+            }
+            // Transferir al input
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            inpArchivo.files = dt.files;
+            _showPreview(file);
+        });
+
+        // ── Agregar evidencia ─────────────────────────────────────
+        document.getElementById('form-evidencia').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const cfg = _tipoConfig();
+            if (cfg.needsFile && !inpArchivo.files.length) {
+                Swal.fire({ icon: 'warning', title: 'Falta el archivo', text: 'Selecciona un archivo para este tipo de evidencia.' });
+                return;
+            }
+            const fd = new FormData(this);
+            // Asegurar que el archivo va en el FormData (ya está por name="archivo")
+            try {
+                const r = await fetch(`/actividades/${ACT_ID}/evidencia`, { method: 'POST', body: fd });
+                const res = await r.json();
+                if (res.status === 'success') {
+                    Swal.fire({ icon: 'success', title: 'Evidencia guardada', timer: 1200, showConfirmButton: false })
+                        .then(() => location.reload());
+                } else throw new Error(res.message);
+            } catch (err) { Swal.fire({ icon: 'error', title: 'Error', text: err.message }); }
+        });
+
+        // ── Eliminar evidencia ────────────────────────────────────
+        async function eliminarEvidencia(id) {
+            const conf = await Swal.fire({
+                title: '¿Eliminar evidencia?', icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar'
+            });
+            if (!conf.isConfirmed) return;
+            const r = await fetch(`/evidencia/${id}`, { method: 'DELETE' });
+            const res = await r.json();
+            if (res.status === 'success') document.getElementById('ev-' + id)?.remove();
+        }
+    </script>
+</body>
+
+</html>
