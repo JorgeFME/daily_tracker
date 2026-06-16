@@ -5,7 +5,7 @@ from web_app.modules.tracker.queries import _registros_where
 def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
     """
     Trae en una sola conexion:
-      - actividades con todos sus metadatos (incluyendo SOLICITANTE)
+      - actividades con todos sus metadatos (incluyendo SOLICITANTE y jerarquías)
       - evidencias agrupadas por actividad
     Devuelve: (actividades, evidencias_por_actividad)
     """
@@ -14,6 +14,7 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
     where_registros, params_registros = _registros_where('R', filtros_reporte)
     where_registros_sql = ' AND '.join(where_registros) if where_registros else '1=1'
 
+    # Modificamos el EXISTS al final para que incluya padres con 0 horas cuyos hijos sí tengan registros
     sql_acts = """
         SELECT
             A."ID",
@@ -25,6 +26,7 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
             A."FECHA_FIN_REAL",
             A."PRIORIDAD",
             A."SOLICITANTE",
+            A."AVANCE_PCT",
             A."ID_ACTIVIDAD_PADRE",
             PADRE."NOMBRE_ACTIVIDAD" AS "NOMBRE_ACTIVIDAD_PADRE",
             E."DESCRIPCION"   AS "ESTATUS",
@@ -51,10 +53,21 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
         LEFT JOIN "ACTIVIDADES" PADRE ON A."ID_ACTIVIDAD_PADRE" = PADRE."ID"
         LEFT JOIN "CAT_ENTREGABLES" CAT ON A."ID_ENTREGABLE" = CAT."ID"
         WHERE A."ID_PROYECTO" = ?
-          AND EXISTS (
-              SELECT 1
-              FROM "REGISTRO_ACTIVIDADES" R
-              WHERE R."ID_ACTIVIDAD" = A."ID" AND """ + where_registros_sql + """
+          AND (
+              /* Condición 1: La actividad tiene registros de horas válidos */
+              EXISTS (
+                  SELECT 1
+                  FROM "REGISTRO_ACTIVIDADES" R
+                  WHERE R."ID_ACTIVIDAD" = A."ID" AND """ + where_registros_sql + """
+              )
+              OR 
+              /* Condición 2: Es un Padre con 0 horas pero tiene hijos que sí tienen registros de horas */
+              EXISTS (
+                  SELECT 1
+                  FROM "ACTIVIDADES" HIJA
+                  JOIN "REGISTRO_ACTIVIDADES" R ON R."ID_ACTIVIDAD" = HIJA."ID"
+                  WHERE HIJA."ID_ACTIVIDAD_PADRE" = A."ID" AND """ + where_registros_sql + """
+              )
           )
         ORDER BY A."FECHA_SOLICITUD" ASC, A."CREADO_EN" ASC
     """
@@ -81,7 +94,8 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
     with _pool.get_connection() as conn:
         cur = conn.cursor()
         try:
-            params_acts = tuple(params_registros + [proyecto_id] + params_registros)
+            # Multiplicamos los parámetros correspondientes por la duplicación del where_registros_sql en el OR
+            params_acts = tuple(params_registros + [proyecto_id] + params_registros + params_registros)
             cur.execute(sql_acts, params_acts)
             cols_a = [c[0] for c in cur.description]
             actividades = [dict(zip(cols_a, row)) for row in cur.fetchall()]
@@ -150,7 +164,7 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
                 fecha_val = rec[0]
                 horas_val = float(rec[1] or 0)
                 accion_val = rec[2] or "Actividad Rápida"
-                detalles_val = rec[3] or "Horas registradas directamente al proyecto."
+                detalles_val = rec[3] or "Horas registrados directamente al proyecto."
                 tipo_val = rec[4] or "Ad-hoc"
                 responsable_val = rec[5] or "—"
                 proyecto_nombre = rec[6] or "Proyecto"
@@ -200,28 +214,9 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
                     actividad["DESGLOSE_REPORTE"] = "\n".join(lineas_desglose) or "—"
                 actividad["TIPO"] = (actividad.get("TIPO") or "—").strip() or "—"
 
-            def _parse_fecha_reporte(act):
-                valor = act.get("FECHA_SOLICITUD")
-                if not valor:
-                    return datetime.max.date()
-                if isinstance(valor, datetime):
-                    return valor.date()
-                texto = str(valor).strip()
-                if not texto:
-                    return datetime.max.date()
-                try:
-                    return datetime.strptime(texto[:10], "%Y-%m-%d").date()
-                except ValueError:
-                    return datetime.max.date()
-
-            actividades.sort(
-                key=lambda act: (
-                    _parse_fecha_reporte(act),
-                    _parse_fecha_reporte(act), # fallback matching key pattern in original
-                    str(act.get("NOMBRE_ACTIVIDAD") or "").upper(),
-                )
-            )
-
+            # NOTA: Removemos el ordenamiento por fecha forzado al final para dejar que la función 
+            # de renderizado ordene jerárquicamente de forma libre en memoria de Python.
             return actividades, evidencias_por_actividad
         finally:
             cur.close()
+

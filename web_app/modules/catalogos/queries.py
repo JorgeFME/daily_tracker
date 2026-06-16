@@ -433,3 +433,118 @@ def eliminar_categoria_db(id_cat):
     if ok:
         invalidar_cache("cat_tipos_actividad")
     return ok
+
+
+# ── CAT_ENTREGABLES POR PROYECTO ──────────────────────────────────────────────
+
+def obtener_entregables(id_proyecto: str | None = None):
+    """
+    Obtiene los entregables activos. Si se especifica id_proyecto, 
+    filtra solo los pertenecientes a ese proyecto.
+    """
+    if id_proyecto:
+        return ejecutar_query(
+            'SELECT "ID", "NOMBRE", "ACTIVO", "ID_PROYECTO" '
+            'FROM "CAT_ENTREGABLES" '
+            'WHERE "ACTIVO" = 1 AND "ID_PROYECTO" = ? '
+            'ORDER BY "NOMBRE"',
+            (id_proyecto,)
+        )
+    return _cached_query(
+        "cat_entregables",
+        'SELECT "ID", "NOMBRE", "ACTIVO", "ID_PROYECTO" FROM "CAT_ENTREGABLES" WHERE "ACTIVO" = 1 ORDER BY "NOMBRE"'
+    )
+
+
+def obtener_entregables_por_proyecto(id_proyecto: str):
+    """
+    Obtiene TODOS los entregables (activos e inactivos) de un proyecto específico
+    para la vista de administración del catálogo.
+    """
+    return ejecutar_query(
+        'SELECT "ID", "NOMBRE", "ACTIVO", "FECHA_CREACION", "ID_PROYECTO" '
+        'FROM "CAT_ENTREGABLES" '
+        'WHERE "ID_PROYECTO" = ? '
+        'ORDER BY "NOMBRE"',
+        (id_proyecto,)
+    )
+
+
+def _entregable_nombre_existe(nombre: str, id_proyecto: str, exclude_id: str | None = None) -> bool:
+    """Verifica si ya existe un entregable con el mismo nombre en el mismo proyecto."""
+    nombre_normalizado = (nombre or "").strip()
+    if not nombre_normalizado:
+        return False
+    
+    sql = 'SELECT COUNT(*) AS "N" FROM "CAT_ENTREGABLES" WHERE UPPER(TRIM("NOMBRE")) = UPPER(TRIM(?)) AND "ID_PROYECTO" = ?'
+    params = [nombre_normalizado, id_proyecto]
+    
+    if exclude_id:
+        sql += ' AND "ID" <> ?'
+        params.append(exclude_id)
+        
+    rows = ejecutar_query(sql, tuple(params))
+    return bool(rows and int(rows[0]["N"]) > 0)
+
+
+def crear_entregable(datos: dict) -> bool:
+    nombre = (datos.get("nombre") or "").strip()
+    id_proyecto = datos.get("id_proyecto")
+    
+    if not nombre or not id_proyecto:
+        return False
+        
+    # Validación: No duplicar nombres en el mismo proyecto
+    if _entregable_nombre_existe(nombre, id_proyecto):
+        return False
+        
+    sql = """INSERT INTO "CAT_ENTREGABLES" 
+                ("ID", "NOMBRE", "ACTIVO", "FECHA_CREACION", "ID_PROYECTO") 
+             VALUES (SYSUUID, ?, 1, CURRENT_TIMESTAMP, ?)"""
+             
+    ok = ejecutar_dml(sql, (nombre, id_proyecto))
+    if ok:
+        invalidar_cache("cat_entregables")
+    return ok
+
+
+def actualizar_entregable(id_val: str, datos: dict) -> bool:
+    nombre = (datos.get("nombre") or "").strip()
+    id_proyecto = datos.get("id_proyecto") # Necesario para validar duplicados correctamente
+    
+    if not nombre or not id_proyecto:
+        return False
+        
+    # Validación: Asegurar que el nuevo nombre no choque con otro del mismo proyecto
+    if _entregable_nombre_existe(nombre, id_proyecto, exclude_id=id_val):
+        return False
+        
+    sql = 'UPDATE "CAT_ENTREGABLES" SET "NOMBRE" = ? WHERE "ID" = ?'
+    ok = ejecutar_dml(sql, (nombre, id_val))
+    if ok:
+        invalidar_cache("cat_entregables")
+    return ok
+
+
+def toggle_entregable(id_val: str, activo: int) -> bool:
+    """Modifica el estado de activación del entregable (Switch UI)"""
+    ok = _cat_toggle("CAT_ENTREGABLES", id_val, activo)
+    if ok:
+        invalidar_cache("cat_entregables")
+    return ok
+
+
+def eliminar_logico_entregable(id_val: str):
+    """
+    Aplica borrado lógico colocando el flag ACTIVO = 0.
+    Si requieres verificar dependencias antes de desactivarlo por completo, puedes añadirla aquí.
+    """
+    # Ejemplo si tuvieras una tabla transaccional vinculada:
+    # if _cat_in_use("ACTIVIDADES_ENTREGABLES", "ID_ENTREGABLE", id_val):
+    #     return False, "Este entregable ya está en uso en una actividad y no puede desactivarse."
+    
+    ok = ejecutar_dml('UPDATE "CAT_ENTREGABLES" SET "ACTIVO" = 0 WHERE "ID" = ?', (id_val,))
+    if ok:
+        invalidar_cache("cat_entregables")
+        return True, ""
+    return False, "Error al intentar deshabilitar el entregable."
