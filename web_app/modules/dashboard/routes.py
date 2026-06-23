@@ -705,42 +705,62 @@ def editar_actividad(actividad_id):
     datos["solicitante"] = (datos.get("solicitante") or "").strip() or None
     datos["tipo"] = (datos.get("tipo") or "").strip().upper()
 
-    # 1. Traer la actividad actual de SAP HANA para tener un respaldo real de los datos actuales
+    # 1. Traer la actividad actual de SAP HANA para tener el respaldo real de los datos actuales
     actividad_actual = obtener_actividad_por_id(actividad_id)
+    if not actividad_actual:
+        return jsonify({"status": "error", "message": "La actividad no existe."}), 404
 
-    # 2. Capturar el id_entregable del formulario (si es que viene)
+    # 2. BLINDAJE CONTRA SOBREESCRITURAS ENTRE FORMULARIOS
+    # Si un campo clave viene ausente o completamente vacío (""), heredamos el valor real de la base de datos.
+    
+    if "nombre_actividad" not in datos or not datos.get("nombre_actividad"):
+        datos["nombre_actividad"] = actividad_actual.get("NOMBRE_ACTIVIDAD")
+
+    if "fecha_solicitud" not in datos or datos.get("fecha_solicitud") == "":
+        datos["fecha_solicitud"] = str(actividad_actual.get("FECHA_SOLICITUD") or "")
+
+    if "fecha_inicio" not in datos or datos.get("fecha_inicio") == "":
+        datos["fecha_inicio"] = str(actividad_actual.get("FECHA_INICIO") or "")
+
+    if "fecha_fin_est" not in datos or datos.get("fecha_fin_est") == "":
+        datos["fecha_fin_est"] = str(actividad_actual.get("FECHA_FIN_EST") or "")
+
+    if "fecha_fin_real" not in datos or datos.get("fecha_fin_real") == "":
+        datos["fecha_fin_real"] = str(actividad_actual.get("FECHA_FIN_REAL") or "")
+
+    if "avance_pct" not in datos or datos.get("avance_pct") in (None, ""):
+    # Lo pasamos como string para que el .strip() de utils.py no truene
+        datos["avance_pct"] = str(actividad_actual.get("AVANCE_PCT") or 0)
+
+    if "id_proyecto" not in datos:
+        datos["id_proyecto"] = actividad_actual.get("ID_PROYECTO")
+
+    if "id_estatus" not in datos:
+        datos["id_estatus"] = actividad_actual.get("ID_ESTATUS")
+
+    if not datos.get("tipo"):
+        datos["tipo"] = actividad_actual.get("TIPO")
+
+    # 3. Mantenemos tu lógica existente para id_entregable
     id_entregable_form = datos.get("id_entregable") or request.form.get("id_entregable")
-
-    # 3. RESPALDO CRÍTICO: Si el formulario completo no lo mandó (por estar disabled o faltar el campo),
-    # tomamos el id_entregable que ya tiene la actividad guardada en SAP HANA para no perderlo.
     if not id_entregable_form and actividad_actual:
         id_entregable_form = actividad_actual.get("ID_ENTREGABLE")
 
-    # Asignamos el valor limpio a la estructura
     datos["id_entregable"] = (
         str(id_entregable_form) if id_entregable_form else ""
     ).strip() or None
 
-    # 4. Ejecutamos la función de normalización del dashboard
+    # 4. Ejecutamos la función de normalización del dashboard con el payload combinado y seguro
     datos, error_campos = _normalizar_campos_dashboard_actividad(datos)
     if error_campos:
         return jsonify({"status": "error", "message": error_campos}), 400
 
-    # 5. Volvemos a asegurar el valor tras la normalización por si acaso
     if not datos.get("id_entregable") and id_entregable_form:
         datos["id_entregable"] = str(id_entregable_form).strip()
 
-    # 6. Validación obligatoria final del sistema
-    if not datos.get("id_entregable"):
-        return (
-            jsonify(
-                {"status": "error", "message": "El tipo de entregable es obligatorio."}
-            ),
-            400,
-        )
-
     if not datos.get("tipo"):
         return jsonify({"status": "error", "message": "El tipo es obligatorio."}), 400
+        
     if datos["tipo"] not in {"DESARROLLO", "TAREA"}:
         return (
             jsonify(
@@ -752,7 +772,6 @@ def editar_actividad(actividad_id):
             400,
         )
 
-    actividad_actual = obtener_actividad_por_id(actividad_id)
     nuevo_proyecto = datos.get("id_proyecto")
     proyecto_cambio = (
         actividad_actual
@@ -760,19 +779,27 @@ def editar_actividad(actividad_id):
         and str(actividad_actual["ID_PROYECTO"]) != str(nuevo_proyecto)
     )
 
+    # 5. Guardado en Base de Datos
     if actualizar_actividad(actividad_id, datos):
         if proyecto_cambio:
             reasignar_registros_proyecto(actividad_id, nuevo_proyecto)
-        guardar_responsables_actividad(
-            actividad_id, request.form.getlist("responsables")
-        )
-        guardar_recursos_actividad(actividad_id, request.form.getlist("recursos"))
+            
+        # BLINDAJE PARA RELACIONES: Solo actualizar responsables y recursos si el formulario enviado los incluía.
+        # Esto previene que si un modal no despliega o no selecciona encargados, limpie la tabla relacional.
+        if "responsables" in request.form:
+            guardar_responsables_actividad(
+                actividad_id, request.form.getlist("responsables")
+            )
+        if "recursos" in request.form:
+            guardar_recursos_actividad(actividad_id, request.form.getlist("recursos"))
+            
         msg = (
             "Actividad actualizada y horas reasignadas al nuevo proyecto."
             if proyecto_cambio
             else "Actividad actualizada."
         )
         return jsonify({"status": "success", "message": msg})
+        
     return jsonify({"status": "error", "message": "Error al actualizar."}), 500
 
 
@@ -808,7 +835,28 @@ def borrar_detalle(detalle_id):
         return jsonify({"status": "success"})
     return jsonify({"status": "error"}), 500
 
-
+@dashboard_bp.route("/api/catalogos/entregables/por-proyecto/<id_proyecto>", methods=["GET"])
+def api_entregables_por_proyecto_json(id_proyecto):
+    """
+    Regresa los entregables activos en JSON pertenecientes al id_proyecto 
+    para alimentar dinámicamente los selects en los formularios.
+    """
+    from web_app.modules.catalogos.queries import obtener_entregables
+    try:
+        # Usamos la función modificada que recibe opcionalmente el proyecto
+        rows = obtener_entregables(id_proyecto)
+        return jsonify({
+            "status": "success",
+            "data": [
+                {"id": r["ID"], "nombre": r["NOMBRE"]} 
+                for r in rows
+            ]
+        })
+    except Exception as e:
+        print(f"[api_entregables_por_proyecto_json] Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    
+    
 # ── CALENDARIO Y AUSENCIAS ROUTES ────────────────────────────────────────
 
 

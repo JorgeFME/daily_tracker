@@ -324,9 +324,90 @@
             color: var(--danger);
         }
 
+        .filter-item-switch {
+            grid-column: span 3;
+            display: flex;
+            align-items: center;
+        }
+
+        .switch-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch-slider {
+            position: absolute;
+            inset: 0;
+            background: var(--border);
+            border-radius: 999px;
+            transition: background-color .2s;
+        }
+
+        .switch-slider::before {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            left: 3px;
+            top: 3px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform .2s;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .25);
+        }
+
+        .switch input:checked+.switch-slider {
+            background: var(--primary);
+        }
+
+        .switch input:checked+.switch-slider::before {
+            transform: translateX(16px);
+        }
+
+        .switch-text {
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .badge-propagado {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            margin-top: 3px;
+            background: var(--surface-alt);
+            color: var(--text-muted);
+            font-size: .65rem;
+            font-weight: 700;
+            padding: 1px 7px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
         @media (max-width: 1100px) {
+
             .filter-item,
-            .filter-item-dates {
+            .filter-item-dates,
+            .filter-item-switch {
                 grid-column: span 6;
             }
 
@@ -409,6 +490,7 @@
 
             .filter-item,
             .filter-item-dates,
+            .filter-item-switch,
             .filter-actions {
                 grid-column: span 12;
             }
@@ -932,7 +1014,8 @@
     <!-- NAV -->
     <nav id="top-nav">
         <a href="/" class="nav-brand">
-            <i class="bi bi-layers-half" style="color:#2563eb;font-size:1.2rem;"></i><span class="nav-brand-text">Dream Team Daily Tracker</span>
+            <i class="bi bi-layers-half" style="color:#2563eb;font-size:1.2rem;"></i><span class="nav-brand-text">Dream
+                Team Daily Tracker</span>
         </a>
         <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Abrir menú de navegación"
             aria-expanded="false" aria-controls="nav-menu">
@@ -966,9 +1049,11 @@
             <i class="bi bi-funnel"></i>
             <div>
                 {% if filtros_meta.usando_mes_actual_default %}
-                Mostrando por defecto el <strong>mes en curso</strong>. Si exportas, el Excel usará este rango y cualquier otro filtro activo.
+                Mostrando por defecto el <strong>mes en curso</strong>. Si exportas, el Excel usará este rango y
+                cualquier otro filtro activo.
                 {% else %}
-                El Excel respetará exactamente los filtros activos de esta pantalla: proyecto, desarrollador, actividad, tipo y rango de fechas.
+                El Excel respetará exactamente los filtros activos de esta pantalla: proyecto, desarrollador, actividad,
+                tipo y rango de fechas.
                 {% endif %}
             </div>
         </div>
@@ -983,17 +1068,20 @@
                             <select name="proyecto_id" id="f-proyecto">
                                 <option value="">Todos los proyectos</option>
                                 {% for p in projects %}
-                                <option value="{{ p.ID }}" {% if filtros.proyecto_id|string == p.ID|string %}selected{% endif %}>{{ p.NOMBRE_PROYECTO }}</option>
+                                <option value="{{ p.ID }}" {% if filtros.proyecto_id|string==p.ID|string %}selected{%
+                                    endif %}>{{ p.NOMBRE_PROYECTO }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="filter-item">
                             <span class="filter-label">Actividad</span>
-                            <select name="actividad_id" id="f-actividad" {% if not filtros.proyecto_id %}disabled{% endif %}>
-                                <option value="">{% if filtros.proyecto_id %}Todas las actividades{% else %}Selecciona un proyecto primero{% endif %}</option>
+                            <select name="actividad_id" id="f-actividad" {% if not filtros.proyecto_id %}disabled{%
+                                endif %}>
+                                <option value="">{% if filtros.proyecto_id %}Todas las actividades{% else %}Selecciona
+                                    un proyecto primero{% endif %}</option>
                                 {% for actividad in actividades %}
-                                <option value="{{ actividad.ID }}"
-                                    {% if filtros.actividad_id|string == actividad.ID|string %}selected{% endif %}>
+                                <option value="{{ actividad.ID }}" {% if
+                                    filtros.actividad_id|string==actividad.ID|string %}selected{% endif %}>
                                     {{ actividad.NOMBRE_ACTIVIDAD }}
                                 </option>
                                 {% endfor %}
@@ -1004,7 +1092,8 @@
                             <select name="user_id" id="f-user">
                                 <option value="">Todos</option>
                                 {% for u in users %}
-                                <option value="{{ u.ID }}" {% if filtros.user_id|string == u.ID|string %}selected{% endif %}>{{ u.NOMBRE_COMPLETO }}</option>
+                                <option value="{{ u.ID }}" {% if filtros.user_id|string==u.ID|string %}selected{% endif
+                                    %}>{{ u.NOMBRE_COMPLETO }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -1013,17 +1102,21 @@
                             <select name="tipo_id" id="f-tipo">
                                 <option value="">Todos</option>
                                 {% for t in tipos_actividad %}
-                                <option value="{{ t.ID }}" {% if filtros.tipo_id|string == t.ID|string %}selected{% endif %}>{{ t.DESCRIPCION }}</option>
+                                <option value="{{ t.ID }}" {% if filtros.tipo_id|string==t.ID|string %}selected{% endif
+                                    %}>{{ t.DESCRIPCION }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="filter-item filter-item-dates">
                             <span class="filter-label">Rango de fechas</span>
                             <div class="filter-date-range">
-                                <input type="text" class="filter-date" name="fecha_ini" id="f-fecha-ini" value="{{ filtros.fecha_ini or '' }}" placeholder="Desde" autocomplete="off">
-                                <input type="text" class="filter-date" name="fecha_fin" id="f-fecha-fin" value="{{ filtros.fecha_fin or '' }}" placeholder="Hasta" autocomplete="off">
+                                <input type="text" class="filter-date" name="fecha_ini" id="f-fecha-ini"
+                                    value="{{ filtros.fecha_ini or '' }}" placeholder="Desde" autocomplete="off">
+                                <input type="text" class="filter-date" name="fecha_fin" id="f-fecha-fin"
+                                    value="{{ filtros.fecha_fin or '' }}" placeholder="Hasta" autocomplete="off">
                             </div>
                         </div>
+
                         {% if has_filters %}
                         <div class="filter-actions">
                             <a href="/registros" class="btn-clear">
@@ -1070,7 +1163,17 @@
                 <div style="display:flex;align-items:center;gap:10px;">
                     <span class="table-head-title">Registros</span>
                     <span class="table-count">{{ registros | length }}</span>
+                    <div class="filter-item filter-item-switch">
+                    <label class="switch-label" for="f-ocultar-propagados">
+                        <span class="switch">
+                            <input type="checkbox" id="f-ocultar-propagados">
+                            <span class="switch-slider"></span>
+                        </span>
+                        <span class="switch-text">Ocultar registros propagados al padre</span>
+                    </label>
                 </div>
+                </div>
+                
                 <div style="display:flex;gap:8px;">
                     <!-- <button class="btn-export" onclick="exportCSV()">
                         <i class="bi bi-filetype-csv"></i> CSV
@@ -1084,76 +1187,87 @@
 
             {% if registros %}
             <div class="table-scroll">
-            <table id="tbl-registros">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Desarrollador</th>
-                        <th>Proyecto</th>
-                        <th>Actividad</th>
-                        <th>Tipo</th>
-                        <th>Acción / Detalles</th>
-                        <th style="text-align:right;">Horas</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for r in registros %}
-                    <tr id="row-{{ r.ID }}">
-                        <td class="td-fecha">{{ r.FECHA|strftime('%Y-%m-%d') }}</td>
-                        <td>
-                            <div class="td-usuario">
-                                <div class="avatar">{{ r.USUARIO[0] }}</div>
-                                <span style="font-weight:600;font-size:.83rem;">{{ r.USUARIO }}</span>
-                            </div>
-                        </td>
-                        <td class="td-proyecto">{{ r.NOMBRE_PROYECTO }}</td>
-                        <td class="td-actividad">
-                            {% if r.NOMBRE_ACTIVIDAD %}
-                            <span title="{{ r.NOMBRE_ACTIVIDAD }}"
-                                style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:180px;">
-                                {{ r.NOMBRE_ACTIVIDAD }}
-                            </span>
-                            {% else %}
-                            <span style="color:var(--text-muted);">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if r.TIPO %}
-                            <span class="badge-tipo">{{ r.TIPO }}</span>
-                            {% else %}
-                            <span style="color:var(--text-muted);font-size:.8rem;">—</span>
-                            {% endif %}
-                        </td>
-                        <td class="td-accion">
-                            <div class="td-accion-main" title="{{ r.ACCION }}">{{ r.ACCION }}</div>
-                            {% if r.DETALLES %}
-                            <div class="td-accion-sub" title="{{ r.DETALLES }}">{{ r.DETALLES }}</div>
-                            {% endif %}
-                        </td>
-                        <td style="text-align:right;">
-                            <span class="badge-horas">{{ r.HORAS }}h</span>
-                        </td>
-                        <td>
-                            <div class="actions">
-                                <button class="btn-action edit" title="Editar"
-                                    onclick="abrirEditar({{ r.ID | tojson | forceescape }}, {{ r.FECHA|strftime('%Y-%m-%d') | tojson | forceescape }}, {{ r.HORAS | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }}, {{ (r.DETALLES or '') | tojson | forceescape }}, {{ r.ID_USUARIO | tojson | forceescape }}, {{ r.ID_PROYECTO | tojson | forceescape }}, {{ (r.ID_ACTIVIDAD or '') | tojson | forceescape }}, {{ (r.ID_TIPO_ACT or '') | tojson | forceescape }})">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn-action dup" title="Duplicar"
-                                    onclick="duplicarRegistro({{ r.ID | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }}, {{ r.FECHA|strftime('%Y-%m-%d') | tojson | forceescape }})">
-                                    <i class="bi bi-copy"></i>
-                                </button>
-                                <button class="btn-action del" title="Eliminar"
-                                    onclick="eliminarRegistro({{ r.ID | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }})">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                <table id="tbl-registros">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Desarrollador</th>
+                            <th>Proyecto</th>
+                            <th>Actividad</th>
+                            <th>Tipo</th>
+                            <th>Acción / Detalles</th>
+                            <th style="text-align:right;">Horas</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in registros %}
+                        <tr id="row-{{ r.ID }}" data-es-propagado="{{ '1' if r.ES_PROPAGADO == 1 else '0' }}">
+                            <td class="td-fecha">{{ r.FECHA|strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <div class="td-usuario">
+                                    <div class="avatar">{{ r.USUARIO[0] }}</div>
+                                    <span style="font-weight:600;font-size:.83rem;">{{ r.USUARIO }}</span>
+                                </div>
+                            </td>
+                            <td class="td-proyecto">{{ r.NOMBRE_PROYECTO }}</td>
+                            <td class="td-actividad">
+                                {% if r.NOMBRE_ACTIVIDAD %}
+                                <span title="{{ r.NOMBRE_ACTIVIDAD }}"
+                                    style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:180px;">
+                                    {{ r.NOMBRE_ACTIVIDAD }}
+                                </span>
+                                {% if r.ES_PROPAGADO == 1 %}
+                                <span class="badge-propagado"
+                                    title="Registro espejo generado por propagación de horas al padre">↑ Padre</span>
+                                {% endif %}
+                                {% else %}
+                                <span style="color:var(--text-muted);">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.TIPO %}
+                                <span class="badge-tipo">{{ r.TIPO }}</span>
+                                {% else %}
+                                <span style="color:var(--text-muted);font-size:.8rem;">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="td-accion">
+                                <div class="td-accion-main" title="{{ r.ACCION }}">{{ r.ACCION }}</div>
+                                {% if r.DETALLES %}
+                                <div class="td-accion-sub" title="{{ r.DETALLES }}">{{ r.DETALLES }}</div>
+                                {% endif %}
+                            </td>
+                            <td style="text-align:right;">
+                                <span class="badge-horas">{{ r.HORAS }}h</span>
+                            </td>
+                            <td>
+                                <div class="actions">
+                                    {% if r.ES_PROPAGADO == 1 or r.ES_PROPAGADO == true %}
+                                    <span class="badge bg-secondary text-wrap text-muted"
+                                        style="font-size: 0.7rem; padding: 0.4em 0.6em; border: 1px solid #ccc; background-color: #f8f9fa !important; color: #6c757d !important; display: inline-flex; align-items: center; gap: 4px;">
+                                        <i class="bi bi-link-45deg"></i> Propagado al Padre
+                                    </span>
+                                    {% else %}
+                                    <button class="btn-action edit" title="Editar"
+                                        onclick="abrirEditar({{ r.ID | tojson | forceescape }}, {{ r.FECHA|strftime('%Y-%m-%d') | tojson | forceescape }}, {{ r.HORAS | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }}, {{ (r.DETALLES or '') | tojson | forceescape }}, {{ r.ID_USUARIO | tojson | forceescape }}, {{ r.ID_PROYECTO | tojson | forceescape }}, {{ (r.ID_ACTIVIDAD or '') | tojson | forceescape }}, {{ (r.ID_TIPO_ACT or '') | tojson | forceescape }})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn-action dup" title="Duplicar"
+                                        onclick="duplicarRegistro({{ r.ID | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }}, {{ r.FECHA|strftime('%Y-%m-%d') | tojson | forceescape }})">
+                                        <i class="bi bi-copy"></i>
+                                    </button>
+                                    <button class="btn-action del" title="Eliminar"
+                                        onclick="eliminarRegistro({{ r.ID | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
             {% else %}
             <div class="empty-state">
@@ -1286,13 +1400,36 @@
             if (filtrosForm) filtrosForm.submit();
         }
 
+        // ── Switch: ocultar registros propagados al padre (client-side, sin recargar) ──
+        const fOcultarPropagados = document.getElementById('f-ocultar-propagados');
+        const STORAGE_KEY_OCULTAR_PROPAGADOS = 'tracker_ocultar_propagados';
+
+        function aplicarFiltroPropagados(ocultar) {
+            document.querySelectorAll('tbody tr[data-es-propagado]').forEach((row) => {
+                const esPropagado = row.dataset.esPropagado === '1';
+                row.style.display = (ocultar && esPropagado) ? 'none' : '';
+            });
+        }
+
+        if (fOcultarPropagados) {
+            const preferenciaGuardada = sessionStorage.getItem(STORAGE_KEY_OCULTAR_PROPAGADOS) === '1';
+            fOcultarPropagados.checked = preferenciaGuardada;
+            aplicarFiltroPropagados(preferenciaGuardada);
+
+            fOcultarPropagados.addEventListener('change', () => {
+                const ocultar = fOcultarPropagados.checked;
+                sessionStorage.setItem(STORAGE_KEY_OCULTAR_PROPAGADOS, ocultar ? '1' : '0');
+                aplicarFiltroPropagados(ocultar);
+            });
+        }
+
         // ── Tom Select filtros ─────────────────────────────────────────────────
         // fProyTs se declara primero porque fActividadTs depende de él al cambiar proyecto.
         const fProyTs = new TomSelect('#f-proyecto', {
             create: false,
             items: {{ [filtros.proyecto_id] | tojson if filtros.proyecto_id else '[]' }},
-            render: {
-                option: (d, e) => `<div class="option">${e(d.text)}</div>`,
+        render: {
+            option: (d, e) => `<div class="option">${e(d.text)}</div>`,
                 item: (d, e) => `<div class="item">${e(d.text)}</div>`,
             }
         });
@@ -1300,9 +1437,9 @@
         const fActividadTs = new TomSelect('#f-actividad', {
             create: false,
             items: {{ [filtros.actividad_id] | tojson if filtros.actividad_id else '[]' }},
-            onChange: () => submitFiltros(),
+        onChange: () => submitFiltros(),
             render: {
-                option: (d, e) => `<div class="option">${e(d.text)}</div>`,
+            option: (d, e) => `<div class="option">${e(d.text)}</div>`,
                 item: (d, e) => `<div class="item">${e(d.text)}</div>`,
             }
         });
@@ -1325,18 +1462,18 @@
         const fUserTs = new TomSelect('#f-user', {
             create: false,
             items: {{ [filtros.user_id] | tojson if filtros.user_id else '[]' }},
-            onChange: () => submitFiltros(),
+        onChange: () => submitFiltros(),
             render: {
-                option: (d, e) => `<div class="option">${e(d.text)}</div>`,
+            option: (d, e) => `<div class="option">${e(d.text)}</div>`,
                 item: (d, e) => `<div class="item">${e(d.text)}</div>`,
             }
         });
         const fTipoTs = new TomSelect('#f-tipo', {
             create: false,
             items: {{ [filtros.tipo_id] | tojson if filtros.tipo_id else '[]' }},
-            onChange: () => submitFiltros(),
+        onChange: () => submitFiltros(),
             render: {
-                option: (d, e) => `<div class="option">${e(d.text)}</div>`,
+            option: (d, e) => `<div class="option">${e(d.text)}</div>`,
                 item: (d, e) => `<div class="item">${e(d.text)}</div>`,
             }
         });

@@ -54,8 +54,11 @@ def _registros_filters_from_request(req_args, proyecto_id: str | None = None):
         "tipo_id": (req_args.get("tipo_id") or "").strip() or None,
         "fecha_ini": (req_args.get("fecha_ini") or "").strip() or None,
         "fecha_fin": (req_args.get("fecha_fin") or "").strip() or None,
+        "ocultar_propagados": (req_args.get("ocultar_propagados") or "").strip() == "1",
     }
-    tiene_filtros_explicitos = any(filtros.values())
+    tiene_filtros_explicitos = any(
+        valor for clave, valor in filtros.items() if clave != "ocultar_propagados"
+    ) or filtros["ocultar_propagados"]
     usando_mes_actual_default = False
 
     if not filtros["fecha_ini"] and not filtros["fecha_fin"]:
@@ -490,4 +493,3 @@ def obtener_contexto_subactividad(id_padre):
         })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
-

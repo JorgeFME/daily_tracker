@@ -7,28 +7,34 @@
     <title>Catálogos · Daily Tracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
-            --primary:       #2563eb;
+            --primary: #2563eb;
             --primary-light: #dbeafe;
-            --primary-glow:  rgba(37,99,235,.15);
-            --surface:       #ffffff;
-            --surface-alt:   #f8fafc;
-            --border:        #e2e8f0;
-            --text-main:     #0f172a;
-            --text-secondary:#334155;
-            --text-muted:    #94a3b8;
-            --radius:        14px;
-            --radius-sm:     8px;
-            --shadow:        0 1px 3px rgba(15,23,42,.08), 0 4px 16px rgba(15,23,42,.06);
-            --danger:        #ef4444;
-            --danger-light:  #fee2e2;
+            --primary-glow: rgba(37, 99, 235, .15);
+            --surface: #ffffff;
+            --surface-alt: #f8fafc;
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #94a3b8;
+            --radius: 14px;
+            --radius-sm: 8px;
+            --shadow: 0 1px 3px rgba(15, 23, 42, .08), 0 4px 16px rgba(15, 23, 42, .06);
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
             font-family: 'DM Sans', sans-serif;
@@ -48,7 +54,7 @@
             position: sticky;
             top: 0;
             z-index: 200;
-            box-shadow: 0 1px 8px rgba(15,23,42,.05);
+            box-shadow: 0 1px 8px rgba(15, 23, 42, .05);
         }
 
         .nav-brand {
@@ -75,8 +81,15 @@
             color: #64748b;
         }
 
-        .nav-link:hover { background: var(--primary-light); color: var(--primary); }
-        .nav-link.active { background: var(--primary); color: #fff; }
+        .nav-link:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .nav-link.active {
+            background: var(--primary);
+            color: #fff;
+        }
 
         .nav-menu {
             display: flex;
@@ -106,9 +119,21 @@
             padding: 32px 28px;
         }
 
-        .page-header { margin-bottom: 28px; }
-        .page-title { font-size: 1.6rem; font-weight: 800; color: var(--text-main); }
-        .page-sub { font-size: .85rem; color: var(--text-muted); margin-top: 2px; }
+        .page-header {
+            margin-bottom: 28px;
+        }
+
+        .page-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .page-sub {
+            font-size: .85rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
 
         /* ── TABS ── */
         .cat-tabs {
@@ -157,11 +182,19 @@
             font-family: 'DM Mono', monospace;
         }
 
-        .cat-tab.active .tab-badge { background: var(--primary); color: #fff; }
+        .cat-tab.active .tab-badge {
+            background: var(--primary);
+            color: #fff;
+        }
 
         /* ── PANEL / CARD ── */
-        .cat-panel { display: none; }
-        .cat-panel.active { display: block; }
+        .cat-panel {
+            display: none;
+        }
+
+        .cat-panel.active {
+            display: block;
+        }
 
         .cat-card {
             background: var(--surface);
@@ -180,7 +213,10 @@
             border-bottom: 1px solid var(--border);
         }
 
-        .card-head-title { font-size: .9rem; font-weight: 700; }
+        .card-head-title {
+            font-size: .9rem;
+            font-weight: 700;
+        }
 
         .count-badge {
             background: var(--primary-light);
@@ -242,7 +278,10 @@
             background: var(--surface);
         }
 
-        .add-bar input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+        .add-bar input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
 
         .btn-add {
             display: flex;
@@ -263,12 +302,22 @@
             flex-shrink: 0;
         }
 
-        .btn-add:hover { background: #1d4ed8; transform: translateY(-1px); }
+        .btn-add:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
 
         /* ── TABLE ── */
-        table { width: 100%; border-collapse: collapse; min-width: 720px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 720px;
+        }
 
-        thead tr { background: var(--surface-alt); border-bottom: 2px solid var(--border); }
+        thead tr {
+            background: var(--surface-alt);
+            border-bottom: 2px solid var(--border);
+        }
 
         th {
             padding: 10px 18px;
@@ -280,12 +329,27 @@
             text-align: left;
         }
 
-        th:first-child { padding-left: 22px; }
-        th:last-child  { padding-right: 22px; text-align: center; }
+        th:first-child {
+            padding-left: 22px;
+        }
 
-        tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
-        tbody tr:last-child { border-bottom: none; }
-        tbody tr:hover { background: #f8faff; }
+        th:last-child {
+            padding-right: 22px;
+            text-align: center;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background .12s;
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #f8faff;
+        }
 
         td {
             padding: 12px 18px;
@@ -294,36 +358,75 @@
             vertical-align: middle;
         }
 
-        td:first-child { padding-left: 22px; }
-        td:last-child  { padding-right: 22px; text-align: center; }
+        td:first-child {
+            padding-left: 22px;
+        }
+
+        td:last-child {
+            padding-right: 22px;
+            text-align: center;
+        }
 
         /* ── BADGES ── */
         .badge-active {
-            display: inline-flex; align-items: center; gap: 6px;
-            font-size: .75rem; font-weight: 600;
-            color: #16a34a; background: #dcfce7;
-            padding: 3px 10px; border-radius: 99px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .75rem;
+            font-weight: 600;
+            color: #16a34a;
+            background: #dcfce7;
+            padding: 3px 10px;
+            border-radius: 99px;
         }
-        .badge-active::before { content:''; width:6px; height:6px; border-radius:50%; background:#16a34a; flex-shrink:0; }
+
+        .badge-active::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #16a34a;
+            flex-shrink: 0;
+        }
 
         .badge-inactive {
-            display: inline-flex; align-items: center; gap: 6px;
-            font-size: .75rem; font-weight: 600;
-            color: var(--text-muted); background: var(--surface-alt);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: var(--surface-alt);
             border: 1px solid var(--border);
-            padding: 3px 10px; border-radius: 99px;
+            padding: 3px 10px;
+            border-radius: 99px;
         }
-        .badge-inactive::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--text-muted); flex-shrink:0; }
+
+        .badge-inactive::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            flex-shrink: 0;
+        }
 
         /* ── COLOR CHIP ── */
         .color-chip {
-            display: inline-flex; align-items: center; gap: 8px;
-            font-size: .78rem; font-family: 'DM Mono', monospace;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .78rem;
+            font-family: 'DM Mono', monospace;
             color: var(--text-secondary);
         }
+
         .color-chip-dot {
-            width: 16px; height: 16px; border-radius: 4px;
-            border: 1px solid rgba(0,0,0,.1); flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, .1);
+            flex-shrink: 0;
         }
 
         /* ── CLAVE ── */
@@ -339,24 +442,57 @@
         }
 
         /* ── ACTION BUTTONS ── */
-        .row-actions { display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .row-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
 
         .btn-action {
-            width: 30px; height: 30px;
+            width: 30px;
+            height: 30px;
             border-radius: var(--radius-sm);
             border: 1.5px solid var(--border);
             background: var(--surface);
             cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            font-size: .8rem; color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .8rem;
+            color: var(--text-muted);
             transition: all .15s;
         }
 
-        .btn-action.edit:hover   { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
-        .btn-action.save:hover   { border-color: #16a34a; color: #16a34a; background: #dcfce7; }
-        .btn-action.cancel:hover { border-color: var(--text-muted); color: var(--text-secondary); background: var(--surface-alt); }
-        .btn-action.toggle:hover { border-color: #d97706; color: #d97706; background: #fef3c7; }
-        .btn-action.del:hover    { border-color: var(--danger); color: var(--danger); background: var(--danger-light); }
+        .btn-action.edit:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .btn-action.save:hover {
+            border-color: #16a34a;
+            color: #16a34a;
+            background: #dcfce7;
+        }
+
+        .btn-action.cancel:hover {
+            border-color: var(--text-muted);
+            color: var(--text-secondary);
+            background: var(--surface-alt);
+        }
+
+        .btn-action.toggle:hover {
+            border-color: #d97706;
+            color: #d97706;
+            background: #fef3c7;
+        }
+
+        .btn-action.del:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: var(--danger-light);
+        }
 
         /* ── INLINE EDIT ── */
         .edit-input {
@@ -366,7 +502,8 @@
             font-size: .84rem;
             font-family: 'DM Sans', sans-serif;
             color: var(--text-main);
-            outline: none; width: 100%;
+            outline: none;
+            width: 100%;
             box-shadow: 0 0 0 3px var(--primary-glow);
             background: #fff;
         }
@@ -375,17 +512,33 @@
             border: 1.5px solid var(--primary);
             border-radius: var(--radius-sm);
             padding: 2px 4px;
-            height: 34px; width: 60px;
-            cursor: pointer; outline: none;
+            height: 34px;
+            width: 60px;
+            cursor: pointer;
+            outline: none;
         }
 
         /* ── EMPTY ── */
-        .empty-state { text-align: center; padding: 56px 32px; color: var(--text-muted); }
-        .empty-state i { font-size: 2rem; display: block; margin-bottom: 10px; }
-        .empty-state p { font-size: .88rem; }
+        .empty-state {
+            text-align: center;
+            padding: 56px 32px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: .88rem;
+        }
 
         @media (max-width: 768px) {
-            body { overflow-x: hidden; }
+            body {
+                overflow-x: hidden;
+            }
 
             .top-nav {
                 padding: 0 14px;
@@ -431,13 +584,30 @@
                 z-index: 210;
             }
 
-            .top-nav.menu-open .nav-menu { display: flex; }
-            .nav-menu .nav-link { width: 100%; justify-content: flex-start; }
+            .top-nav.menu-open .nav-menu {
+                display: flex;
+            }
 
-            .page { padding: 24px 14px; }
-            .cat-tabs { overflow-x: auto; }
-            .cat-card { overflow-x: auto; }
-            .add-bar { min-width: 720px; }
+            .nav-menu .nav-link {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .page {
+                padding: 24px 14px;
+            }
+
+            .cat-tabs {
+                overflow-x: auto;
+            }
+
+            .cat-card {
+                overflow-x: auto;
+            }
+
+            .add-bar {
+                min-width: 720px;
+            }
         }
     </style>
 </head>
@@ -447,9 +617,11 @@
     <!-- NAV -->
     <nav class="top-nav" id="top-nav">
         <a href="/" class="nav-brand">
-            <i class="bi bi-layers-half" style="color:#2563eb;font-size:1.2rem;"></i><span class="nav-brand-text">Dream Team Daily Tracker</span>
+            <i class="bi bi-layers-half" style="color:#2563eb;font-size:1.2rem;"></i><span class="nav-brand-text">Dream
+                Team Daily Tracker</span>
         </a>
-        <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="nav-menu">
+        <button class="nav-hamburger" id="nav-hamburger" type="button" aria-label="Abrir menú de navegación"
+            aria-expanded="false" aria-controls="nav-menu">
             <i class="bi bi-list"></i>
         </button>
         <div class="nav-menu" id="nav-menu">
@@ -495,13 +667,18 @@
                 <i class="bi bi-briefcase"></i> Proyectos
                 <span class="tab-badge">{{ proyectos|length }}</span>
             </button>
+            <button class="cat-tab" data-tab="entregables" onclick="switchTab('entregables', this)">
+                <i class="bi bi-archive"></i> Entregables
+                <span class="tab-badge">{{ entregables|length if entregables else 0 }}</span>
+            </button>
         </div>
 
         <!-- ══ ESTATUS ══ -->
         <div class="cat-panel active" id="panel-estatus">
             <div class="cat-card">
                 <div class="card-head">
-                    <span class="card-head-title">Estatus de Actividad <span class="count-badge">{{ estatus|length }}</span></span>
+                    <span class="card-head-title">Estatus de Actividad <span class="count-badge">{{ estatus|length
+                            }}</span></span>
                 </div>
                 <div class="add-bar">
                     <div class="field-wrap">
@@ -515,32 +692,58 @@
                     <button class="btn-add" onclick="agregarEstatus()"><i class="bi bi-plus-lg"></i> Agregar</button>
                 </div>
                 <table>
-                    <thead><tr><th>Descripción</th><th>Color</th><th>Estado</th><th style="width:130px;">Acciones</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Descripción</th>
+                            <th>Color</th>
+                            <th>Estado</th>
+                            <th style="width:130px;">Acciones</th>
+                        </tr>
+                    </thead>
                     <tbody id="tbody-estatus">
-                    {% for e in estatus %}
-                    <tr id="est-row-{{ e.ID }}">
-                        <td>
-                            <span class="view-mode" style="font-weight:500;">{{ e.DESCRIPCION }}</span>
-                            <input class="edit-input edit-mode" style="display:none;" value="{{ e.DESCRIPCION }}" data-field="descripcion">
-                        </td>
-                        <td>
-                            <span class="view-mode"><span class="color-chip"><span class="color-chip-dot" style="background:#{{ e.COLOR_HEX or 'e2e8f0' }};"></span>#{{ e.COLOR_HEX or '—' }}</span></span>
-                            <input type="color" class="edit-color edit-mode" style="display:none;" value="#{{ e.COLOR_HEX or '2563eb' }}" data-field="color_hex">
-                        </td>
-                        <td>{% if e.ACTIVO %}<span class="badge-active">Activo</span>{% else %}<span class="badge-inactive">Inactivo</span>{% endif %}</td>
-                        <td>
-                            <div class="row-actions">
-                                <button class="btn-action edit view-mode" title="Editar" onclick="startEdit('est-row-{{ e.ID }}')"><i class="bi bi-pencil"></i></button>
-                                <button class="btn-action save edit-mode" style="display:none;" title="Guardar" onclick="saveEstatus('{{ e.ID }}')"><i class="bi bi-check-lg"></i></button>
-                                <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar" onclick="cancelEdit('est-row-{{ e.ID }}')"><i class="bi bi-x-lg"></i></button>
-                                <button class="btn-action toggle view-mode" title="{{ 'Desactivar' if e.ACTIVO else 'Activar' }}" onclick="toggleCatalogo('estatus','{{ e.ID }}',{{ e.ACTIVO }},this)"><i class="bi bi-{{ 'toggle-on' if e.ACTIVO else 'toggle-off' }}"></i></button>
-                                <button class="btn-action del view-mode" title="Eliminar" onclick="eliminarCatalogo('estatus','{{ e.ID }}','est-row-{{ e.ID }}')"><i class="bi bi-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="4"><div class="empty-state"><i class="bi bi-circle-half"></i><p>Sin estatus registrados.</p></div></td></tr>
-                    {% endfor %}
+                        {% for e in estatus %}
+                        <tr id="est-row-{{ e.ID }}">
+                            <td>
+                                <span class="view-mode" style="font-weight:500;">{{ e.DESCRIPCION }}</span>
+                                <input class="edit-input edit-mode" style="display:none;" value="{{ e.DESCRIPCION }}"
+                                    data-field="descripcion">
+                            </td>
+                            <td>
+                                <span class="view-mode"><span class="color-chip"><span class="color-chip-dot"
+                                            style="background:#{{ e.COLOR_HEX or 'e2e8f0' }};"></span>#{{ e.COLOR_HEX or
+                                        '—' }}</span></span>
+                                <input type="color" class="edit-color edit-mode" style="display:none;"
+                                    value="#{{ e.COLOR_HEX or '2563eb' }}" data-field="color_hex">
+                            </td>
+                            <td>{% if e.ACTIVO %}<span class="badge-active">Activo</span>{% else %}<span
+                                    class="badge-inactive">Inactivo</span>{% endif %}</td>
+                            <td>
+                                <div class="row-actions">
+                                    <button class="btn-action edit view-mode" title="Editar"
+                                        onclick="startEdit('est-row-{{ e.ID }}')"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn-action save edit-mode" style="display:none;" title="Guardar"
+                                        onclick="saveEstatus('{{ e.ID }}')"><i class="bi bi-check-lg"></i></button>
+                                    <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar"
+                                        onclick="cancelEdit('est-row-{{ e.ID }}')"><i class="bi bi-x-lg"></i></button>
+                                    <button class="btn-action toggle view-mode"
+                                        title="{{ 'Desactivar' if e.ACTIVO else 'Activar' }}"
+                                        onclick="toggleCatalogo('estatus','{{ e.ID }}',{{ e.ACTIVO }},this)"><i
+                                            class="bi bi-{{ 'toggle-on' if e.ACTIVO else 'toggle-off' }}"></i></button>
+                                    <button class="btn-action del view-mode" title="Eliminar"
+                                        onclick="eliminarCatalogo('estatus','{{ e.ID }}','est-row-{{ e.ID }}')"><i
+                                            class="bi bi-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4">
+                                <div class="empty-state"><i class="bi bi-circle-half"></i>
+                                    <p>Sin estatus registrados.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -550,7 +753,8 @@
         <div class="cat-panel" id="panel-tipos">
             <div class="cat-card">
                 <div class="card-head">
-                    <span class="card-head-title">Tipos de Actividad <span class="count-badge">{{ tipos|length }}</span></span>
+                    <span class="card-head-title">Tipos de Actividad <span class="count-badge">{{ tipos|length
+                            }}</span></span>
                 </div>
                 <div class="add-bar">
                     <div class="field-wrap">
@@ -560,32 +764,57 @@
                     <button class="btn-add" onclick="agregarTipo()"><i class="bi bi-plus-lg"></i> Agregar</button>
                 </div>
                 <table>
-                    <thead><tr><th>Descripción</th><th>Clave</th><th>Estado</th><th style="width:130px;">Acciones</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Descripción</th>
+                            <th>Clave</th>
+                            <th>Estado</th>
+                            <th style="width:130px;">Acciones</th>
+                        </tr>
+                    </thead>
                     <tbody id="tbody-tipos">
-                    {% for t in tipos %}
-                    <tr id="tipo-row-{{ t.ID }}">
-                        <td>
-                            <span class="view-mode" style="font-weight:500;">{{ t.DESCRIPCION }}</span>
-                            <input class="edit-input edit-mode" style="display:none;" value="{{ t.DESCRIPCION }}" data-field="descripcion">
-                        </td>
-                        <td>
-                            <span class="clave-badge view-mode">{{ t.CLAVE }}</span>
-                            <span class="edit-mode" style="display:none;font-size:.75rem;color:var(--text-muted);">Se regenera automáticamente</span>
-                        </td>
-                        <td>{% if t.ACTIVO %}<span class="badge-active">Activo</span>{% else %}<span class="badge-inactive">Inactivo</span>{% endif %}</td>
-                        <td>
-                            <div class="row-actions">
-                                <button class="btn-action edit view-mode" title="Editar" onclick="startEdit('tipo-row-{{ t.ID }}')"><i class="bi bi-pencil"></i></button>
-                                <button class="btn-action save edit-mode" style="display:none;" title="Guardar" onclick="saveTipo('{{ t.ID }}')"><i class="bi bi-check-lg"></i></button>
-                                <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar" onclick="cancelEdit('tipo-row-{{ t.ID }}')"><i class="bi bi-x-lg"></i></button>
-                                <button class="btn-action toggle view-mode" title="{{ 'Desactivar' if t.ACTIVO else 'Activar' }}" onclick="toggleCatalogo('tipos','{{ t.ID }}',{{ t.ACTIVO }},this)"><i class="bi bi-{{ 'toggle-on' if t.ACTIVO else 'toggle-off' }}"></i></button>
-                                <button class="btn-action del view-mode" title="Eliminar" onclick="eliminarCatalogo('tipos','{{ t.ID }}','tipo-row-{{ t.ID }}')"><i class="bi bi-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="4"><div class="empty-state"><i class="bi bi-tag"></i><p>Sin tipos registrados.</p></div></td></tr>
-                    {% endfor %}
+                        {% for t in tipos %}
+                        <tr id="tipo-row-{{ t.ID }}">
+                            <td>
+                                <span class="view-mode" style="font-weight:500;">{{ t.DESCRIPCION }}</span>
+                                <input class="edit-input edit-mode" style="display:none;" value="{{ t.DESCRIPCION }}"
+                                    data-field="descripcion">
+                            </td>
+                            <td>
+                                <span class="clave-badge view-mode">{{ t.CLAVE }}</span>
+                                <span class="edit-mode"
+                                    style="display:none;font-size:.75rem;color:var(--text-muted);">Se regenera
+                                    automáticamente</span>
+                            </td>
+                            <td>{% if t.ACTIVO %}<span class="badge-active">Activo</span>{% else %}<span
+                                    class="badge-inactive">Inactivo</span>{% endif %}</td>
+                            <td>
+                                <div class="row-actions">
+                                    <button class="btn-action edit view-mode" title="Editar"
+                                        onclick="startEdit('tipo-row-{{ t.ID }}')"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn-action save edit-mode" style="display:none;" title="Guardar"
+                                        onclick="saveTipo('{{ t.ID }}')"><i class="bi bi-check-lg"></i></button>
+                                    <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar"
+                                        onclick="cancelEdit('tipo-row-{{ t.ID }}')"><i class="bi bi-x-lg"></i></button>
+                                    <button class="btn-action toggle view-mode"
+                                        title="{{ 'Desactivar' if t.ACTIVO else 'Activar' }}"
+                                        onclick="toggleCatalogo('tipos','{{ t.ID }}',{{ t.ACTIVO }},this)"><i
+                                            class="bi bi-{{ 'toggle-on' if t.ACTIVO else 'toggle-off' }}"></i></button>
+                                    <button class="btn-action del view-mode" title="Eliminar"
+                                        onclick="eliminarCatalogo('tipos','{{ t.ID }}','tipo-row-{{ t.ID }}')"><i
+                                            class="bi bi-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4">
+                                <div class="empty-state"><i class="bi bi-tag"></i>
+                                    <p>Sin tipos registrados.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -595,38 +824,63 @@
         <div class="cat-panel" id="panel-evidencia">
             <div class="cat-card">
                 <div class="card-head">
-                    <span class="card-head-title">Tipos de Evidencia <span class="count-badge">{{ tipos_ev|length }}</span></span>
+                    <span class="card-head-title">Tipos de Evidencia <span class="count-badge">{{ tipos_ev|length
+                            }}</span></span>
                 </div>
                 <div class="add-bar">
                     <div class="field-wrap">
                         <label>Descripción *</label>
                         <input type="text" id="new-ev-desc" placeholder="Ej: Video">
                     </div>
-                    <button class="btn-add" onclick="agregarTipoEvidencia()"><i class="bi bi-plus-lg"></i> Agregar</button>
+                    <button class="btn-add" onclick="agregarTipoEvidencia()"><i class="bi bi-plus-lg"></i>
+                        Agregar</button>
                 </div>
                 <table>
-                    <thead><tr><th>Descripción</th><th>Estado</th><th style="width:130px;">Acciones</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                            <th style="width:130px;">Acciones</th>
+                        </tr>
+                    </thead>
                     <tbody id="tbody-evidencia">
-                    {% for e in tipos_ev %}
-                    <tr id="ev-row-{{ e.ID }}">
-                        <td>
-                            <span class="view-mode" style="font-weight:500;">{{ e.DESCRIPCION }}</span>
-                            <input class="edit-input edit-mode" style="display:none;" value="{{ e.DESCRIPCION }}" data-field="descripcion">
-                        </td>
-                        <td>{% if e.ACTIVO %}<span class="badge-active">Activo</span>{% else %}<span class="badge-inactive">Inactivo</span>{% endif %}</td>
-                        <td>
-                            <div class="row-actions">
-                                <button class="btn-action edit view-mode" title="Editar" onclick="startEdit('ev-row-{{ e.ID }}')"><i class="bi bi-pencil"></i></button>
-                                <button class="btn-action save edit-mode" style="display:none;" title="Guardar" onclick="saveTipoEvidencia('{{ e.ID }}')"><i class="bi bi-check-lg"></i></button>
-                                <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar" onclick="cancelEdit('ev-row-{{ e.ID }}')"><i class="bi bi-x-lg"></i></button>
-                                <button class="btn-action toggle view-mode" title="{{ 'Desactivar' if e.ACTIVO else 'Activar' }}" onclick="toggleCatalogo('evidencia','{{ e.ID }}',{{ e.ACTIVO }},this)"><i class="bi bi-{{ 'toggle-on' if e.ACTIVO else 'toggle-off' }}"></i></button>
-                                <button class="btn-action del view-mode" title="Eliminar" onclick="eliminarCatalogo('evidencia','{{ e.ID }}','ev-row-{{ e.ID }}')"><i class="bi bi-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="3"><div class="empty-state"><i class="bi bi-paperclip"></i><p>Sin tipos de evidencia registrados.</p></div></td></tr>
-                    {% endfor %}
+                        {% for e in tipos_ev %}
+                        <tr id="ev-row-{{ e.ID }}">
+                            <td>
+                                <span class="view-mode" style="font-weight:500;">{{ e.DESCRIPCION }}</span>
+                                <input class="edit-input edit-mode" style="display:none;" value="{{ e.DESCRIPCION }}"
+                                    data-field="descripcion">
+                            </td>
+                            <td>{% if e.ACTIVO %}<span class="badge-active">Activo</span>{% else %}<span
+                                    class="badge-inactive">Inactivo</span>{% endif %}</td>
+                            <td>
+                                <div class="row-actions">
+                                    <button class="btn-action edit view-mode" title="Editar"
+                                        onclick="startEdit('ev-row-{{ e.ID }}')"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn-action save edit-mode" style="display:none;" title="Guardar"
+                                        onclick="saveTipoEvidencia('{{ e.ID }}')"><i
+                                            class="bi bi-check-lg"></i></button>
+                                    <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar"
+                                        onclick="cancelEdit('ev-row-{{ e.ID }}')"><i class="bi bi-x-lg"></i></button>
+                                    <button class="btn-action toggle view-mode"
+                                        title="{{ 'Desactivar' if e.ACTIVO else 'Activar' }}"
+                                        onclick="toggleCatalogo('evidencia','{{ e.ID }}',{{ e.ACTIVO }},this)"><i
+                                            class="bi bi-{{ 'toggle-on' if e.ACTIVO else 'toggle-off' }}"></i></button>
+                                    <button class="btn-action del view-mode" title="Eliminar"
+                                        onclick="eliminarCatalogo('evidencia','{{ e.ID }}','ev-row-{{ e.ID }}')"><i
+                                            class="bi bi-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3">
+                                <div class="empty-state"><i class="bi bi-paperclip"></i>
+                                    <p>Sin tipos de evidencia registrados.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -646,28 +900,50 @@
                     <button class="btn-add" onclick="agregarRecurso()"><i class="bi bi-plus-lg"></i> Agregar</button>
                 </div>
                 <table>
-                    <thead><tr><th>Nombre</th><th>Estado</th><th style="width:130px;">Acciones</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Estado</th>
+                            <th style="width:130px;">Acciones</th>
+                        </tr>
+                    </thead>
                     <tbody id="tbody-recursos">
-                    {% for r in recursos %}
-                    <tr id="rec-row-{{ r.ID }}">
-                        <td>
-                            <span class="view-mode" style="font-weight:500;">{{ r.NOMBRE }}</span>
-                            <input class="edit-input edit-mode" style="display:none;" value="{{ r.NOMBRE }}" data-field="nombre">
-                        </td>
-                        <td>{% if r.ACTIVO %}<span class="badge-active">Activo</span>{% else %}<span class="badge-inactive">Inactivo</span>{% endif %}</td>
-                        <td>
-                            <div class="row-actions">
-                                <button class="btn-action edit view-mode" title="Editar" onclick="startEdit('rec-row-{{ r.ID }}')"><i class="bi bi-pencil"></i></button>
-                                <button class="btn-action save edit-mode" style="display:none;" title="Guardar" onclick="saveRecurso('{{ r.ID }}')"><i class="bi bi-check-lg"></i></button>
-                                <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar" onclick="cancelEdit('rec-row-{{ r.ID }}')"><i class="bi bi-x-lg"></i></button>
-                                <button class="btn-action toggle view-mode" title="{{ 'Desactivar' if r.ACTIVO else 'Activar' }}" onclick="toggleCatalogo('recursos','{{ r.ID }}',{{ r.ACTIVO }},this)"><i class="bi bi-{{ 'toggle-on' if r.ACTIVO else 'toggle-off' }}"></i></button>
-                                <button class="btn-action del view-mode" title="Eliminar" onclick="eliminarCatalogo('recursos','{{ r.ID }}','rec-row-{{ r.ID }}')"><i class="bi bi-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="3"><div class="empty-state"><i class="bi bi-people"></i><p>Sin recursos registrados.</p></div></td></tr>
-                    {% endfor %}
+                        {% for r in recursos %}
+                        <tr id="rec-row-{{ r.ID }}">
+                            <td>
+                                <span class="view-mode" style="font-weight:500;">{{ r.NOMBRE }}</span>
+                                <input class="edit-input edit-mode" style="display:none;" value="{{ r.NOMBRE }}"
+                                    data-field="nombre">
+                            </td>
+                            <td>{% if r.ACTIVO %}<span class="badge-active">Activo</span>{% else %}<span
+                                    class="badge-inactive">Inactivo</span>{% endif %}</td>
+                            <td>
+                                <div class="row-actions">
+                                    <button class="btn-action edit view-mode" title="Editar"
+                                        onclick="startEdit('rec-row-{{ r.ID }}')"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn-action save edit-mode" style="display:none;" title="Guardar"
+                                        onclick="saveRecurso('{{ r.ID }}')"><i class="bi bi-check-lg"></i></button>
+                                    <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar"
+                                        onclick="cancelEdit('rec-row-{{ r.ID }}')"><i class="bi bi-x-lg"></i></button>
+                                    <button class="btn-action toggle view-mode"
+                                        title="{{ 'Desactivar' if r.ACTIVO else 'Activar' }}"
+                                        onclick="toggleCatalogo('recursos','{{ r.ID }}',{{ r.ACTIVO }},this)"><i
+                                            class="bi bi-{{ 'toggle-on' if r.ACTIVO else 'toggle-off' }}"></i></button>
+                                    <button class="btn-action del view-mode" title="Eliminar"
+                                        onclick="eliminarCatalogo('recursos','{{ r.ID }}','rec-row-{{ r.ID }}')"><i
+                                            class="bi bi-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3">
+                                <div class="empty-state"><i class="bi bi-people"></i>
+                                    <p>Sin recursos registrados.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -677,38 +953,63 @@
         <div class="cat-panel" id="panel-solicitantes">
             <div class="cat-card">
                 <div class="card-head">
-                    <span class="card-head-title">Solicitantes <span class="count-badge">{{ solicitantes|length }}</span></span>
+                    <span class="card-head-title">Solicitantes <span class="count-badge">{{ solicitantes|length
+                            }}</span></span>
                 </div>
                 <div class="add-bar">
                     <div class="field-wrap">
                         <label>Nombre del solicitante *</label>
-                        <input type="text" id="new-sol-nombre" placeholder="Ej: MESA DE AYUDA RH" style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()">
+                        <input type="text" id="new-sol-nombre" placeholder="Ej: MESA DE AYUDA RH"
+                            style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()">
                     </div>
-                    <button class="btn-add" onclick="agregarSolicitante()"><i class="bi bi-plus-lg"></i> Agregar</button>
+                    <button class="btn-add" onclick="agregarSolicitante()"><i class="bi bi-plus-lg"></i>
+                        Agregar</button>
                 </div>
                 <table>
-                    <thead><tr><th>Nombre</th><th>Estado</th><th style="width:130px;">Acciones</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Estado</th>
+                            <th style="width:130px;">Acciones</th>
+                        </tr>
+                    </thead>
                     <tbody id="tbody-solicitantes">
-                    {% for s in solicitantes %}
-                    <tr id="sol-row-{{ s.ID }}">
-                        <td>
-                            <span class="view-mode" style="font-weight:500;">{{ s.NOMBRE }}</span>
-                            <input class="edit-input edit-mode" style="display:none;" value="{{ s.NOMBRE }}" data-field="nombre">
-                        </td>
-                        <td>{% if s.ACTIVO %}<span class="badge-active">Activo</span>{% else %}<span class="badge-inactive">Inactivo</span>{% endif %}</td>
-                        <td>
-                            <div class="row-actions">
-                                <button class="btn-action edit view-mode" title="Editar" onclick="startEdit('sol-row-{{ s.ID }}')"><i class="bi bi-pencil"></i></button>
-                                <button class="btn-action save edit-mode" style="display:none;" title="Guardar" onclick="saveSolicitante('{{ s.ID }}')"><i class="bi bi-check-lg"></i></button>
-                                <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar" onclick="cancelEdit('sol-row-{{ s.ID }}')"><i class="bi bi-x-lg"></i></button>
-                                <button class="btn-action toggle view-mode" title="{{ 'Desactivar' if s.ACTIVO else 'Activar' }}" onclick="toggleCatalogo('solicitantes','{{ s.ID }}',{{ s.ACTIVO }},this)"><i class="bi bi-{{ 'toggle-on' if s.ACTIVO else 'toggle-off' }}"></i></button>
-                                <button class="btn-action del view-mode" title="Eliminar" onclick="eliminarCatalogo('solicitantes','{{ s.ID }}','sol-row-{{ s.ID }}')"><i class="bi bi-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="3"><div class="empty-state"><i class="bi bi-person-badge"></i><p>Sin solicitantes registrados.</p></div></td></tr>
-                    {% endfor %}
+                        {% for s in solicitantes %}
+                        <tr id="sol-row-{{ s.ID }}">
+                            <td>
+                                <span class="view-mode" style="font-weight:500;">{{ s.NOMBRE }}</span>
+                                <input class="edit-input edit-mode" style="display:none;" value="{{ s.NOMBRE }}"
+                                    data-field="nombre">
+                            </td>
+                            <td>{% if s.ACTIVO %}<span class="badge-active">Activo</span>{% else %}<span
+                                    class="badge-inactive">Inactivo</span>{% endif %}</td>
+                            <td>
+                                <div class="row-actions">
+                                    <button class="btn-action edit view-mode" title="Editar"
+                                        onclick="startEdit('sol-row-{{ s.ID }}')"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn-action save edit-mode" style="display:none;" title="Guardar"
+                                        onclick="saveSolicitante('{{ s.ID }}')"><i class="bi bi-check-lg"></i></button>
+                                    <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar"
+                                        onclick="cancelEdit('sol-row-{{ s.ID }}')"><i class="bi bi-x-lg"></i></button>
+                                    <button class="btn-action toggle view-mode"
+                                        title="{{ 'Desactivar' if s.ACTIVO else 'Activar' }}"
+                                        onclick="toggleCatalogo('solicitantes','{{ s.ID }}',{{ s.ACTIVO }},this)"><i
+                                            class="bi bi-{{ 'toggle-on' if s.ACTIVO else 'toggle-off' }}"></i></button>
+                                    <button class="btn-action del view-mode" title="Eliminar"
+                                        onclick="eliminarCatalogo('solicitantes','{{ s.ID }}','sol-row-{{ s.ID }}')"><i
+                                            class="bi bi-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3">
+                                <div class="empty-state"><i class="bi bi-person-badge"></i>
+                                    <p>Sin solicitantes registrados.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -718,7 +1019,8 @@
         <div class="cat-panel" id="panel-proyectos">
             <div class="cat-card">
                 <div class="card-head">
-                    <span class="card-head-title">Proyectos <span class="count-badge">{{ proyectos|length }}</span></span>
+                    <span class="card-head-title">Proyectos <span class="count-badge">{{ proyectos|length
+                            }}</span></span>
                 </div>
                 <div class="add-bar">
                     <div class="field-wrap">
@@ -736,39 +1038,171 @@
                     <button class="btn-add" onclick="agregarProyecto()"><i class="bi bi-plus-lg"></i> Agregar</button>
                 </div>
                 <table>
-                    <thead><tr><th>Nombre</th><th>Cliente</th><th>Descripción</th><th>Estado</th><th style="width:130px;">Acciones</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cliente</th>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                            <th style="width:130px;">Acciones</th>
+                        </tr>
+                    </thead>
                     <tbody id="tbody-proyectos">
-                    {% for p in proyectos %}
-                    <tr id="proy-row-{{ p.ID }}">
-                        <td>
-                            <span class="view-mode" style="font-weight:500;">{{ p.NOMBRE_PROYECTO }}</span>
-                            <input class="edit-input edit-mode" style="display:none;" value="{{ p.NOMBRE_PROYECTO }}" data-field="nombre_proyecto">
-                        </td>
-                        <td>
-                            <span class="view-mode">{{ p.CLIENTE or '—' }}</span>
-                            <input class="edit-input edit-mode" style="display:none;" value="{{ p.CLIENTE or '' }}" data-field="cliente">
-                        </td>
-                        <td>
-                            <span class="view-mode">{{ p.DESCRIPCION or '—' }}</span>
-                            <input class="edit-input edit-mode" style="display:none;" value="{{ p.DESCRIPCION or '' }}" data-field="descripcion">
-                        </td>
-                        <td>{% if p.ACTIVO %}<span class="badge-active">Activo</span>{% else %}<span class="badge-inactive">Inactivo</span>{% endif %}</td>
-                        <td>
-                            <div class="row-actions">
-                                <button class="btn-action edit view-mode" title="Editar" onclick="startEdit('proy-row-{{ p.ID }}')"><i class="bi bi-pencil"></i></button>
-                                <button class="btn-action save edit-mode" style="display:none;" title="Guardar" onclick="saveProyecto('{{ p.ID }}')"><i class="bi bi-check-lg"></i></button>
-                                <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar" onclick="cancelEdit('proy-row-{{ p.ID }}')"><i class="bi bi-x-lg"></i></button>
-                                <button class="btn-action toggle view-mode" title="{{ 'Desactivar' if p.ACTIVO else 'Activar' }}" onclick="toggleCatalogo('proyectos','{{ p.ID }}',{{ p.ACTIVO }},this)"><i class="bi bi-{{ 'toggle-on' if p.ACTIVO else 'toggle-off' }}"></i></button>
-                                <button class="btn-action del view-mode" title="Eliminar" onclick="eliminarCatalogo('proyectos','{{ p.ID }}','proy-row-{{ p.ID }}')"><i class="bi bi-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="5"><div class="empty-state"><i class="bi bi-briefcase"></i><p>Sin proyectos registrados.</p></div></td></tr>
-                    {% endfor %}
+                        {% for p in proyectos %}
+                        <tr id="proy-row-{{ p.ID }}">
+                            <td>
+                                <span class="view-mode" style="font-weight:500;">{{ p.NOMBRE_PROYECTO }}</span>
+                                <input class="edit-input edit-mode" style="display:none;"
+                                    value="{{ p.NOMBRE_PROYECTO }}" data-field="nombre_proyecto">
+                            </td>
+                            <td>
+                                <span class="view-mode">{{ p.CLIENTE or '—' }}</span>
+                                <input class="edit-input edit-mode" style="display:none;" value="{{ p.CLIENTE or '' }}"
+                                    data-field="cliente">
+                            </td>
+                            <td>
+                                <span class="view-mode">{{ p.DESCRIPCION or '—' }}</span>
+                                <input class="edit-input edit-mode" style="display:none;"
+                                    value="{{ p.DESCRIPCION or '' }}" data-field="descripcion">
+                            </td>
+                            <td>{% if p.ACTIVO %}<span class="badge-active">Activo</span>{% else %}<span
+                                    class="badge-inactive">Inactivo</span>{% endif %}</td>
+                            <td>
+                                <div class="row-actions">
+                                    <button class="btn-action edit view-mode" title="Editar"
+                                        onclick="startEdit('proy-row-{{ p.ID }}')"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn-action save edit-mode" style="display:none;" title="Guardar"
+                                        onclick="saveProyecto('{{ p.ID }}')"><i class="bi bi-check-lg"></i></button>
+                                    <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar"
+                                        onclick="cancelEdit('proy-row-{{ p.ID }}')"><i class="bi bi-x-lg"></i></button>
+                                    <button class="btn-action toggle view-mode"
+                                        title="{{ 'Desactivar' if p.ACTIVO else 'Activar' }}"
+                                        onclick="toggleCatalogo('proyectos','{{ p.ID }}',{{ p.ACTIVO }},this)"><i
+                                            class="bi bi-{{ 'toggle-on' if p.ACTIVO else 'toggle-off' }}"></i></button>
+                                    <button class="btn-action del view-mode" title="Eliminar"
+                                        onclick="eliminarCatalogo('proyectos','{{ p.ID }}','proy-row-{{ p.ID }}')"><i
+                                            class="bi bi-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state"><i class="bi bi-briefcase"></i>
+                                    <p>Sin proyectos registrados.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <!-- ══ ENTREGABLES ══ -->
+
+        <div class="cat-panel" id="panel-entregables">
+            <div
+                style="background: var(--surface); border: 1.5px dashed var(--primary); padding: 16px 20px; border-radius: var(--radius); margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 15px; box-shadow: var(--shadow);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="bi bi-filter-square-fill" style="color: var(--primary); font-size: 1.3rem;"></i>
+                    <div>
+                        <h4 style="font-size: .88rem; font-weight: 700;">Filtrar Catálogo por Proyecto</h4>
+                        <p style="font-size: .78rem; color: var(--text-muted);">Selecciona un proyecto para ver, crear o
+                            editar sus entregables.</p>
+                    </div>
+                </div>
+                <select id="entregable-proy-select" onchange="cambiarProyectoEntregables(this.value)"
+                    style="height: 38px; padding: 0 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: .85rem; color: var(--text-main); outline: none; width: 260px; cursor: pointer; transition: all .2s; background-color: var(--surface-alt);">
+                    <option value="">-- Selecciona un Proyecto --</option>
+                    {% for p in proyectos %}
+                    <option value="{{ p.ID }}" {% if id_proyecto_activo==p.ID %}selected{% endif %}>{{ p.NOMBRE_PROYECTO
+                        }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if id_proyecto_activo %}
+            <div class="cat-card">
+                <div class="card-head">
+                    <span class="card-head-title">Catálogo de Entregables <span class="count-badge">{{
+                            entregables|length }}</span></span>
+                </div>
+
+                <div class="add-bar">
+                    <div class="field-wrap">
+                        <label>Nombre del Entregable *</label>
+                        <input type="text" id="new-entregable-nombre"
+                            placeholder="Ej: Documento de Arquitectura de Software, Manual Técnico...">
+                    </div>
+                    <button class="btn-add" onclick="agregarEntregable()"><i class="bi bi-plus-lg"></i> Agregar</button>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre del Entregable</th>
+                            <th>Estado</th>
+                            <th style="width:130px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-entregables">
+                        {% for ent in entregables %}
+                        <tr id="entregable-row-{{ ent.ID }}">
+                            <td>
+                                <span class="view-mode" style="font-weight:500;">{{ ent.NOMBRE }}</span>
+                                <input class="edit-input edit-mode" style="display:none;" value="{{ ent.NOMBRE }}"
+                                    data-field="nombre">
+                            </td>
+                            <td>
+                                {% if ent.ACTIVO %}
+                                <span class="badge-active">Activo</span>
+                                {% else %}
+                                <span class="badge-inactive">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="row-actions">
+                                    <button class="btn-action edit view-mode" title="Editar"
+                                        onclick="startEdit('entregable-row-{{ ent.ID }}')"><i
+                                            class="bi bi-pencil"></i></button>
+                                    <button class="btn-action save edit-mode" style="display:none;" title="Guardar"
+                                        onclick="saveEntregable('{{ ent.ID }}')"><i class="bi bi-check-lg"></i></button>
+                                    <button class="btn-action cancel edit-mode" style="display:none;" title="Cancelar"
+                                        onclick="cancelEdit('entregable-row-{{ ent.ID }}')"><i
+                                            class="bi bi-x-lg"></i></button>
+                                    <button class="btn-action toggle view-mode"
+                                        title="{{ 'Desactivar' if ent.ACTIVO else 'Activar' }}"
+                                        onclick="toggleCatalogoEntregable('{{ ent.ID }}', {{ ent.ACTIVO }}, this)"><i
+                                            class="bi bi-{{ 'toggle-on' if ent.ACTIVO else 'toggle-off' }}"></i></button>
+                                    <button class="btn-action del view-mode" title="Eliminar (Borrado Lógico)"
+                                        onclick="eliminarLogicoEntregable('{{ ent.ID }}', 'entregable-row-{{ ent.ID }}')"><i
+                                            class="bi bi-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3">
+                                <div class="empty-state">
+                                    <i class="bi bi-archive"></i>
+                                    <p>No hay entregables configurados para este proyecto.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="cat-card">
+                <div class="empty-state">
+                    <i class="bi bi-arrow-up-square-fill" style="color: var(--primary);"></i>
+                    <p style="font-weight: 600; margin-top: 10px;">Por favor, selecciona un proyecto arriba para poder
+                        gestionar su catálogo de entregables.</p>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -852,7 +1286,7 @@
         }
 
         async function _apiCall(url, method, body) {
-            const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+            const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
             return r.json();
         }
 
@@ -994,7 +1428,100 @@
             } else Swal.fire({ icon: 'error', title: 'No se puede eliminar', text: res.message });
         }
 
-        ['new-est-desc','new-tipo-desc','new-ev-desc','new-rec-nombre','new-sol-nombre','new-proy-nombre','new-proy-cliente','new-proy-desc'].forEach(id => {
+        // 1. Manejo del cambio de proyecto y persistencia de la pestaña activa
+        function cambiarProyectoEntregables(idProyecto) {
+            if (!idProyecto) {
+                location.href = "/catalogos?tab=entregables";
+                return;
+            }
+            location.href = `/catalogos?tab=entregables&id_proyecto=${idProyecto}`;
+        }
+
+        // 2. Modificación a la función switchTab existente para recordar la tab seleccionada por URL
+        // (Asegúrate de actualizar o complementar tu función switchTab actual si no maneja parámetros de URL)
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tabParam = urlParams.get('tab');
+            if (tabParam) {
+                const targetBtn = document.querySelector(`.cat-tab[data-tab="${tabParam}"]`);
+                if (targetBtn) targetBtn.click();
+            }
+        });
+
+        // 3. Crear nuevo entregable asignado al proyecto seleccionado
+        async function agregarEntregable() {
+            const nombre = document.getElementById('new-entregable-nombre')?.value.trim();
+            const idProyecto = document.getElementById('entregable-proy-select')?.value;
+
+            if (!nombre) return Swal.fire({ icon: 'warning', title: 'El nombre es obligatorio' });
+            if (!idProyecto) return Swal.fire({ icon: 'warning', title: 'Falta asociar el ID del proyecto' });
+
+            const res = await _apiCall('/api/catalogos/entregables', 'POST', { nombre: nombre, id_proyecto: idProyecto });
+            if (res.status === 'success') {
+                _toast('success', 'Entregable guardado con éxito');
+                location.reload();
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error al guardar', text: res.message || 'Verifica que no esté duplicado.' });
+            }
+        }
+
+        // 4. Actualizar Nombre de un Entregable existente
+        async function saveEntregable(id) {
+            const row = document.getElementById(`entregable-row-${id}`);
+            const nombre = row.querySelector('[data-field="nombre"]').value.trim();
+            const idProyecto = document.getElementById('entregable-proy-select')?.value;
+
+            if (!nombre) return Swal.fire({ icon: 'warning', title: 'El nombre no puede estar vacío' });
+
+            const res = await _apiCall(`/api/catalogos/entregables/${id}`, 'PUT', { nombre: nombre, id_proyecto: idProyecto });
+            if (res.status === 'success') {
+                _toast('success', 'Actualizado con éxito');
+                location.reload();
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error al actualizar', text: res.message || 'Verifica que no exista conflicto con otro nombre.' });
+            }
+        }
+
+        // 5. Toggle de Activación / Desactivación (Switch rápido)
+        async function toggleCatalogoEntregable(id, estadoActual, btn) {
+            const nuevoEstado = estadoActual === 1 ? 0 : 1;
+            const res = await _apiCall(`/api/catalogos/entregables/${id}/toggle`, 'POST', { activo: nuevoEstado });
+            if (res.status === 'success') {
+                _toast('success', 'Estado del entregable actualizado');
+                location.reload();
+            } else {
+                Swal.fire({ icon: 'error', title: res.message });
+            }
+        }
+
+        // 6. Borrado Lógico Completo (Botón de Basura)
+        async function eliminarLogicoEntregable(id, rowId) {
+            const conf = await Swal.fire({
+                title: '¿Deshabilitar este entregable?',
+                text: 'Se aplicará un borrado lógico. El entregable ya no se mostrará para nuevos registros pero se mantendrá en el histórico.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Sí, deshabilitar',
+                cancelButtonText: 'Cancelar'
+            });
+            if (!conf.isConfirmed) return;
+
+            const res = await _apiCall(`/api/catalogos/entregables/${id}`, 'DELETE', {});
+            if (res.status === 'success') {
+                _toast('success', 'Registro deshabilitado de forma lógica');
+                location.reload(); // Recarga para ver reflejado el cambio de color/estado inmediatamente
+            } else {
+                Swal.fire({ icon: 'error', title: 'No se pudo deshabilitar', text: res.message });
+            }
+        }
+
+        // 7. Soporte para el guardado rápido con la tecla "Enter"
+        document.getElementById('new-entregable-nombre')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') agregarEntregable();
+        });
+
+        ['new-est-desc', 'new-tipo-desc', 'new-ev-desc', 'new-rec-nombre', 'new-sol-nombre', 'new-proy-nombre', 'new-proy-cliente', 'new-proy-desc'].forEach(id => {
             document.getElementById(id)?.addEventListener('keydown', e => {
                 if (e.key === 'Enter') e.target.closest('.add-bar').querySelector('.btn-add').click();
             });
@@ -1003,4 +1530,5 @@
         restoreActiveTab();
     </script>
 </body>
+
 </html>

@@ -16,6 +16,8 @@ from web_app.modules.catalogos.queries import (
     obtener_dias_festivos, guardar_dia_festivo, actualizar_dia_festivo,
     toggle_dia_festivo, eliminar_dia_festivo,
     agregar_categoria_db, eliminar_categoria_db,
+    obtener_entregables_por_proyecto, crear_entregable, actualizar_entregable,
+    toggle_entregable, eliminar_logico_entregable
 )
 
 catalogos_bp = Blueprint("catalogos_bp", __name__)
@@ -27,6 +29,16 @@ def _json_err(msg, code=500): return jsonify({"status": "error", "message": msg}
 
 @catalogos_bp.route("/catalogos")
 def vista_catalogos():
+
+    # Obtenemos el id_proyecto desde la URL (?id_proyecto=xxx)
+    id_proyecto_activo = request.args.get("id_proyecto", "")
+    
+    # Obtenemos los entregables filtrados si es que hay un proyecto seleccionado
+    entregables = []
+    if id_proyecto_activo:
+        entregables = obtener_entregables_por_proyecto(id_proyecto_activo)
+
+
     return render_template(
         "catalogos/catalogos.html",
         estatus   = obtener_estatus_actividad_todos(),
@@ -35,6 +47,8 @@ def vista_catalogos():
         recursos  = obtener_recursos_todos(),
         solicitantes = obtener_solicitantes_todos(),
         proyectos = obtener_proyectos_todos(),
+        entregables   = entregables,
+        id_proyecto_activo = id_proyecto_activo
     )
 
 
@@ -247,6 +261,44 @@ def api_festivo_toggle(festivo_id):
 @catalogos_bp.route("/api/festivos/<festivo_id>", methods=["DELETE"])
 def api_festivo_eliminar(festivo_id):
     return _json_ok() if eliminar_dia_festivo(festivo_id) else _json_err("Error al eliminar.")
+
+
+
+
+# ── APIs DE ENTREGABLES POR PROYECTO ────────────────────────────────────────
+
+@catalogos_bp.route("/api/catalogos/entregables", methods=["POST"])
+def api_cat_entregables_crear():
+    data = request.get_json() or {}
+    if not (data.get("nombre") or "").strip():
+        return _json_err("El nombre del entregable es obligatorio.", 400)
+    if not (data.get("id_proyecto") or "").strip():
+        return _json_err("El ID del proyecto es obligatorio para asociar el entregable.", 400)
+        
+    return _json_ok() if crear_entregable(data) else _json_err("Error al crear el entregable.")
+
+
+@catalogos_bp.route("/api/catalogos/entregables/<id>", methods=["PUT"])
+def api_cat_entregables_editar(id):
+    data = request.get_json() or {}
+    if not (data.get("nombre") or "").strip():
+        return _json_err("El nombre del entregable es obligatorio.", 400)
+        
+    return _json_ok() if actualizar_entregable(id, data) else _json_err("Error al actualizar el entregable.")
+
+
+@catalogos_bp.route("/api/catalogos/entregables/<id>/toggle", methods=["POST"])
+def api_cat_entregables_toggle(id):
+    # Permite activar o desactivar de forma rápida (Estatus activo/inactivo de switch en UI)
+    activo = request.get_json().get("activo", 1)
+    return _json_ok() if toggle_entregable(id, activo) else _json_err("Error al cambiar el estatus del entregable.")
+
+
+@catalogos_bp.route("/api/catalogos/entregables/<id>", methods=["DELETE"])
+def api_cat_entregables_eliminar(id):
+    # Ejecuta el borrado lógico directo (colocando ACTIVO = 0)
+    ok, msg = eliminar_logico_entregable(id)
+    return _json_ok() if ok else _json_err(msg, 400)
 
 
 # ── HEALTHCHECK ─────────────────────────────────────────────────────────────

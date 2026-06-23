@@ -426,38 +426,44 @@ def crear_actividad(datos):
 
 
 def actualizar_actividad(actividad_id, datos):
-    sql = """UPDATE "ACTIVIDADES" SET
-                 "ID_PROYECTO"=?,
-                 "NOMBRE_ACTIVIDAD"=?, "FRIENDLY_NAME"=?, "DESCRIPCION"=?,
-                 "FECHA_SOLICITUD"=?, "SOLICITANTE"=?,
-                 "FECHA_INICIO"=?, "FECHA_FIN_EST"=?, "FECHA_FIN_REAL"=?,
-                 "DIAS_ACORDADOS"=?, "AVANCE_PCT"=?,
-                 "ID_ESTATUS"=?, "PRIORIDAD"=?, "TIPO"=?,
-                 "ID_ACTIVIDAD_PADRE"=?,
-                 "ID_ENTREGABLE"=?,
-                 "ACTUALIZADO_EN"=CURRENT_TIMESTAMP, "ACTUALIZADO_POR"=?
-             WHERE "ID"=?"""
+    # Mapa de: clave en `datos` -> (columna SQL, transformación)
+    campos_posibles = {
+        'id_proyecto':        ('ID_PROYECTO', lambda v: v),
+        'nombre_actividad':   ('NOMBRE_ACTIVIDAD', lambda v: v),
+        'friendly_name':      ('FRIENDLY_NAME', lambda v: v or None),
+        'descripcion':        ('DESCRIPCION', lambda v: v or None),
+        'fecha_solicitud':    ('FECHA_SOLICITUD', lambda v: v or None),
+        'solicitante':        ('SOLICITANTE', lambda v: v or None),
+        'fecha_inicio':       ('FECHA_INICIO', lambda v: v or None),
+        'fecha_fin_est':      ('FECHA_FIN_EST', lambda v: v or None),
+        'fecha_fin_real':     ('FECHA_FIN_REAL', lambda v: v or None),
+        'dias_acordados':     ('DIAS_ACORDADOS', lambda v: int(v) if v else None),
+        'avance_pct':         ('AVANCE_PCT', lambda v: int(v) if v not in (None, '') else None),
+        'id_estatus':         ('ID_ESTATUS', lambda v: v),
+        'prioridad':          ('PRIORIDAD', lambda v: int(v) if v else 2),
+        'tipo':               ('TIPO', lambda v: v),
+        'id_actividad_padre': ('ID_ACTIVIDAD_PADRE', lambda v: v or None),
+        'id_entregable':      ('ID_ENTREGABLE', lambda v: v or None),
+    }
 
-    return ejecutar_dml(sql, (
-        datos.get('id_proyecto'),
-        datos.get('nombre_actividad'),
-        datos.get('friendly_name') or None,
-        datos.get('descripcion') or None,
-        datos.get('fecha_solicitud') or None,
-        datos.get('solicitante') or None,
-        datos.get('fecha_inicio') or None,
-        datos.get('fecha_fin_est') or None,
-        datos.get('fecha_fin_real') or None,
-        int(datos['dias_acordados']) if datos.get('dias_acordados') else None,
-        int(datos.get('avance_pct') or 0),
-        datos.get('id_estatus'),
-        int(datos.get('prioridad', 2)),
-        datos.get('tipo'),
-        datos.get('id_actividad_padre') or None,
-        datos.get('id_entregable') or None,
-        datos.get('actualizado_por', 'SISTEMA'),
-        actividad_id,
-    ))
+    set_clauses = []
+    params = []
+    for clave_form, (columna_sql, transform) in campos_posibles.items():
+        if clave_form in datos:
+            set_clauses.append(f'"{columna_sql}"=?')
+            params.append(transform(datos.get(clave_form)))
+
+    if not set_clauses:
+        return False
+
+    set_clauses.append('"ACTUALIZADO_EN"=CURRENT_TIMESTAMP')
+    set_clauses.append('"ACTUALIZADO_POR"=?')
+    params.append(datos.get('actualizado_por', 'SISTEMA'))
+
+    sql = f'UPDATE "ACTIVIDADES" SET {", ".join(set_clauses)} WHERE "ID"=?'
+    params.append(actividad_id)
+
+    return ejecutar_dml(sql, tuple(params))
 
 
 def _filtros_plan_de_trabajo_sql(

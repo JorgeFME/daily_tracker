@@ -131,6 +131,84 @@ def _crear_actividad_rapida_desde_registro(cur, datos):
     return actividad_id
 
 
+def _propagar_horas_a_padre(cur, actividad_id, datos):
+    """
+    Si la actividad hija tiene ID_ACTIVIDAD_PADRE:
+      1. Valida que el padre no esté COMPLETADO/CANCELADO.
+      2. Inserta un registro espejo en REGISTRO_ACTIVIDADES apuntando al padre.
+      3. Recalcula AVANCE_PCT del padre como promedio de sus hijas.
+    Ejecuta dentro de la misma transacción abierta por el cursor `cur`.
+    """
+    # 1. Obtener ID_ACTIVIDAD_PADRE de la hija
+    cur.execute(
+        'SELECT "ID_ACTIVIDAD_PADRE", "ID_PROYECTO" '
+        'FROM "ACTIVIDADES" '
+        'WHERE "ID"=?',
+        (actividad_id,)
+    )
+    row = cur.fetchone()
+    if not row:
+        return  # actividad no encontrada, nada que propagar
+
+    padre_id = row[0]
+    if not padre_id:
+        return  # no tiene padre, fin
+
+    # 2. Validar estatus del padre
+    cur.execute(
+        'SELECT A."ID_ESTATUS", E."DESCRIPCION" '
+        'FROM "ACTIVIDADES" A '
+        'JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS"=E."ID" '
+        'WHERE A."ID"=?',
+        (padre_id,)
+    )
+    padre_row = cur.fetchone()
+    if padre_row:
+        estatus_padre = str(padre_row[1] or '').strip().upper()
+        if estatus_padre in ('COMPLETADO', 'CANCELADO'):
+            raise ValueError(
+                f"No se pueden propagar horas: la actividad padre tiene estatus '{padre_row[1]}'. "
+                "Actualiza el estatus del padre antes de registrar horas en sus actividades hijas."
+            )
+
+    # 3. Insertar registro espejo apuntando al padre (marcado como propagado)
+    cur.execute(
+        """
+            INSERT INTO "REGISTRO_ACTIVIDADES"
+                ("ID","FECHA","ID_USUARIO","ID_PROYECTO","ID_ACTIVIDAD","ID_TIPO_ACT","ACCION","HORAS","DETALLES","ES_PROPAGADO","CREADO_EN")
+            VALUES (SYSUUID,?,?,?,?,?,?,?,?,1,CURRENT_TIMESTAMP)
+        """,
+        (
+            datos.get('date'),
+            datos.get('user'),
+            datos.get('project'),
+            padre_id,
+            datos.get('tipo_act') or None,
+            datos.get('activity_action'),
+            datos.get('hours'),
+            datos.get('details'),
+        )
+    )
+
+    # 4. Recalcular AVANCE_PCT del padre como promedio de sus hijas
+    cur.execute(
+        'SELECT COALESCE(AVG(CAST("AVANCE_PCT" AS DECIMAL)), 0) '
+        'FROM "ACTIVIDADES" '
+        'WHERE "ID_ACTIVIDAD_PADRE"=?',
+        (padre_id,)
+    )
+    avg_row = cur.fetchone()
+    nuevo_avance = int(round(float(avg_row[0] or 0))) if avg_row else 0
+    nuevo_avance = max(0, min(100, nuevo_avance))
+
+    cur.execute(
+        'UPDATE "ACTIVIDADES" '
+        'SET "AVANCE_PCT"=?, "ACTUALIZADO_EN"=CURRENT_TIMESTAMP '
+        'WHERE "ID"=?',
+        (nuevo_avance, padre_id)
+    )
+
+
 def guardar_registro_actividad(datos):
     actividad_id = datos.get('actividad_id')
     crear_actividad_rapida = actividad_id == 'ad_hoc'
@@ -181,6 +259,10 @@ def guardar_registro_actividad(datos):
                 )
             )
             datos["actividad_id"] = actividad_id
+
+            # ── Propagación automática al padre (si la actividad es hija) ──────
+            if actividad_id:
+                _propagar_horas_a_padre(cur, actividad_id, datos)
 
             estatus_objetivo_id = None
             estatus_objetivo_desc = None
@@ -324,6 +406,8 @@ def _registros_where(alias='R', filtros=None):
     if filtros.get('tipo_id'):
         where.append(f'"{alias}"."ID_TIPO_ACT" = ?')
         params.append(filtros['tipo_id'])
+    if filtros.get('ocultar_propagados'):
+        where.append(f'COALESCE("{alias}"."ES_PROPAGADO", 0) != 1')
     return where, params
 
 
@@ -337,6 +421,7 @@ def obtener_registros(filtros=None):
                P."NOMBRE_PROYECTO", P."ID" as "ID_PROYECTO",
                A."NOMBRE_ACTIVIDAD", A."ID" as "ID_ACTIVIDAD",
                T."DESCRIPCION" as "TIPO", T."ID" as "ID_TIPO_ACT",
+               COALESCE(R."ES_PROPAGADO", 0) as "ES_PROPAGADO",
                R."CREADO_EN"
         FROM "REGISTRO_ACTIVIDADES" R
         JOIN  "USUARIOS"  U ON R."ID_USUARIO"  = U."ID"
@@ -383,7 +468,98 @@ def actualizar_registro(registro_id, datos):
 
 
 def eliminar_registro(registro_id):
-    return ejecutar_dml('DELETE FROM "REGISTRO_ACTIVIDADES" WHERE "ID" = ?', (registro_id,))
+    """
+    Elimina de forma segura un registro de actividades.
+    Si el registro pertenece a una actividad hija, localiza y elimina 
+    su registro espejo correspondiente en la actividad padre y actualiza el AVANCE_PCT.
+    """
+    if not registro_id:
+        return False
+
+    with _pool.get_connection() as conn:
+        cur = conn.cursor()
+        try:
+            # 1. Recuperar los datos del registro que se va a eliminar
+            cur.execute(
+                """
+                SELECT "FECHA", "ID_USUARIO", "ID_PROYECTO", "ID_ACTIVIDAD", 
+                       "ACCION", "HORAS", "DETALLES", COALESCE("ES_PROPAGADO", 0)
+                FROM "REGISTRO_ACTIVIDADES"
+                WHERE "ID" = ?
+                """,
+                (registro_id,)
+            )
+            registro = cur.fetchone()
+            if not registro:
+                return False  # El registro ya no existe
+
+            fecha, user_id, proyecto_id, actividad_id, accion, horas, detalles, es_propagado = registro
+
+            # Evitar que borren directamente un espejo desde la lista general si estuviera visible
+            if es_propagado == 1:
+                raise ValueError("No se puede eliminar un registro propagado directamente. Elimina el registro de la actividad hija.")
+
+            padre_id = None
+            # 2. Si el registro tiene actividad, verificar si es una actividad hija para hallar al padre
+            if actividad_id:
+                cur.execute(
+                    'SELECT "ID_ACTIVIDAD_PADRE" FROM "ACTIVIDADES" WHERE "ID" = ?',
+                    (actividad_id,)
+                )
+                act_row = cur.fetchone()
+                if act_row:
+                    padre_id = act_row[0]
+
+            # 3. Si existe un padre, buscar y eliminar su registro espejo correspondiente
+            if padre_id:
+                cur.execute(
+                    """
+                    DELETE FROM "REGISTRO_ACTIVIDADES"
+                    WHERE "FECHA" = ?
+                      AND "ID_USUARIO" = ?
+                      AND "ID_PROYECTO" = ?
+                      AND "ID_ACTIVIDAD" = ?
+                      AND "ACCION" = ?
+                      AND "HORAS" = ?
+                      AND COALESCE("DETALLES", '') = COALESCE(?, '')
+                      AND "ES_PROPAGADO" = 1
+                    """,
+                    (fecha, user_id, proyecto_id, padre_id, accion, horas, detalles)
+                )
+
+            # 4. Eliminar el registro original seleccionado por el usuario
+            cur.execute('DELETE FROM "REGISTRO_ACTIVIDADES" WHERE "ID" = ?', (registro_id,))
+
+            # 5. Si hubo una actividad padre involucrada, recalcular su AVANCE_PCT inmediatamente
+            if padre_id:
+                cur.execute(
+                    """
+                    SELECT COALESCE(AVG(CAST("AVANCE_PCT" AS DECIMAL)), 0)
+                    FROM "ACTIVIDADES"
+                    WHERE "ID_ACTIVIDAD_PADRE" = ?
+                    """,
+                    (padre_id,)
+                )
+                avg_row = cur.fetchone()
+                nuevo_avance = int(round(float(avg_row[0] or 0))) if avg_row else 0
+                nuevo_avance = max(0, min(100, nuevo_avance))
+
+                cur.execute(
+                    """
+                    UPDATE "ACTIVIDADES"
+                    SET "AVANCE_PCT" = ?, "ACTUALIZADO_EN" = CURRENT_TIMESTAMP
+                    WHERE "ID" = ?
+                    """,
+                    (nuevo_avance, padre_id)
+                )
+
+            conn.commit()
+            return True
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            cur.close()
 
 
 def obtener_actividad_completa(actividad_id):

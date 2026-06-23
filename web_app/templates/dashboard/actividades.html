@@ -1323,12 +1323,9 @@
                             </select>
                         </div>
                         <div class="field-group">
-                            <label class="field-label">Entregable tipo</label>
-                            <select class="field-input" name="id_entregable" id="sel-entregable" required>
-                                <option value="" disabled selected>Selecciona un tipo de entregable...</option>
-                                {% for e in entregables_list %}
-                                <option value="{{ e.ID }}">{{ e.NOMBRE }}</option>
-                                {% endfor %}
+                            <label class="field-label">Entregable Tipo</label>
+                            <select id="sel-entregable" name="id_entregable">
+                                <option value="">Selecciona primero un proyecto...</option>
                             </select>
                         </div>
                         <div class="field-group">
@@ -1433,7 +1430,7 @@
 
 
 
-<!-- MODAL EDITAR ACTIVIDAD COMPLETO -->
+    <!-- MODAL EDITAR ACTIVIDAD COMPLETO -->
     <div class="modal fade" id="modalEditarActividadRapida" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -1448,6 +1445,7 @@
                             <div class="field-group">
                                 <label class="field-label">Proyecto *</label>
                                 <select id="quick-edit-proyecto" name="id_proyecto" required>
+                                    <option value="">Selecciona...</option>
                                     {% for p in projects %}
                                     <option value="{{ p.ID }}">{{ p.NOMBRE_PROYECTO }}</option>
                                     {% endfor %}
@@ -1487,12 +1485,9 @@
                                 placeholder="Ej: Plan semanal cliente ACME">
                         </div>
                         <div class="field-group">
-                            <label class="field-label">Entregable tipo</label>
-                            <select class="field-input" name="id_entregable" id="quick-edit-entregable" required>
-                                <option value="" disabled>Selecciona un tipo de entregable...</option>
-                                {% for e in entregables_list %}
-                                <option value="{{ e.ID }}">{{ e.NOMBRE }}</option>
-                                {% endfor %}
+                            <label class="field-label">Entregable Tipo</label>
+                            <select id="quick-edit-entregable" name="id_entregable">
+                                <option value="">Selecciona primero un proyecto...</option>
                             </select>
                         </div>
                         <div class="field-group">
@@ -1857,10 +1852,18 @@
 
         // ── TomSelect modales ─────────────────────────────────────────────────────────
         // IMPORTANTE: cada ID debe inicializarse UNA SOLA VEZ
-        new TomSelect('#sel-proyecto', tsCfg);
+        // new TomSelect('#sel-proyecto', tsCfg);
+        // new TomSelect('#sel-estatus', tsCfg);
+        // new TomSelect('#sel-tipo', tsCfg);
+        // new TomSelect('#sel-entregable', tsCfg);
+        // new TomSelect('#sel-responsable', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona responsables...' });
+        // new TomSelect('#sel-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
+        // new TomSelect('#sel-actividad-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
+
+        const tsProyecto = new TomSelect('#sel-proyecto', tsCfg);
         new TomSelect('#sel-estatus', tsCfg);
         new TomSelect('#sel-tipo', tsCfg);
-        new TomSelect('#sel-entregable', tsCfg);
+        const tsEntregable = new TomSelect('#sel-entregable', tsCfg);
         new TomSelect('#sel-responsable', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona responsables...' });
         new TomSelect('#sel-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
         new TomSelect('#sel-actividad-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
@@ -1889,6 +1892,7 @@
         const quickEditRecursosTs = new TomSelect('#quick-edit-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
         const quickEditPadreTs = new TomSelect('#quick-edit-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
         const quickEditEntregableTs = new TomSelect('#quick-edit-entregable', tsCfg);  // ← única inicialización
+
 
         // ── Helpers ───────────────────────────────────────────────────────────────────
         function normalizarFechaInput(value) {
@@ -1965,6 +1969,78 @@
             quickEditPadreTs.refreshOptions(false);
         }
 
+
+        // ── FUNCIÓN DE CONEXIÓN API PARA TOMSELECT ──────────────────────────────────
+        async function actualizarCascadaEntregables(idProyecto, tsInstanciaEntregable, idPreseleccionado = null) {
+            if (!tsInstanciaEntregable) return;
+
+            function setPlaceholderText(texto) {
+                tsInstanciaEntregable.settings.placeholder = texto;
+                if (tsInstanciaEntregable.control_input) {
+                    tsInstanciaEntregable.control_input.placeholder = texto;
+                }
+            }
+
+            function vaciarConPlaceholder(texto) {
+                tsInstanciaEntregable.clear(true);
+                tsInstanciaEntregable.clearOptions();
+                setPlaceholderText(texto);
+            }
+
+            if (!idProyecto) {
+                vaciarConPlaceholder('Selecciona primero un proyecto...');
+                return;
+            }
+
+            vaciarConPlaceholder('Cargando entregables...');
+
+            try {
+                const response = await fetch(`/api/catalogos/entregables/por-proyecto/${idProyecto}`);
+                const res = await response.json();
+
+                if (res.status === 'success') {
+                    tsInstanciaEntregable.clearOptions();
+
+                    if (!res.data || res.data.length === 0) {
+                        vaciarConPlaceholder('Sin entregables para este proyecto');
+                        return;
+                    }
+
+                    res.data.forEach(entregable => {
+                        tsInstanciaEntregable.addOption({ value: entregable.id, text: entregable.nombre });
+                    });
+                    setPlaceholderText('Selecciona...');
+
+                    if (idPreseleccionado) {
+                        tsInstanciaEntregable.setValue(idPreseleccionado);
+                    } else {
+                        tsInstanciaEntregable.clear(true);
+                    }
+                } else {
+                    vaciarConPlaceholder('Error al cargar');
+                }
+            } catch (error) {
+                console.error("Error al actualizar entregables:", error);
+                vaciarConPlaceholder('Error de conexión');
+            }
+        }
+
+
+
+
+        // ── LISTENERS PARA CUANDO EL USUARIO INTERACTÚA CON LOS SELECTS ──────────────
+
+        // Escuchar cambios en el formulario de creación
+
+        // Escuchar cambios en el formulario de creación
+        tsProyecto.on('change', function (value) {
+            actualizarCascadaEntregables(value, tsEntregable);
+        });
+
+        quickEditProyectoTs.on('change', function (value) {
+            actualizarCascadaEntregables(value, quickEditEntregableTs);
+        });
+
         // ── Abrir modal edición rápida ────────────────────────────────────────────────
         async function abrirEdicionRapidaActividad(event, actividadId) {
             event?.preventDefault();
@@ -2007,7 +2083,7 @@
                 quickEditProyectoTs.setValue(actividad.id_proyecto || '', true);
                 quickEditEstatusTs.setValue(actividad.id_estatus || '', true);
                 quickEditTipoTs.setValue(actividad.tipo || '', true);
-                quickEditEntregableTs.setValue(actividad.id_entregable || '', true);  // ← línea añadida
+                await actualizarCascadaEntregables(actividad.id_proyecto, quickEditEntregableTs, actividad.id_entregable || null);
                 quickEditResponsablesTs.setValue(Array.isArray(actividad.responsables) ? actividad.responsables : [], true);
                 quickEditRecursosTs.setValue(Array.isArray(actividad.recursos) ? actividad.recursos : [], true);
                 syncQuickEditPadreOptions(actividad.id);
