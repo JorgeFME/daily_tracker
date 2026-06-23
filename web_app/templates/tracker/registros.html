@@ -1077,8 +1077,7 @@
                             <span class="filter-label">Actividad</span>
                             <select name="actividad_id" id="f-actividad" {% if not filtros.proyecto_id %}disabled{%
                                 endif %}>
-                                <option value="">{% if filtros.proyecto_id %}Todas las actividades{% else %}Selecciona
-                                    un proyecto primero{% endif %}</option>
+                                <option value="">{% if filtros.proyecto_id %}Todas las actividades{% else %}Selecciona un proyecto primero{% endif %}</option>
                                 {% for actividad in actividades %}
                                 <option value="{{ actividad.ID }}" {% if
                                     filtros.actividad_id|string==actividad.ID|string %}selected{% endif %}>
@@ -1130,9 +1129,10 @@
         </form>
 
         <!-- Stats strip -->
-        {% set total_horas = registros | sum(attribute='HORAS') %}
-        {% set num_registros = registros | length %}
-        {% set usuarios_uniq = registros | map(attribute='USUARIO') | unique | list %}
+        {% set registros_reales = registros | rejectattr('ES_PROPAGADO', 'equalto', 1) | list %}
+        {% set total_horas = registros_reales | sum(attribute='HORAS') %}
+        {% set num_registros = registros_reales | length %}
+        {% set usuarios_uniq = registros_reales | map(attribute='USUARIO') | unique | list %}
         <div class="stats-strip">
             <div class="stat-card">
                 <div class="stat-label">Total registros</div>

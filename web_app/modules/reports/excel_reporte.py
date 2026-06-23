@@ -98,37 +98,44 @@ def _es_actividad_rapida(row):
 
 def _build_summary(actividades, evidencias_por_actividad):
     total_actividades = len(actividades)
-    total_horas = sum(float(item.get("HORAS_TOTALES") or 0) for item in actividades)
+    
     actividades_con_evidencia = sum(
-        1 for item in actividades if evidencias_por_actividad.get(item.get("ID"))
+        1 for item in actividades if item and evidencias_por_actividad.get(item.get("ID"))
     )
-    actividades_rapidas = sum(1 for item in actividades if _es_actividad_rapida(item))
+    actividades_rapidas = sum(1 for item in actividades if item and _es_actividad_rapida(item))
     actividades_rapidas_historicas = sum(
-        1
-        for item in actividades
-        if int(item.get("ES_ACTIVIDAD_RAPIDA_HISTORICA") or 0) == 1
+        1 for item in actividades if item and int(item.get("ES_ACTIVIDAD_RAPIDA_HISTORICA") or 0) == 1
     )
 
     estatus_counter = Counter()
     estatus_horas = Counter()
     prioridad_counter = Counter()
-    for item in actividades:
-        estatus = _safe(item.get("ESTATUS"))
-        horas = float(item.get("HORAS_TOTALES") or 0)
-        estatus_counter[estatus] += 1
-        estatus_horas[estatus] += horas
+    tipo_counter = Counter()
+    tipo_horas = Counter()
+    
+    total_horas = 0
 
+    for item in actividades:
+        # Validación de seguridad por si algún cruce de BD devuelve un elemento vacío
+        if not item:
+            continue
+            
+        estatus = _safe(item.get("ESTATUS"))
+        tipo = _safe(item.get("TIPO"))
+        horas = float(item.get("HORAS_TOTALES") or 0)
         prioridad = _prioridad(item.get("PRIORIDAD"))
+
+        # 1. Conteo de métricas generales (se cuentan todas las filas para no perder el total de tareas)
+        estatus_counter[estatus] += 1
+        tipo_counter[tipo] += 1
         if prioridad != "—":
             prioridad_counter[prioridad] += 1
 
-    tipo_counter = Counter()
-    tipo_horas = Counter()
-    for item in actividades:
-        tipo = _safe(item.get("TIPO"))
-        horas_item = float(item.get("HORAS_TOTALES") or 0)
-        tipo_counter[tipo] += 1
-        tipo_horas[tipo] += horas_item
+        # 2. FIX: Sumatoria de horas SOLO para actividades de nivel superior (sin padre)
+        if not item.get("ID_ACTIVIDAD_PADRE"):
+            total_horas += horas
+            estatus_horas[estatus] += horas
+            tipo_horas[tipo] += horas
 
     return {
         "total_actividades": total_actividades,
@@ -706,7 +713,7 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
     total_caption.alignment = R_ALN
     total_caption.border = BORDER
 
-    formula_desarrollo = f"=SUM(I4:I{total_row - 1})" if actividades else 0
+    formula_desarrollo = f'=SUMIF(O4:O{total_row - 1}, "—", I4:I{total_row - 1})' if actividades else 0
     total_dev_cell = ws.cell(row=total_row, column=9, value=formula_desarrollo)
     total_dev_cell.font = _font(bold=True, color=C_WHITE, size=10)
     total_dev_cell.fill = _fill(C_BLUE)
@@ -714,7 +721,7 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
     total_dev_cell.number_format = "#,##0.0"
     total_dev_cell.border = BORDER
 
-    formula_tareas = f"=SUM(J4:J{total_row - 1})" if actividades else 0
+    formula_tareas = f'=SUMIF(O4:O{total_row - 1}, "—", J4:J{total_row - 1})' if actividades else 0
     total_task_cell = ws.cell(row=total_row, column=10, value=formula_tareas)
     total_task_cell.font = _font(bold=True, color=C_WHITE, size=10)
     total_task_cell.fill = _fill(C_BLUE)

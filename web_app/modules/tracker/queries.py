@@ -314,7 +314,8 @@ def get_horas_semanales(user_id, fecha_str):
         try:
             cur.execute(
                 'SELECT COALESCE(SUM("HORAS"), 0) FROM "REGISTRO_ACTIVIDADES" '
-                'WHERE "ID_USUARIO"=? AND "FECHA" BETWEEN ? AND ?',
+                'WHERE "ID_USUARIO"=? AND "FECHA" BETWEEN ? AND ? '
+                'AND COALESCE("ES_PROPAGADO", 0) != 1',
                 (user_id, lunes.strftime('%Y-%m-%d'), vier.strftime('%Y-%m-%d'))
             )
             r = cur.fetchone()
@@ -334,7 +335,8 @@ def get_horas_diarias(user_id, fecha_str):
         try:
             cur.execute(
                 'SELECT COALESCE(SUM("HORAS"), 0) FROM "REGISTRO_ACTIVIDADES" '
-                'WHERE "ID_USUARIO"=? AND "FECHA"=?',
+                'WHERE "ID_USUARIO"=? AND "FECHA"=? '
+                'AND COALESCE("ES_PROPAGADO", 0) != 1',
                 (user_id, fecha_str)
             )
             r = cur.fetchone()
