@@ -33,7 +33,7 @@ def obtener_datos_grafica_proyectos(user_id=None, period='month', fecha_ref=None
         params.append(user_id)
     sql = f"""SELECT P."NOMBRE_PROYECTO", SUM(R."HORAS") as "TOTAL"
               FROM "REGISTRO_ACTIVIDADES" R JOIN "PROYECTOS" P ON R."ID_PROYECTO"=P."ID"
-              WHERE R."FECHA" BETWEEN ? AND ? {uf}
+              WHERE R."FECHA" BETWEEN ? AND ? AND COALESCE(R."ES_PROPAGADO", 0) != 1 {uf}
               GROUP BY P."NOMBRE_PROYECTO" ORDER BY "TOTAL" DESC"""
     return ejecutar_query(sql, tuple(params))
 
@@ -50,7 +50,7 @@ def obtener_registros_recientes_filtrados(user_id=None, period='month', fecha_re
               JOIN "PROYECTOS" P ON R."ID_PROYECTO"=P."ID"
               LEFT JOIN "CAT_TIPO_ACTIVIDAD" A ON R."ID_TIPO_ACT"=A."ID"
               JOIN "USUARIOS" U ON R."ID_USUARIO"=U."ID"
-              WHERE R."FECHA" BETWEEN ? AND ? {uf}
+              WHERE R."FECHA" BETWEEN ? AND ? AND COALESCE(R."ES_PROPAGADO", 0) != 1 {uf}
               ORDER BY R."FECHA" DESC, R."ID" DESC"""
     return ejecutar_query(sql, tuple(params))
 
