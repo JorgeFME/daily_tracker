@@ -50,7 +50,7 @@ ESTATUS_TXT = {
     "cancelado": "475569",
 }
 
-# Bordes más sutiles (Menos toscos que el negro/gris oscuro)
+# Bordes más sutiles
 THIN = Side(style="thin", color="E2E8F0")  # Slate 200
 WARN_SIDE = Side(style="thin", color=C_WARN_BORDER)
 BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
@@ -95,6 +95,30 @@ def _es_actividad_rapida(row):
     return str(row.get("NOMBRE_ACTIVIDAD") or "").startswith("⚡")
 
 
+def _horas_directas(actividad):
+    """
+    Devuelve las horas que realmente le corresponden a esta actividad
+    para efectos del total del reporte:
+
+    - Padres con hijas: HORAS_DIRECTAS (solo registros no propagados, es decir
+      los históricos propios del padre antes de que existieran hijas).
+    - Hijas y actividades sueltas: HORAS_TOTALES (sus registros son siempre
+      directos, nunca son espejos de nadie).
+
+    De esta forma:
+      · Las horas históricas del padre cuentan exactamente una vez.
+      · Las horas de las hijas cuentan exactamente una vez.
+      · Los espejos propagados del padre (copia de las hijas) nunca se suman.
+    """
+    es_padre_con_hijas = (
+        not actividad.get("ID_ACTIVIDAD_PADRE")
+        and int(actividad.get("NUM_HIJAS") or 0) > 0
+    )
+    if es_padre_con_hijas:
+        return float(actividad.get("HORAS_DIRECTAS") or 0)
+    return float(actividad.get("HORAS_TOTALES") or 0)
+
+
 def _build_summary(actividades, evidencias_por_actividad):
     total_actividades = len(actividades)
 
@@ -120,26 +144,17 @@ def _build_summary(actividades, evidencias_por_actividad):
 
         estatus = _safe(item.get("ESTATUS"))
         tipo = _safe(item.get("TIPO"))
-        horas = float(item.get("HORAS_TOTALES") or 0)
         prioridad = _prioridad(item.get("PRIORIDAD"))
+        horas = _horas_directas(item)
 
         estatus_counter[estatus] += 1
         tipo_counter[tipo] += 1
         if prioridad != "—":
             prioridad_counter[prioridad] += 1
 
-        # Sumatoria de horas: hijas + actividades sueltas (padres sin hijos).
-        # Los padres que TIENEN hijas se excluyen porque sus horas reales son 0
-        # (las horas viven en las hijas); incluirlos causaría doble conteo.
-        # Un padre sin hijas es equivalente a una actividad suelta → se suma.
-        es_padre_con_hijas = (
-            not item.get("ID_ACTIVIDAD_PADRE")
-            and int(item.get("NUM_HIJAS") or 0) > 0
-        )
-        if not es_padre_con_hijas:
-            total_horas += horas
-            estatus_horas[estatus] += horas
-            tipo_horas[tipo] += horas
+        total_horas += horas
+        estatus_horas[estatus] += horas
+        tipo_horas[tipo] += horas
 
     return {
         "total_actividades": total_actividades,
@@ -177,7 +192,7 @@ def _render_resumen(
     actividades,
     evidencias_por_actividad,
     export_context=None,
-    total_row_actividades=None,  # fila del total en hoja Actividades (para referencia directa)
+    total_row_actividades=None,
 ):
     summary = _build_summary(actividades, evidencias_por_actividad)
 
@@ -272,8 +287,6 @@ def _render_resumen(
         left.font = _font(bold=True, color=C_DARK)
         right.font = _font(bold=True, color=C_BLUE, size=10)
         if label == "Horas totales":
-            # Referencia directa a la fila de totales de la hoja Actividades.
-            # Suma col I (Desarrollo) + col J (Tareas) para obtener el gran total.
             if total_row_actividades:
                 right.value = (
                     f"=Actividades!I{total_row_actividades}"
@@ -433,7 +446,6 @@ def _render_resumen(
         row = tipo_section_row + 2 + offset
         tipo_bg = "EFF6FF" if tipo_key == "DESARROLLO" else "FEFBF0"
         tipo_color = "1E40AF" if tipo_key == "DESARROLLO" else "B45309"
-        # Col I de Actividades = Desarrollo, col J = Tareas
         horas_col = "I" if tipo_key == "DESARROLLO" else "J"
         c1 = ws.cell(row=row, column=1, value=f" {tipo_key}")
         c2 = ws.cell(row=row, column=2, value=summary["tipo_counter"].get(tipo_key, 0))
@@ -490,10 +502,6 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
     ws["A2"].border = BORDER
     ws.row_dimensions[2].height = 22
 
-    # ── Leyenda de símbolos en horas heredadas ──────────────────────────────
-    # Se agrega como nota al pie en fila 3 (antes de los headers reales)
-    # Se renderiza debajo de los datos. Ver nota al pie al final de la función.
-
     headers = [
         ("Entregables Ambiente Productivo", 40),
         ("Descripción requerimiento", 34),
@@ -513,8 +521,8 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
         ("Actividades", 44),
         ("Comentarios", 20),
         # Columnas ocultas: valores numéricos reales para totales por tipo
-        ("_horas_dev_real", 0),    # Columna R — solo desarrollo
-        ("_horas_tarea_real", 0),  # Columna S — solo tareas
+        ("_horas_dev_real", 0),    # Columna R — desarrollo real (sin espejos)
+        ("_horas_tarea_real", 0),  # Columna S — tareas real (sin espejos)
     ]
 
     actividades_col_index = 16
@@ -527,7 +535,6 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
     for column_index, (header, width) in enumerate(headers, start=1):
         cell = ws.cell(row=3, column=column_index, value=header)
         if header in ("_horas_dev_real", "_horas_tarea_real"):
-            # Columnas ocultas: sin formato visible
             ws.column_dimensions[get_column_letter(column_index)].width = 0
             ws.column_dimensions[get_column_letter(column_index)].hidden = True
             cell.value = None
@@ -537,26 +544,6 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
         cell.alignment = C_ALN
         cell.border = BORDER
         ws.column_dimensions[get_column_letter(column_index)].width = width
-
-    # ── Pre-calcular horas de hijas agrupadas por padre ─────────────────────
-    # Necesitamos saber cuántas horas tiene cada padre provenientes de sus hijas
-    # para poder mostrar el valor visual correcto (heredado) en la fila del padre.
-    horas_hijas_por_padre = {}   # padre_id -> suma de horas de sus hijas
-    tipo_hijas_por_padre = {}    # padre_id -> tipo predominante de hijas (para columna dev/tarea)
-
-    for act in actividades:
-        padre_id = act.get("ID_ACTIVIDAD_PADRE")
-        if padre_id:
-            horas_hija = float(act.get("HORAS_TOTALES") or 0)
-            tipo_hija = _safe(act.get("TIPO"))
-            padre_id_str = str(padre_id)
-
-            if padre_id_str not in horas_hijas_por_padre:
-                horas_hijas_por_padre[padre_id_str] = {"DESARROLLO": 0.0, "TAREA": 0.0}
-            if tipo_hija in horas_hijas_por_padre[padre_id_str]:
-                horas_hijas_por_padre[padre_id_str][tipo_hija] += horas_hija
-            else:
-                horas_hijas_por_padre[padre_id_str]["DESARROLLO"] += horas_hija
 
     # ── Reordenamiento Jerárquico ────────────────────────────────────────────
     lista_ordenada = []
@@ -590,7 +577,6 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
     for row_index, actividad in enumerate(lista_ordenada, start=4):
         prioridad_texto = _prioridad(actividad.get("PRIORIDAD"))
         estatus_texto = _safe(actividad.get("ESTATUS"))
-        horas_totales = float(actividad.get("HORAS_TOTALES") or 0)
         tipo_actividad = _safe(actividad.get("TIPO"))
         desglose_actividades = _safe(actividad.get("DESGLOSE_REPORTE"))
 
@@ -624,87 +610,59 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
         except (ValueError, TypeError):
             avance_val = 0.0
 
-        # ── Lógica de horas: padre hereda visualmente de hijas ───────────────
-        padre_id_str = str(actividad.get("ID", ""))
-        horas_heredadas = horas_hijas_por_padre.get(padre_id_str, {})
-        horas_heredadas_dev = horas_heredadas.get("DESARROLLO", 0.0)
-        horas_heredadas_tarea = horas_heredadas.get("TAREA", 0.0)
-        tiene_hijas_con_horas = (horas_heredadas_dev + horas_heredadas_tarea) > 0
+        # ── Lógica de horas simplificada ─────────────────────────────────────
+        # Cada actividad muestra y suma sus propias horas reales:
+        #
+        #   · Padre con hijas → HORAS_DIRECTAS (registros no propagados del padre,
+        #     es decir sus horas históricas propias). Puede ser 0 si el padre
+        #     nunca tuvo registros directos.
+        #   · Hija o actividad suelta → HORAS_TOTALES (siempre son directas,
+        #     nunca son espejos de nadie).
+        #
+        # Los espejos propagados del padre (copia de las hijas) nunca aparecen.
+        # No hay herencia visual: cada fila muestra exactamente lo que le pertenece.
+        horas_para_mostrar = _horas_directas(actividad)
 
-        if not es_hija and tiene_hijas_con_horas:
-            # Padre: mostrar horas de hijas visualmente con símbolo
-            horas_propias = horas_totales  # horas reales del registro padre
-
-            def _formato_heredado(horas_hija, horas_propia):
-                """Devuelve texto visual y valor real para la columna de horas."""
-                if horas_hija == 0:
-                    return ("", 0.0)
-                total = horas_hija + horas_propia
-                if horas_propia > 0:
-                    # Padre tiene propias + hijas -> símbolo ★
-                    return (f"{total:.1f} ★", total)
-                else:
-                    # Padre solo hereda de hijas -> símbolo ↑
-                    return (f"{horas_hija:.1f} ↑", horas_hija)
-
-            display_dev, real_dev = _formato_heredado(horas_heredadas_dev, 0.0)
-            display_tarea, real_tarea = _formato_heredado(horas_heredadas_tarea, 0.0)
-
-            # Si el padre tiene horas propias, las sumamos al tipo que corresponde
-            if horas_propias > 0:
-                if tipo_actividad == "DESARROLLO":
-                    display_dev, real_dev = _formato_heredado(horas_heredadas_dev, horas_propias)
-                elif tipo_actividad == "TAREA":
-                    display_tarea, real_tarea = _formato_heredado(horas_heredadas_tarea, horas_propias)
-
-            celda_horas_desarrollo = display_dev
-            celda_horas_tareas = display_tarea
-            # Padre excluido del total (las hijas ya se suman individualmente)
-            horas_dev_real = None
+        if tipo_actividad == "DESARROLLO":
+            celda_horas_desarrollo = horas_para_mostrar if horas_para_mostrar else ""
+            celda_horas_tareas = ""
+            horas_dev_real = horas_para_mostrar if horas_para_mostrar else None
             horas_tarea_real = None
-
+        elif tipo_actividad == "TAREA":
+            celda_horas_desarrollo = ""
+            celda_horas_tareas = horas_para_mostrar if horas_para_mostrar else ""
+            horas_dev_real = None
+            horas_tarea_real = horas_para_mostrar if horas_para_mostrar else None
         else:
-            # Actividad normal (suelta o hija): horas reales sin símbolo
-            if tipo_actividad == "DESARROLLO":
-                celda_horas_desarrollo = horas_totales if horas_totales else ""
-                celda_horas_tareas = ""
-                horas_dev_real = horas_totales if horas_totales else None
-                horas_tarea_real = None
-            elif tipo_actividad == "TAREA":
-                celda_horas_desarrollo = ""
-                celda_horas_tareas = horas_totales if horas_totales else ""
-                horas_dev_real = None
-                horas_tarea_real = horas_totales if horas_totales else None
-            else:
-                celda_horas_desarrollo = horas_totales if horas_totales else ""
-                celda_horas_tareas = ""
-                horas_dev_real = horas_totales if horas_totales else None
-                horas_tarea_real = None
+            celda_horas_desarrollo = horas_para_mostrar if horas_para_mostrar else ""
+            celda_horas_tareas = ""
+            horas_dev_real = horas_para_mostrar if horas_para_mostrar else None
+            horas_tarea_real = None
 
         dependencia_texto = (
             _safe(actividad.get("NOMBRE_ACTIVIDAD_PADRE")) if es_hija else "—"
         )
 
         row_data = [
-            _safe(actividad.get("NOMBRE_ENTREGABLE")),   # A  col 1 - Entregables Ambiente Productivo
-            nombre_reporte,                               # B  col 2 - Descripción requerimiento (nombre actividad)
-            _safe(actividad.get("RECURSOS")),        # C  col 3
-            tipo_actividad,                          # D  col 4
-            _fecha(actividad.get("FECHA_SOLICITUD")),# E  col 5
-            _fecha(actividad.get("FECHA_INICIO")),   # F  col 6
-            _fecha(actividad.get("FECHA_FIN_REAL")), # G  col 7
-            prioridad_texto,                         # H  col 8
-            celda_horas_desarrollo,                  # I  col 9  (Horas Desarrollo - visual)
-            celda_horas_tareas,                      # J  col 10 (Horas Tareas - visual)
-            avance_val,                              # K  col 11
-            estatus_texto,                           # L  col 12
-            _safe(actividad.get("SOLICITANTE")),     # M  col 13
-            _safe(actividad.get("RESPONSABLES")),    # N  col 14
-            dependencia_texto,                       # O  col 15
-            desglose_actividades,                    # P  col 16
-            "",                                      # Q  col 17 (Comentarios)
-            horas_dev_real,                          # R  col 18 (oculta, dev real para total)
-            horas_tarea_real,                        # S  col 19 (oculta, tarea real para total)
+            _safe(actividad.get("NOMBRE_ENTREGABLE")),   # A  col 1
+            nombre_reporte,                               # B  col 2
+            _safe(actividad.get("RECURSOS")),             # C  col 3
+            tipo_actividad,                               # D  col 4
+            _fecha(actividad.get("FECHA_SOLICITUD")),     # E  col 5
+            _fecha(actividad.get("FECHA_INICIO")),        # F  col 6
+            _fecha(actividad.get("FECHA_FIN_REAL")),      # G  col 7
+            prioridad_texto,                              # H  col 8
+            celda_horas_desarrollo,                       # I  col 9  (Horas Desarrollo)
+            celda_horas_tareas,                           # J  col 10 (Horas Tareas)
+            avance_val,                                   # K  col 11
+            estatus_texto,                                # L  col 12
+            _safe(actividad.get("SOLICITANTE")),          # M  col 13
+            _safe(actividad.get("RESPONSABLES")),         # N  col 14
+            dependencia_texto,                            # O  col 15
+            desglose_actividades,                         # P  col 16
+            "",                                           # Q  col 17 (Comentarios)
+            horas_dev_real,                               # R  col 18 (oculta, dev real)
+            horas_tarea_real,                             # S  col 19 (oculta, tarea real)
         ]
 
         desglose_lineas = (
@@ -730,14 +688,12 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
             cell.border = BORDER
 
             if column_index == 1:
-                # Entregable: centrado, negrita si es padre
                 cell.alignment = C_ALN
                 if es_hija:
                     cell.font = _font(bold=False, italic=True, color="555555")
                 else:
                     cell.font = _font(bold=True, color=C_DARK)
             elif column_index == 2:
-                # Nombre actividad (jerarquía): alineado a la izquierda para que el ↳ y ▾ se lean bien
                 cell.alignment = L_ALN
                 if es_hija:
                     cell.font = _font(bold=False, italic=True, color="555555")
@@ -769,13 +725,8 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
                 cell.fill = _fill(bg)
                 cell.font = _font(bold=True, color=color)
             elif column_index in (9, 10):
-                # Horas Desarrollo / Horas Tareas
                 cell.alignment = C_ALN
-                if not es_hija and tiene_hijas_con_horas:
-                    # Padre con horas heredadas: texto con símbolo, formato visual especial
-                    cell.font = _font(bold=True, color=C_MID, italic=True)
-                    cell.fill = _fill("F0F4FF")  # Azul muy suave para indicar herencia
-                elif value != "":
+                if value != "":
                     cell.number_format = "#,##0.0"
             elif column_index == 11:
                 cell.alignment = C_ALN
@@ -796,7 +747,7 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
             else:
                 cell.alignment = L_ALN
 
-        # Borde grueso a la izquierda en filas hijas — aplica sobre col 2 (nombre jerárquico)
+        # Borde grueso a la izquierda en filas hijas
         if es_hija:
             existing = ws.cell(row=row_index, column=2).border
             thick_left = Side(style="medium", color=C_BLUE)
@@ -814,7 +765,6 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
     ws.sheet_properties.outlinePr.summaryAbove = True
 
     data_end_row = max(len(actividades) + 3, 3)
-    # Autofilter solo sobre columnas visibles A:Q
     ws.auto_filter.ref = f"A3:Q{data_end_row}"
     ws.column_dimensions[actividades_col_letter].width = max(
         34, min(70, max_actividades_line_len + 6)
@@ -822,8 +772,8 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
     ws.print_area = f"A1:Q{data_end_row + 2}"
 
     # ── Fila de totales ──────────────────────────────────────────────────────
-    # Columna R (oculta) = horas DESARROLLO reales (hijas + sueltas, sin padres)
-    # Columna S (oculta) = horas TAREA reales (hijas + sueltas, sin padres)
+    # Columna R (oculta) = horas DESARROLLO reales (sin espejos propagados)
+    # Columna S (oculta) = horas TAREA reales (sin espejos propagados)
     total_row = len(actividades) + 4
     ws.row_dimensions[total_row].height = 24
     ws.merge_cells(f"A{total_row}:H{total_row}")
@@ -834,7 +784,6 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
     total_caption.alignment = R_ALN
     total_caption.border = BORDER
 
-    # Col I — total Horas Desarrollo (suma columna R oculta)
     formula_dev = f"=SUM(R4:R{total_row - 1})" if actividades else 0
     total_dev_cell = ws.cell(row=total_row, column=9, value=formula_dev)
     total_dev_cell.font = _font(bold=True, color=C_WHITE, size=10)
@@ -843,7 +792,6 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
     total_dev_cell.number_format = "#,##0.0"
     total_dev_cell.border = BORDER
 
-    # Col J — total Horas Tareas (suma columna S oculta)
     formula_tarea = f"=SUM(S4:S{total_row - 1})" if actividades else 0
     total_task_cell = ws.cell(row=total_row, column=10, value=formula_tarea)
     total_task_cell.font = _font(bold=True, color=C_WHITE, size=10)
@@ -857,7 +805,7 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
         cell.fill = _fill(C_DARK)
         cell.border = BORDER
 
-    # ── Leyenda de símbolos (nota al pie) ───────────────────────────────────
+    # ── Nota al pie ──────────────────────────────────────────────────────────
     note_row = total_row + 2
     ws.merge_cells(f"A{note_row}:Q{note_row}")
     note = ws.cell(
@@ -877,8 +825,8 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
         row=legend_row,
         column=1,
         value=(
-            " 🔣 Símbolos en horas:  ↑ = horas heredadas de subactividades (solo visual, no se suman al total)  "
-            "·  ★ = horas propias del padre + horas de subactividades (solo visual, el total suma las hijas individualmente)"
+            " ℹ️ Actividades padre: las horas mostradas son registros propios históricos (anteriores a la creación de subactividades). "
+            "Las horas de las subactividades se muestran y contabilizan en sus propias filas."
         ),
     )
     legend.font = _font(size=8.5, color=C_MID, italic=True)
@@ -984,7 +932,6 @@ def generar_reporte(
     wb = Workbook()
     generado_en = datetime.now().strftime("%d/%m/%Y %H:%M")
 
-    # Fila del total en hoja Actividades: datos desde fila 4, total = len + 4
     total_row_actividades = len(actividades) + 4
 
     ws_resumen = wb.active
