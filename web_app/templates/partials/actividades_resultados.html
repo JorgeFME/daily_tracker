@@ -40,14 +40,16 @@
     </div>
     <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
         <i class="bi bi-clock" style="color:var(--primary);font-size:.8rem;"></i>
-        <span style="font-size:.8rem;font-weight:700;font-family:'DM Mono',monospace;color:var(--text-main);">{{ a.HORAS_INVERTIDAS }}h</span>
+        <span style="font-size:.8rem;font-weight:700;font-family:'DM Mono',monospace;color:var(--text-main);">{{
+            a.HORAS_INVERTIDAS }}h</span>
         <span style="font-size:.75rem;color:var(--text-muted);">invertidas</span>
     </div>
     {% if a.RECURSOS %}
     <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">
         {% for rec in a.RECURSOS.split(', ') %}
         <span
-            style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.67rem;font-weight:700;padding:2px 7px;border-radius:6px;">{{ rec }}</span>
+            style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.67rem;font-weight:700;padding:2px 7px;border-radius:6px;">{{
+            rec }}</span>
         {% endfor %}
     </div>
     {% endif %}
@@ -56,13 +58,10 @@
 
 {% macro act_card_wrap(a, is_hija=False) %}
 <div class="act-card-wrap{% if is_hija %} act-card-wrap--hija{% endif %}" style="position:relative;">
-    <button class="btn-edit-act"
-        onclick="abrirEdicionRapidaActividad(event,'{{ a.ID }}')"
-        title="Editar actividad">
+    <button class="btn-edit-act" onclick="abrirEdicionRapidaActividad(event,'{{ a.ID }}')" title="Editar actividad">
         <i class="bi bi-pencil-square"></i>
     </button>
-    <button class="btn-delete-act"
-        onclick="eliminarActividad(event,'{{ a.ID }}','{{ a.NOMBRE_ACTIVIDAD }}')"
+    <button class="btn-delete-act" onclick="eliminarActividad(event,'{{ a.ID }}','{{ a.NOMBRE_ACTIVIDAD }}')"
         title="Eliminar actividad">
         <i class="bi bi-trash"></i>
     </button>
@@ -76,7 +75,8 @@
                 <i class="bi bi-arrow-return-right"></i>
                 Subactividad de:
                 <span class="act-padre-link-target"
-                    onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/actividades/{{ a.ID_ACTIVIDAD_PADRE }}';">{{ a.NOMBRE_ACTIVIDAD_PADRE }}</span>
+                    onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/actividades/{{ a.ID_ACTIVIDAD_PADRE }}';">{{
+                    a.NOMBRE_ACTIVIDAD_PADRE }}</span>
             </p>
             {% endif %}
         </div>
@@ -86,7 +86,7 @@
 {% endmacro %}
 
 {% macro act_row(a, is_hija=False) %}
-<tr{% if is_hija %} class="act-row--hija"{% endif %}>
+<tr{% if is_hija %} class="act-row--hija" {% endif %}>
     <td>
         <div class="act-table-name">
             {% if is_hija %}<span class="act-tree-icon" title="Subactividad">↳</span>{% endif %}
@@ -99,7 +99,8 @@
         </div>
         {% elif not is_hija and a.NUM_HIJAS and a.NUM_HIJAS > 0 %}
         <div class="act-table-hijas-link">
-            <a href="/actividades/{{ a.ID }}"><i class="bi bi-diagram-3"></i> {{ a.NUM_HIJAS }} subactividad{% if a.NUM_HIJAS != 1 %}es{% endif %}</a>
+            <a href="/actividades/{{ a.ID }}"><i class="bi bi-diagram-3"></i> {{ a.NUM_HIJAS }} subactividad{% if
+                a.NUM_HIJAS != 1 %}es{% endif %}</a>
         </div>
         {% endif %}
     </td>
@@ -108,79 +109,85 @@
     <td>{{ a.RESPONSABLES or '—' }}</td>
     <td>{{ a.FECHA_SOLICITUD or '—' }}</td>
     <td>{{ a.HORAS_INVERTIDAS }}h</td>
-</tr>
-{% endmacro %}
+    </tr>
+    {% endmacro %}
 
-<div class="results-toolbar">
-    <div class="results-meta">
-        <strong>{{ total_actividades }}</strong> actividades encontradas
-        <span class="pagination-text">Pagina {{ page }} de {{ total_paginas }}</span>
-        {% if default_scope %}
-        <span class="scope-pill">{{ default_scope }}</span>
-        {% endif %}
-    </div>
-    <div class="view-switch" aria-label="Cambiar vista">
-        <button type="button" class="view-btn" data-view-btn="cards"><i class="bi bi-grid-3x3-gap"></i>Cards</button>
-        <button type="button" class="view-btn" data-view-btn="table"><i class="bi bi-table"></i>Tabla</button>
-    </div>
-</div>
-
-{% if actividades %}
-<div data-view-target="cards" class="active">
-    <div class="actividades-grid">
-        {% for a in actividades %}
-        {% if a._hijas_en_pagina %}
-        <div class="act-family-group">
-            {{ act_card_wrap(a) }}
-            <div class="act-family-children">
-                {% for h in a._hijas_en_pagina %}
-                {{ act_card_wrap(h, True) }}
-                {% endfor %}
-            </div>
+    <div class="results-toolbar">
+        <div class="results-meta">
+            <strong>{{ total_actividades }}</strong> actividades encontradas
+            <span class="pagination-text">Pagina {{ page }} de {{ total_paginas }}</span>
+            {% if default_scope %}
+            <span class="scope-pill">{{ default_scope }}</span>
+            {% endif %}
         </div>
-        {% else %}
-        {{ act_card_wrap(a) }}
-        {% endif %}
-        {% endfor %}
+        <div class="view-switch" aria-label="Cambiar vista">
+            <button type="button" class="view-btn" data-view-btn="cards"><i
+                    class="bi bi-grid-3x3-gap"></i>Cards</button>
+            <button type="button" class="view-btn" data-view-btn="table"><i class="bi bi-table"></i>Tabla</button>
+        </div>
     </div>
-</div>
 
-<div data-view-target="table">
-    <div class="table-shell">
-        <table class="actividades-table">
-            <thead>
-                <tr>
-                    <th>Actividad</th>
-                    <th>Proyecto</th>
-                    <th>Estatus</th>
-                    <th>Responsables</th>
-                    <th>Solicitud</th>
-                    <th>Horas</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for a in actividades %}
-                {{ act_row(a) }}
-                {% if a._hijas_en_pagina %}
-                {% for h in a._hijas_en_pagina %}
-                {{ act_row(h, True) }}
-                {% endfor %}
-                {% endif %}
-                {% endfor %}
-            </tbody>
-        </table>
+    {% if actividades %}
+    <div data-view-target="cards" class="active">
+        <div class="actividades-grid">
+            {% for a in actividades %}
+            {% if a._hijas_en_pagina %}
+            <div class="act-family-group">
+                {{ act_card_wrap(a) }}
+                <div class="act-family-children">
+                    {% for h in a._hijas_en_pagina %}
+                    {{ act_card_wrap(h, True) }}
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            {{ act_card_wrap(a) }}
+            {% endif %}
+            {% endfor %}
+        </div>
     </div>
-</div>
 
-<div class="pagination-wrap">
-    <button class="pagination-btn" type="button" onclick="goToPage({{ page - 1 }})" {% if page <= 1 %}disabled{% endif %}>Anterior</button>
-    <span class="pagination-text">Mostrando hasta {{ page_size }} por pagina</span>
-    <button class="pagination-btn" type="button" onclick="goToPage({{ page + 1 }})" {% if page >= total_paginas %}disabled{% endif %}>Siguiente</button>
-</div>
+    <div data-view-target="table">
+        <div class="table-shell">
+            <table class="actividades-table">
+                <thead>
+                    <tr>
+                        <th>Actividad</th>
+                        <th>Proyecto</th>
+                        <th>Estatus</th>
+                        <th>Responsables</th>
+                        <th>Solicitud</th>
+                        <th>Horas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in actividades %}
+                    {{ act_row(a) }}
+                    {% if a._hijas_en_pagina %}
+                    {% for h in a._hijas_en_pagina %}
+                    {{ act_row(h, True) }}
+                    {% endfor %}
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-{% else %}
-<div class="empty-page">
-    <i class="bi bi-kanban"></i>
-    <p>No hay actividades{% if has_filters %} con los filtros seleccionados{% endif %}.</p>
-</div>
-{% endif %}
+    <!-- DEBUG: page={{ page }}, total_paginas={{ total_paginas }} -->
+    <div class="pagination-wrap" data-current-page="{{ page }}" data-total-pages="{{ total_paginas }}">
+        <button class="pagination-btn" type="button" data-page="{{ page - 1 }}" {% if page <= 1 %}disabled{% endif %}>
+            <i class="bi bi-chevron-left"></i> Anterior
+        </button>
+
+        <button class="pagination-btn" type="button" data-page="{{ page + 1 }}" {% if page >= total_paginas %}disabled{% endif %}>
+            Siguiente <i class="bi bi-chevron-right"></i>
+        </button>
+    </div>
+
+    {% else %}
+    <div class="empty-page">
+        <i class="bi bi-kanban"></i>
+        <p>No hay actividades{% if has_filters %} con los filtros seleccionados{% endif %}.</p>
+    </div>
+    {% endif %}
