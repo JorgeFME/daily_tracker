@@ -14,7 +14,6 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
     where_registros, params_registros = _registros_where('R', filtros_reporte)
     where_registros_sql = ' AND '.join(where_registros) if where_registros else '1=1'
 
-    # Modificamos el EXISTS al final para que incluya padres con 0 horas cuyos hijos sí tengan registros
     sql_acts = """
         SELECT
             A."ID",
@@ -34,6 +33,10 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
             CAT."NOMBRE" AS "NOMBRE_ENTREGABLE",
             COALESCE((SELECT SUM(R."HORAS") FROM "REGISTRO_ACTIVIDADES" R
                        WHERE R."ID_ACTIVIDAD" = A."ID" AND """ + where_registros_sql + """), 0) AS "HORAS_TOTALES",
+            COALESCE((SELECT SUM(R."HORAS") FROM "REGISTRO_ACTIVIDADES" R
+                       WHERE R."ID_ACTIVIDAD" = A."ID"
+                         AND COALESCE(R."ES_PROPAGADO", 0) = 0
+                         AND """ + where_registros_sql + """), 0) AS "HORAS_DIRECTAS",
             (SELECT STRING_AGG(U2."NOMBRE_COMPLETO", ' / ')
              FROM "ACTIVIDAD_RESPONSABLES" AR
              JOIN "USUARIOS" U2 ON AR."ID_USUARIO" = U2."ID"
@@ -60,7 +63,7 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
                   FROM "REGISTRO_ACTIVIDADES" R
                   WHERE R."ID_ACTIVIDAD" = A."ID" AND """ + where_registros_sql + """
               )
-              OR 
+              OR
               /* Condición 2: Es un Padre con 0 horas pero tiene hijos que sí tienen registros de horas */
               EXISTS (
                   SELECT 1
@@ -71,7 +74,7 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
           )
         ORDER BY A."FECHA_SOLICITUD" ASC, A."CREADO_EN" ASC
     """
-    
+
     sql_evs = """
         SELECT
             EV."ID_ACTIVIDAD",
@@ -94,8 +97,20 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
     with _pool.get_connection() as conn:
         cur = conn.cursor()
         try:
-            # Multiplicamos los parámetros correspondientes por la duplicación del where_registros_sql en el OR
-            params_acts = tuple(params_registros + [proyecto_id] + params_registros + params_registros)
+            # HORAS_DIRECTAS agrega un bloque extra de params_registros en el SELECT
+            # Orden de parámetros en sql_acts:
+            #   1. where_registros_sql en HORAS_TOTALES subquery       → params_registros
+            #   2. where_registros_sql en HORAS_DIRECTAS subquery      → params_registros
+            #   3. WHERE A."ID_PROYECTO" = ?                           → proyecto_id
+            #   4. where_registros_sql en EXISTS condición 1           → params_registros
+            #   5. where_registros_sql en EXISTS condición 2           → params_registros
+            params_acts = tuple(
+                params_registros          # HORAS_TOTALES subquery
+                + params_registros        # HORAS_DIRECTAS subquery  ← nuevo
+                + [proyecto_id]
+                + params_registros        # EXISTS condición 1
+                + params_registros        # EXISTS condición 2
+            )
             cur.execute(sql_acts, params_acts)
             cols_a = [c[0] for c in cur.description]
             actividades = [dict(zip(cols_a, row)) for row in cur.fetchall()]
@@ -144,10 +159,10 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
             # Inyectar pseudo-actividades individuales para Actividades Rápidas (Ad-hoc)
             where_adhoc, params_adhoc = _registros_where('R', filtros_reporte)
             sql_adhoc = """
-                SELECT 
-                    R."FECHA", 
-                    R."HORAS", 
-                    R."ACCION", 
+                SELECT
+                    R."FECHA",
+                    R."HORAS",
+                    R."ACCION",
                     R."DETALLES",
                     T."DESCRIPCION" AS "TIPO",
                     U."NOMBRE_COMPLETO" AS "RESPONSABLE",
@@ -168,9 +183,9 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
                 tipo_val = rec[4] or "Ad-hoc"
                 responsable_val = rec[5] or "—"
                 proyecto_nombre = rec[6] or "Proyecto"
-                
+
                 fecha_str = str(fecha_val)[:10] if fecha_val else None
-                
+
                 actividades.append({
                     "ID": None,
                     "NOMBRE_ACTIVIDAD": f"⚡ {tipo_val} - {accion_val}",
@@ -186,6 +201,7 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
                     "ESTATUS": "Completado",
                     "NOMBRE_PROYECTO": proyecto_nombre,
                     "HORAS_TOTALES": horas_val,
+                    "HORAS_DIRECTAS": horas_val,  # Ad-hoc: siempre directas
                     "RESPONSABLES": responsable_val,
                     "RECURSOS": "—",
                     "NUM_HIJAS": 0,
@@ -200,6 +216,9 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
                     actividad["ES_ACTIVIDAD_RAPIDA_HISTORICA"] = 0
                 if "NOTAS_REPORTE" not in actividad:
                     actividad["NOTAS_REPORTE"] = ""
+                # Garantizar que HORAS_DIRECTAS siempre existe en todos los registros
+                if "HORAS_DIRECTAS" not in actividad:
+                    actividad["HORAS_DIRECTAS"] = actividad.get("HORAS_TOTALES", 0)
                 if "DESGLOSE_REPORTE" not in actividad:
                     actividad_id = actividad.get("ID")
                     bloques = desglose_por_actividad.get(actividad_id, {})
@@ -214,9 +233,6 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
                     actividad["DESGLOSE_REPORTE"] = "\n".join(lineas_desglose) or "—"
                 actividad["TIPO"] = (actividad.get("TIPO") or "—").strip() or "—"
 
-            # NOTA: Removemos el ordenamiento por fecha forzado al final para dejar que la función 
-            # de renderizado ordene jerárquicamente de forma libre en memoria de Python.
             return actividades, evidencias_por_actividad
         finally:
             cur.close()
-
