@@ -10,22 +10,34 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
     <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
     <style>
         :root {
             --primary: #2563eb;
+            --primary-dark: #1d4ed8;
             --primary-light: #dbeafe;
             --primary-glow: rgba(37, 99, 235, .15);
             --surface: #fff;
             --surface-alt: #f8fafd;
-            --border: #e8edf5;
-            --text-main: #1e293b;
+            --border: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --text-main: #0f172a;
             --text-muted: #94a3b8;
             --text-secondary: #64748b;
-            --radius-card: 20px;
-            --radius-input: 12px;
-            --shadow-card: 0 4px 24px rgba(15, 23, 42, .06), 0 1px 4px rgba(15, 23, 42, .04);
+            --radius-card: 16px;
+            --radius-input: 10px;
+            --shadow-card: 0 1px 3px rgba(15, 23, 42, .07), 0 4px 16px rgba(15, 23, 42, .05);
+            --shadow-md: 0 4px 12px rgba(15, 23, 42, .10);
+            --shadow-lg: 0 8px 32px rgba(15, 23, 42, .14);
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --success: #22c55e;
+            --success-light: #dcfce7;
+            --purple: #8b5cf6;
+            --purple-light: #ede9fe;
+            --orange: #f97316;
+            --orange-light: #ffedd5;
         }
 
         * {
@@ -33,14 +45,13 @@
         }
 
         body {
-            background: #f0f4fb;
-            background-image: radial-gradient(ellipse at 20% 0%, rgba(37, 99, 235, .06) 0%, transparent 60%);
+            background: #eef2f7;
             min-height: 100vh;
             font-family: 'DM Sans', sans-serif;
             color: var(--text-main);
         }
 
-        /* NAV */
+        /* ── NAV ── */
         .top-nav {
             background: #fff;
             border-bottom: 1px solid var(--border);
@@ -48,11 +59,11 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            height: 56px;
+            height: 58px;
             position: sticky;
             top: 0;
             z-index: 200;
-            box-shadow: 0 1px 8px rgba(15, 23, 42, .05);
+            box-shadow: 0 1px 12px rgba(15, 23, 42, .06);
         }
 
         .nav-logo {
@@ -117,11 +128,11 @@
             transition: all .2s;
         }
 
-        /* PAGE */
+        /* ── PAGE ── */
         .page-wrap {
-            max-width: 1280px;
+            max-width: 1600px;
             margin: 0 auto;
-            padding: 28px 24px;
+            padding: 36px 36px;
         }
 
         .page-header {
@@ -129,35 +140,92 @@
             justify-content: space-between;
             align-items: flex-end;
             margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
         .page-title {
-            font-size: 1.5rem;
+            font-size: 1.65rem;
             font-weight: 800;
             color: var(--text-main);
-            letter-spacing: -.4px;
+            letter-spacing: -.02em;
             margin: 0;
         }
 
         .page-subtitle {
-            font-size: .82rem;
+            font-size: .85rem;
             color: var(--text-muted);
             margin-top: 3px;
         }
 
-        /* FILTERS */
+        /* ── SCOPE CHIPS ── */
+        .scope-chips {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .scope-chip {
+            border: 1.5px solid var(--border);
+            border-radius: 99px;
+            background: #fff;
+            color: var(--text-secondary);
+            font-size: .78rem;
+            font-weight: 600;
+            padding: 5px 14px;
+            cursor: pointer;
+            line-height: 1;
+            transition: all .18s;
+        }
+
+        .scope-chip:hover {
+            border-color: var(--border-hover);
+            color: var(--text-main);
+        }
+
+        .scope-chip.active {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        /* ── FILTER HINT ── */
+        .filter-hint {
+            margin-bottom: 14px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(37, 99, 235, .2);
+            background: linear-gradient(135deg, rgba(219, 234, 254, .7), rgba(239, 246, 255, .95));
+            color: #1e3a8a;
+            font-size: .82rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-hint strong {
+            font-weight: 800;
+        }
+
+        .filter-disabled-note {
+            color: #3b82f6;
+            font-size: .76rem;
+            font-weight: 500;
+        }
+
+        /* ── FILTERS ── */
         .filters-bar {
             margin-bottom: 20px;
         }
 
         .filters-panel {
-            background: linear-gradient(180deg, rgba(248, 250, 253, .96), rgba(240, 244, 251, .92));
+            background: #fff;
             border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 16px;
+            border-radius: 16px;
+            padding: 20px;
             box-shadow: var(--shadow-card);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), var(--shadow-card);
-            backdrop-filter: blur(6px);
         }
 
         .filters-grid {
@@ -171,7 +239,7 @@
             grid-column: span 3;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
             min-width: 0;
         }
 
@@ -188,15 +256,16 @@
             display: flex;
             justify-content: flex-end;
             align-items: end;
+            gap: 8px;
             min-height: 100%;
         }
 
         .filter-field-label {
-            font-size: .72rem;
+            font-size: .67rem;
             font-weight: 700;
-            color: var(--text-secondary);
-            letter-spacing: .02em;
-            padding-left: 2px;
+            text-transform: uppercase;
+            letter-spacing: .9px;
+            color: var(--text-muted);
         }
 
         .filter-date-range {
@@ -213,7 +282,8 @@
             border: 1.5px solid var(--border) !important;
             border-radius: var(--radius-input) !important;
             background: var(--surface) !important;
-            box-shadow: var(--shadow-card) !important;
+            box-shadow: none !important;
+            transition: border-color .18s, box-shadow .18s !important;
         }
 
         .filters-bar .ts-wrapper.focus {
@@ -225,19 +295,18 @@
             border: none !important;
             background: transparent !important;
             box-shadow: none !important;
-            padding: 8px 12px !important;
+            padding: 7px 12px !important;
             font-size: .83rem !important;
             font-family: 'DM Sans', sans-serif !important;
-            min-height: 40px !important;
+            min-height: 38px !important;
             cursor: pointer !important;
         }
 
-        /* Date inputs in filters bar */
         .filter-date {
             width: 100%;
             min-width: 0;
             max-width: none;
-            height: 40px;
+            height: 38px;
             border: 1.5px solid var(--border);
             border-radius: var(--radius-input);
             padding: 0 12px;
@@ -245,30 +314,44 @@
             font-family: 'DM Sans', sans-serif;
             color: var(--text-main);
             background: var(--surface);
-            box-shadow: var(--shadow-card);
             cursor: pointer;
             outline: none;
-            transition: border-color .2s, box-shadow .2s;
-            white-space: nowrap;
+            transition: border-color .18s, box-shadow .18s;
         }
 
-        .filter-date:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-glow);
-        }
-
+        .filter-date:focus,
         .filter-date.flatpickr-input.active {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px var(--primary-glow);
         }
 
-        /* Hide the real input, style only the altInput */
         .filter-date[type="hidden"] {
             display: none;
         }
 
+        .filter-search {
+            width: 100%;
+            min-width: 0;
+            max-width: none;
+            height: 38px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-input);
+            padding: 0 12px;
+            font-size: .83rem;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-main);
+            background: var(--surface);
+            outline: none;
+            transition: border-color .18s, box-shadow .18s;
+        }
+
+        .filter-search:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
         .filter-clear {
-            min-height: 40px;
+            min-height: 38px;
             white-space: nowrap;
             color: var(--text-secondary);
             text-decoration: none;
@@ -277,42 +360,22 @@
             justify-content: center;
             gap: 6px;
             font-size: .82rem;
-            font-weight: 700;
+            font-weight: 600;
             padding: 0 14px;
-            border: 1.5px dashed var(--border);
-            border-radius: 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-input);
             background: #fff;
             width: 100%;
+            transition: all .18s;
         }
 
         .filter-clear:hover {
-            border-color: #fecaca;
-            background: #fff7f7;
+            border-color: var(--danger);
+            background: var(--danger-light);
             color: var(--danger);
         }
 
-        .filter-search {
-            width: 100%;
-            min-width: 0;
-            max-width: none;
-            height: 40px;
-            border: 1.5px solid var(--border);
-            border-radius: var(--radius-input);
-            padding: 0 12px;
-            font-size: .83rem;
-            font-family: 'DM Sans', sans-serif;
-            color: var(--text-main);
-            background: var(--surface);
-            box-shadow: var(--shadow-card);
-            outline: none;
-            transition: border-color .2s, box-shadow .2s;
-        }
-
-        .filter-search:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-glow);
-        }
-
+        /* ── RESULTS TOOLBAR ── */
         .results-toolbar {
             display: flex;
             justify-content: space-between;
@@ -331,85 +394,25 @@
         }
 
         .scope-pill {
-            background: #eff6ff;
-            color: #1d4ed8;
-            border: 1px solid #bfdbfe;
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid rgba(37, 99, 235, .2);
             border-radius: 99px;
             padding: 3px 10px;
             font-size: .72rem;
             font-weight: 700;
         }
 
-        .scope-chips {
-            display: inline-flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 10px;
-        }
-
-        .scope-chip {
-            border: 1.5px solid var(--border);
-            border-radius: 99px;
-            background: #fff;
-            color: var(--text-secondary);
-            font-size: .74rem;
-            font-weight: 700;
-            padding: 5px 10px;
-            cursor: pointer;
-            line-height: 1;
-        }
-
-        .scope-chip.active {
-            border-color: var(--primary);
-            color: var(--primary);
-            background: var(--primary-light);
-        }
-
-        .filter-hint {
-            margin-bottom: 12px;
-            padding: 10px 12px;
-            border-radius: 12px;
-            border: 1px solid #dbeafe;
-            background: #f8fbff;
-            color: #1e3a8a;
-            font-size: .78rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .filter-hint strong {
-            font-weight: 800;
-        }
-
-        .filter-disabled-note {
-            color: var(--text-muted);
-            font-size: .72rem;
-            font-weight: 600;
-        }
-
-        .filters-bar .ts-wrapper.disabled,
-        .filters-bar .ts-wrapper.locked {
-            opacity: .55;
-            pointer-events: none;
-            background: #f8fafc !important;
-        }
-
-        .filters-bar .ts-wrapper.disabled .ts-control,
-        .filters-bar .ts-wrapper.locked .ts-control {
-            cursor: not-allowed !important;
-        }
-
+        /* ── VIEW SWITCH ── */
         .view-switch {
             display: inline-flex;
-            gap: 6px;
+            gap: 4px;
         }
 
         .view-btn {
             height: 34px;
             border: 1.5px solid var(--border);
-            border-radius: 10px;
+            border-radius: 9px;
             background: #fff;
             color: var(--text-secondary);
             font-size: .78rem;
@@ -419,6 +422,12 @@
             align-items: center;
             gap: 6px;
             cursor: pointer;
+            transition: all .18s;
+        }
+
+        .view-btn:hover {
+            border-color: var(--border-hover);
+            color: var(--text-main);
         }
 
         .view-btn.active {
@@ -427,13 +436,28 @@
             background: var(--primary-light);
         }
 
+        /* ── TABLE ── */
         .table-shell {
             background: #fff;
             border: 1px solid var(--border);
-            border-radius: 16px;
-            overflow-x: auto;
+            border-radius: var(--radius-card);
             box-shadow: var(--shadow-card);
+            overflow: hidden;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: calc(100vh - 320px);
             -webkit-overflow-scrolling: touch;
+        }
+
+        .table-scroll thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #f8fafc;
+            box-shadow: 0 1px 0 var(--border);
         }
 
         .actividades-table {
@@ -444,23 +468,31 @@
 
         .actividades-table th,
         .actividades-table td {
-            padding: 11px 12px;
-            font-size: .79rem;
-            border-bottom: 1px solid var(--border);
+            padding: 11px 14px;
+            font-size: .8rem;
+            border-bottom: 1px solid #f1f5f9;
             vertical-align: middle;
         }
 
         .actividades-table th {
-            background: var(--surface-alt);
-            color: var(--text-muted);
+            background: #f8fafc;
+            color: #8899b0;
             text-transform: uppercase;
-            letter-spacing: .6px;
-            font-size: .67rem;
+            letter-spacing: .8px;
+            font-size: .66rem;
             font-weight: 700;
         }
 
         .actividades-table tr:last-child td {
             border-bottom: none;
+        }
+
+        .actividades-table tbody tr {
+            transition: background .12s;
+        }
+
+        .actividades-table tbody tr:hover {
+            background: #f0f6ff;
         }
 
         .table-title-link {
@@ -473,6 +505,7 @@
             color: var(--primary);
         }
 
+        /* ── PAGINATION ── */
         .pagination-wrap {
             margin-top: 16px;
             display: flex;
@@ -484,22 +517,33 @@
 
         .pagination-btn {
             border: 1.5px solid var(--border);
-            border-radius: 10px;
+            border-radius: 9px;
             background: #fff;
             color: var(--text-secondary);
-            font-size: .78rem;
-            font-weight: 700;
-            padding: 7px 12px;
+            font-size: .8rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            padding: 7px 14px;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all .18s;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
         }
 
         .pagination-btn:disabled {
-            opacity: .45;
+            opacity: .4;
             cursor: not-allowed;
         }
 
         .pagination-text {
-            font-size: .78rem;
+            font-size: .8rem;
             color: var(--text-muted);
         }
 
@@ -511,104 +555,7 @@
             display: block;
         }
 
-        @media (max-width: 1100px) {
-
-            .filter-field,
-            .filter-field-wide,
-            .filter-field-dates {
-                grid-column: span 6;
-            }
-
-            .filter-actions {
-                grid-column: span 12;
-                justify-content: stretch;
-            }
-        }
-
-        @media (max-width: 768px) {
-            body {
-                overflow-x: hidden;
-            }
-
-            .top-nav {
-                padding: 0 14px;
-                gap: 8px;
-                overflow: visible;
-            }
-
-            .nav-logo {
-                margin-right: 0;
-                min-width: 0;
-                flex: 1;
-            }
-
-            .nav-logo-text {
-                display: block;
-                flex: 1;
-                text-align: center;
-                padding-right: 10px;
-                font-size: .78rem;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            .nav-hamburger {
-                display: inline-flex;
-                margin-left: 0;
-            }
-
-            .nav-menu {
-                position: absolute;
-                top: calc(100% + 8px);
-                left: 12px;
-                right: 12px;
-                display: none;
-                flex-direction: column;
-                align-items: stretch;
-                gap: 4px;
-                background: #fff;
-                border: 1px solid var(--border);
-                border-radius: 14px;
-                padding: 8px;
-                box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
-                z-index: 210;
-            }
-
-            .top-nav.menu-open .nav-menu {
-                display: flex;
-            }
-
-            .nav-menu .nav-link-item {
-                width: 100%;
-                justify-content: flex-start;
-            }
-
-            .page-wrap {
-                padding: 22px 16px;
-            }
-
-            .filters-panel {
-                padding: 14px;
-            }
-
-            .filter-field,
-            .filter-field-wide,
-            .filter-field-dates,
-            .filter-actions {
-                grid-column: span 12;
-            }
-
-            .filter-date-range {
-                grid-template-columns: 1fr;
-            }
-
-            .results-meta {
-                width: 100%;
-                flex-wrap: wrap;
-            }
-        }
-
-        /* CARDS GRID */
+        /* ── CARDS GRID ── */
         .actividades-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -628,8 +575,8 @@
         }
 
         .act-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 32px rgba(15, 23, 42, .1);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .act-card-top {
@@ -642,46 +589,51 @@
             gap: 6px;
             margin-bottom: 10px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .badge-estatus {
             padding: 3px 10px;
             border-radius: 99px;
-            font-size: .68rem;
+            font-size: .67rem;
             font-weight: 700;
-            letter-spacing: .4px;
+            letter-spacing: .3px;
         }
 
         .badge-prioridad {
             padding: 3px 10px;
             border-radius: 99px;
-            font-size: .68rem;
+            font-size: .67rem;
             font-weight: 700;
         }
 
         .prio-1 {
             background: #fff1f2;
             color: #ef4444;
+            border: 1px solid #fecaca;
         }
 
         .prio-2 {
             background: #fefce8;
             color: #ca8a04;
+            border: 1px solid #fde68a;
         }
 
         .prio-3 {
             background: #f0fdf4;
             color: #059669;
+            border: 1px solid #bbf7d0;
         }
 
         .act-nombre {
-            font-size: .98rem;
+            font-size: .97rem;
             font-weight: 700;
             color: var(--text-main);
             margin: 0 0 4px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            letter-spacing: -.01em;
         }
 
         .act-proyecto {
@@ -713,6 +665,7 @@
             text-transform: uppercase;
             letter-spacing: .6px;
             display: block;
+            font-size: .67rem;
         }
 
         .act-meta-val {
@@ -722,7 +675,7 @@
             font-size: .78rem;
         }
 
-        /* JERARQUÍA PADRE/HIJA */
+        /* ── HIERARCHY ── */
         .act-family-group {
             grid-column: 1 / -1;
             display: flex;
@@ -862,6 +815,7 @@
             gap: 4px;
         }
 
+        /* ── PROGRESS ── */
         .progress-wrap {
             margin-top: 4px;
         }
@@ -875,7 +829,7 @@
         }
 
         .progress-bar-track {
-            height: 6px;
+            height: 5px;
             background: #f1f5f9;
             border-radius: 99px;
             overflow: hidden;
@@ -888,26 +842,39 @@
             transition: width .4s ease;
         }
 
-        /* EMPTY */
+        /* ── EMPTY ── */
         .empty-page {
             text-align: center;
             padding: 80px 20px;
         }
 
-        .empty-page i {
-            font-size: 3rem;
+        .empty-page-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--surface-alt);
+            border: 1.5px solid var(--border);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
             color: var(--text-muted);
-            opacity: .4;
-            display: block;
-            margin-bottom: 12px;
+            margin: 0 auto 16px;
+        }
+
+        .empty-page-title {
+            font-size: .95rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
         }
 
         .empty-page p {
             color: var(--text-muted);
-            font-size: .9rem;
+            font-size: .85rem;
         }
 
-        /* BTN */
+        /* ── ACTION BTNS ON CARD ── */
         .btn-delete-act {
             position: absolute;
             top: 10px;
@@ -917,15 +884,15 @@
             height: 30px;
             border-radius: 8px;
             border: none;
-            background: #fff1f2;
-            color: #ef4444;
+            background: var(--danger-light);
+            color: var(--danger);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: .8rem;
             opacity: 0;
-            transition: all .2s;
+            transition: all .18s;
         }
 
         .btn-edit-act {
@@ -937,15 +904,15 @@
             height: 30px;
             border-radius: 8px;
             border: none;
-            background: #eff6ff;
-            color: #2563eb;
+            background: var(--primary-light);
+            color: var(--primary);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: .8rem;
             opacity: 0;
-            transition: all .2s;
+            transition: all .18s;
         }
 
         .act-card-wrap:hover .btn-edit-act,
@@ -954,17 +921,18 @@
         }
 
         .btn-edit-act:hover {
-            background: #2563eb;
+            background: var(--primary);
             color: #fff;
-            transform: scale(1.1);
+            transform: scale(1.08);
         }
 
         .btn-delete-act:hover {
-            background: #ef4444;
+            background: var(--danger);
             color: #fff;
-            transform: scale(1.1);
+            transform: scale(1.08);
         }
 
+        /* ── BTN NEW ── */
         .btn-new {
             display: flex;
             align-items: center;
@@ -972,32 +940,36 @@
             padding: 10px 20px;
             border-radius: var(--radius-input);
             border: none;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            background: var(--primary);
             color: #fff;
             font-weight: 700;
             font-size: .88rem;
             font-family: 'DM Sans', sans-serif;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(37, 99, 235, .3);
+            box-shadow: 0 4px 14px rgba(37, 99, 235, .28);
             transition: all .2s;
+            white-space: nowrap;
         }
 
         .btn-new:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(37, 99, 235, .4);
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(37, 99, 235, .36);
         }
 
-        /* MODAL */
+        /* ── MODAL ── */
         .modal-content {
             border: none !important;
-            border-radius: 20px !important;
-            box-shadow: 0 24px 60px rgba(15, 23, 42, .15) !important;
+            border-radius: 18px !important;
+            box-shadow: var(--shadow-lg), 0 0 0 1px rgba(15, 23, 42, .06) !important;
             font-family: 'DM Sans', sans-serif;
         }
 
         .modal-header {
-            padding: 24px 28px 16px;
+            padding: 22px 28px 16px;
             border-bottom: 1px solid var(--border) !important;
+            display: flex;
+            align-items: center;
         }
 
         .modal-body {
@@ -1005,26 +977,42 @@
         }
 
         .modal-footer {
-            padding: 16px 28px 24px;
-            border-top: none !important;
+            padding: 16px 28px 22px;
+            border-top: 1px solid var(--border) !important;
         }
 
         .modal-title {
             font-weight: 700;
-            font-size: 1.05rem;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-title-icon {
+            width: 30px;
+            height: 30px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .85rem;
+            flex-shrink: 0;
         }
 
         .field-group {
-            margin-bottom: 18px;
+            margin-bottom: 16px;
         }
 
         .field-label {
-            font-size: .68rem;
+            font-size: .67rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: .9px;
             color: var(--text-muted);
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             display: block;
         }
 
@@ -1032,13 +1020,13 @@
             width: 100%;
             border: 1.5px solid var(--border);
             border-radius: var(--radius-input);
-            padding: 10px 14px;
-            font-size: .9rem;
+            padding: 9px 13px;
+            font-size: .88rem;
             font-family: 'DM Sans', sans-serif;
             color: var(--text-main);
             outline: none;
             background: var(--surface-alt);
-            transition: all .2s;
+            transition: all .18s;
         }
 
         .field-input:focus {
@@ -1058,19 +1046,22 @@
             gap: 12px;
         }
 
+        /* Tom Select modal */
         .ts-control {
             border: none !important;
             background: transparent !important;
             box-shadow: none !important;
-            padding: 10px 14px !important;
-            font-size: .9rem !important;
-            min-height: 44px !important;
+            padding: 9px 13px !important;
+            font-size: .88rem !important;
+            min-height: 42px !important;
+            font-family: 'DM Sans', sans-serif !important;
         }
 
         .ts-wrapper {
             border: 1.5px solid var(--border);
             border-radius: var(--radius-input);
             background: var(--surface-alt);
+            transition: border-color .18s, box-shadow .18s;
         }
 
         .ts-wrapper.focus {
@@ -1079,17 +1070,18 @@
         }
 
         .ts-dropdown {
-            border-radius: 14px !important;
-            box-shadow: 0 12px 32px rgba(15, 23, 42, .12) !important;
+            border-radius: 12px !important;
+            box-shadow: var(--shadow-lg) !important;
             border: 1px solid var(--border) !important;
-            padding: 8px !important;
-            margin-top: 6px !important;
+            padding: 6px !important;
+            margin-top: 5px !important;
         }
 
         .ts-dropdown .option {
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: .88rem;
+            border-radius: 7px;
+            padding: 7px 11px;
+            font-size: .85rem;
+            font-family: 'DM Sans', sans-serif;
         }
 
         .ts-dropdown .option:hover,
@@ -1100,21 +1092,133 @@
 
         .btn-submit-modal {
             width: 100%;
-            padding: 13px;
+            padding: 12px;
             border-radius: var(--radius-input);
             border: none;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            background: var(--primary);
             color: #fff;
             font-weight: 700;
             font-size: .9rem;
             font-family: 'DM Sans', sans-serif;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(37, 99, 235, .3);
+            box-shadow: 0 4px 14px rgba(37, 99, 235, .28);
             transition: all .2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .btn-submit-modal:hover {
+            background: var(--primary-dark);
             transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(37, 99, 235, .36);
+        }
+
+        /* ── DISABLED FILTER STATE ── */
+        .filters-bar .ts-wrapper.disabled,
+        .filters-bar .ts-wrapper.locked {
+            opacity: .55;
+            pointer-events: none;
+            background: #f8fafc !important;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1100px) {
+
+            .filter-field,
+            .filter-field-wide,
+            .filter-field-dates {
+                grid-column: span 6;
+            }
+
+            .filter-actions {
+                grid-column: span 12;
+                justify-content: stretch;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                overflow-x: hidden;
+            }
+
+            .top-nav {
+                padding: 0 14px;
+                gap: 8px;
+                overflow: visible;
+            }
+
+            .nav-logo {
+                margin-right: 0;
+                min-width: 0;
+                flex: 1;
+            }
+
+            .nav-logo-text {
+                display: block;
+                flex: 1;
+                text-align: center;
+                padding-right: 10px;
+                font-size: .78rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .nav-hamburger {
+                display: inline-flex;
+                margin-left: 0;
+            }
+
+            .nav-menu {
+                position: absolute;
+                top: calc(100% + 8px);
+                left: 12px;
+                right: 12px;
+                display: none;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+                background: #fff;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 8px;
+                box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+                z-index: 210;
+            }
+
+            .top-nav.menu-open .nav-menu {
+                display: flex;
+            }
+
+            .nav-menu .nav-link-item {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .page-wrap {
+                padding: 22px 16px;
+            }
+
+            .filters-panel {
+                padding: 14px;
+            }
+
+            .filter-field,
+            .filter-field-wide,
+            .filter-field-dates,
+            .filter-actions {
+                grid-column: span 12;
+            }
+
+            .filter-date-range {
+                grid-template-columns: 1fr;
+            }
+
+            .results-meta {
+                width: 100%;
+                flex-wrap: wrap;
+            }
         }
     </style>
 </head>
@@ -1186,7 +1290,7 @@
                         <div class="filter-field filter-field-wide">
                             <label class="filter-field-label" for="filter-q">Buscar actividad</label>
                             <input type="search" id="filter-q" name="q" class="filter-search"
-                                placeholder="Buscar por nombre o descripcion..." value="{{ filtro_q or '' }}">
+                                placeholder="Buscar por nombre o descripción..." value="{{ filtro_q or '' }}">
                         </div>
 
                         <div class="filter-field">
@@ -1194,11 +1298,11 @@
                             <select id="filter-sort" name="sort">
                                 <option value="prioridad" {% if filtro_sort=='prioridad' %}selected{% endif %}>Prioridad
                                 </option>
-                                <option value="recientes" {% if filtro_sort=='recientes' %}selected{% endif %}>Mas
+                                <option value="recientes" {% if filtro_sort=='recientes' %}selected{% endif %}>Más
                                     recientes</option>
                                 <option value="nombre" {% if filtro_sort=='nombre' %}selected{% endif %}>Nombre A-Z
                                 </option>
-                                <option value="horas" {% if filtro_sort=='horas' %}selected{% endif %}>Mas horas
+                                <option value="horas" {% if filtro_sort=='horas' %}selected{% endif %}>Más horas
                                 </option>
                             </select>
                         </div>
@@ -1290,7 +1394,10 @@
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-plus-circle me-2 text-primary"></i>Nueva Actividad</h5>
+                    <h5 class="modal-title">
+                        <span class="modal-title-icon"><i class="bi bi-plus-lg"></i></span>
+                        Nueva Actividad
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -1338,7 +1445,6 @@
                             <input type="text" class="field-input" name="friendly_name"
                                 placeholder="Ej: Plan semanal cliente ACME">
                         </div>
-
                         <div class="field-group">
                             <label class="field-label">Descripción</label>
                             <textarea class="field-input" name="descripcion"
@@ -1350,9 +1456,8 @@
                                 <select class="field-input" name="solicitante">
                                     <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero
                                         registra solicitantes en Catálogos' }}</option>
-                                    {% for s in solicitantes %}
-                                    <option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>
-                                    {% endfor %}
+                                    {% for s in solicitantes %}<option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>{%
+                                    endfor %}
                                 </select>
                             </div>
                             <div class="field-group">
@@ -1396,17 +1501,14 @@
                         <div class="field-group">
                             <label class="field-label">Responsable(s)</label>
                             <select id="sel-responsable" name="responsables" multiple>
-                                {% for u in users %}
-                                <option value="{{ u.ID }}">{{ u.NOMBRE_COMPLETO }}</option>
-                                {% endfor %}
+                                {% for u in users %}<option value="{{ u.ID }}">{{ u.NOMBRE_COMPLETO }}</option>{% endfor
+                                %}
                             </select>
                         </div>
                         <div class="field-group">
                             <label class="field-label">Recursos utilizados</label>
                             <select id="sel-recursos" name="recursos" multiple>
-                                {% for r in recursos %}
-                                <option value="{{ r.ID }}">{{ r.NOMBRE }}</option>
-                                {% endfor %}
+                                {% for r in recursos %}<option value="{{ r.ID }}">{{ r.NOMBRE }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="field-group">
@@ -1414,13 +1516,12 @@
                                     style="font-weight:400;color:var(--text-muted);font-size:.8em;">(opcional)</span></label>
                             <select id="sel-actividad-padre" name="id_actividad_padre">
                                 <option value="">Sin actividad origen</option>
-                                {% for a in todas_actividades %}
-                                <option value="{{ a.ID }}">{{ a.NOMBRE_ACTIVIDAD }} — {{ a.NOMBRE_PROYECTO }}</option>
-                                {% endfor %}
+                                {% for a in todas_actividades %}<option value="{{ a.ID }}">{{ a.NOMBRE_ACTIVIDAD }} — {{
+                                    a.NOMBRE_PROYECTO }}</option>{% endfor %}
                             </select>
                         </div>
                         <button type="submit" class="btn-submit-modal">
-                            <i class="bi bi-check2-circle me-2"></i>Crear Actividad
+                            <i class="bi bi-check2-circle"></i> Crear Actividad
                         </button>
                     </form>
                 </div>
@@ -1428,14 +1529,15 @@
         </div>
     </div>
 
-
-
-    <!-- MODAL EDITAR ACTIVIDAD COMPLETO -->
+    <!-- MODAL EDITAR ACTIVIDAD -->
     <div class="modal fade" id="modalEditarActividadRapida" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2 text-primary"></i>Editar Actividad</h5>
+                    <h5 class="modal-title">
+                        <span class="modal-title-icon"><i class="bi bi-pencil"></i></span>
+                        Editar Actividad
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -1446,23 +1548,20 @@
                                 <label class="field-label">Proyecto *</label>
                                 <select id="quick-edit-proyecto" name="id_proyecto" required>
                                     <option value="">Selecciona...</option>
-                                    {% for p in projects %}
-                                    <option value="{{ p.ID }}">{{ p.NOMBRE_PROYECTO }}</option>
-                                    {% endfor %}
+                                    {% for p in projects %}<option value="{{ p.ID }}">{{ p.NOMBRE_PROYECTO }}</option>{%
+                                    endfor %}
                                 </select>
                                 <p
                                     style="font-size:.7rem;color:#f59e0b;margin:5px 0 0;display:flex;align-items:center;gap:4px;">
                                     <i class="bi bi-exclamation-triangle-fill"></i>
-                                    Al cambiar el proyecto, las horas registradas se reasignarán automáticamente al
-                                    nuevo proyecto.
+                                    Al cambiar el proyecto, las horas registradas se reasignarán automáticamente.
                                 </p>
                             </div>
                             <div class="field-group">
                                 <label class="field-label">Estatus *</label>
                                 <select id="quick-edit-estatus" name="id_estatus" required>
-                                    {% for e in estatus_list %}
-                                    <option value="{{ e.ID }}">{{ e.DESCRIPCION }}</option>
-                                    {% endfor %}
+                                    {% for e in estatus_list %}<option value="{{ e.ID }}">{{ e.DESCRIPCION }}</option>{%
+                                    endfor %}
                                 </select>
                             </div>
                         </div>
@@ -1501,16 +1600,14 @@
                                 <select class="field-input" id="quick-edit-solicitante" name="solicitante">
                                     <option value="">{{ 'Selecciona un solicitante...' if solicitantes else 'Primero
                                         registra solicitantes en Catálogos' }}</option>
-                                    {% for s in solicitantes %}
-                                    <option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>
-                                    {% endfor %}
+                                    {% for s in solicitantes %}<option value="{{ s.NOMBRE }}">{{ s.NOMBRE }}</option>{%
+                                    endfor %}
                                 </select>
                             </div>
                             <div class="field-group">
                                 <label class="field-label">Fecha de solicitud *</label>
                                 <input type="text" class="field-input" id="quick-edit-fecha-solicitud"
-                                    name="fecha_solicitud" placeholder="Selecciona fecha" autocomplete="off" required
-                                    aria-required="true">
+                                    name="fecha_solicitud" placeholder="Selecciona fecha" autocomplete="off" required>
                             </div>
                         </div>
                         <div class="row-2">
@@ -1539,10 +1636,8 @@
                                         style="font-weight:400;color:var(--text-muted);font-size:.8em;">(opcional)</span></label>
                                 <select id="quick-edit-padre" name="id_actividad_padre">
                                     <option value="">Sin actividad origen</option>
-                                    {% for a in todas_actividades %}
-                                    <option value="{{ a.ID }}">{{ a.NOMBRE_ACTIVIDAD }} — {{ a.NOMBRE_PROYECTO }}
-                                    </option>
-                                    {% endfor %}
+                                    {% for a in todas_actividades %}<option value="{{ a.ID }}">{{ a.NOMBRE_ACTIVIDAD }}
+                                        — {{ a.NOMBRE_PROYECTO }}</option>{% endfor %}
                                 </select>
                             </div>
                         </div>
@@ -1562,21 +1657,18 @@
                         <div class="field-group">
                             <label class="field-label">Responsable(s)</label>
                             <select id="quick-edit-responsables" name="responsables" multiple>
-                                {% for u in users %}
-                                <option value="{{ u.ID }}">{{ u.NOMBRE_COMPLETO }}</option>
-                                {% endfor %}
+                                {% for u in users %}<option value="{{ u.ID }}">{{ u.NOMBRE_COMPLETO }}</option>{% endfor
+                                %}
                             </select>
                         </div>
                         <div class="field-group">
                             <label class="field-label">Recursos utilizados</label>
                             <select id="quick-edit-recursos" name="recursos" multiple>
-                                {% for r in recursos %}
-                                <option value="{{ r.ID }}">{{ r.NOMBRE }}</option>
-                                {% endfor %}
+                                {% for r in recursos %}<option value="{{ r.ID }}">{{ r.NOMBRE }}</option>{% endfor %}
                             </select>
                         </div>
                         <button type="submit" class="btn-submit-modal">
-                            <i class="bi bi-check2-circle me-2"></i>Guardar cambios
+                            <i class="bi bi-check2-circle"></i> Guardar cambios
                         </button>
                     </form>
                 </div>
@@ -1590,8 +1682,8 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
 
-
     <script>
+        // ── NAV MOBILE ──────────────────────────────────────────────────────────────
         const topNav = document.getElementById('top-nav');
         const navHamburger = document.getElementById('nav-hamburger');
         const navMenu = document.getElementById('nav-menu');
@@ -1603,33 +1695,20 @@
         }
 
         function toggleMobileNav(event) {
-            event?.preventDefault();
-            event?.stopPropagation();
+            event?.preventDefault(); event?.stopPropagation();
             if (window.innerWidth > 768) return;
             const open = topNav.classList.toggle('menu-open');
             navHamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
             navHamburger.innerHTML = open ? '<i class="bi bi-x-lg"></i>' : '<i class="bi bi-list"></i>';
         }
 
-        navHamburger?.addEventListener('click', (event) => toggleMobileNav(event));
-        navMenu?.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
-                if (window.innerWidth <= 768) closeMobileNav();
-            });
-        });
+        navHamburger?.addEventListener('click', toggleMobileNav);
+        navMenu?.querySelectorAll('a').forEach(l => l.addEventListener('click', () => { if (window.innerWidth <= 768) closeMobileNav(); }));
+        document.addEventListener('click', e => { if (window.innerWidth > 768) return; if (!e.target.closest('#top-nav')) closeMobileNav(); });
+        window.addEventListener('resize', () => { if (window.innerWidth > 768) closeMobileNav(); });
 
-        document.addEventListener('click', (event) => {
-            if (window.innerWidth > 768) return;
-            const clickedInsideNav = event.target.closest('#top-nav');
-            if (!clickedInsideNav) closeMobileNav();
-        });
-
-        window.addEventListener('resize', () => {
-            if (window.innerWidth > 768) closeMobileNav();
-        });
-
+        // ── FILTROS ─────────────────────────────────────────────────────────────────
         const tsCfg = { create: false, sortField: { field: 'text', direction: 'asc' } };
-
         const filtrosForm = document.getElementById('form-filtros');
         const pageInput = document.getElementById('filter-page');
         const scopeInput = document.getElementById('filter-scope');
@@ -1640,16 +1719,12 @@
         let filtersRequestController = null;
 
         function getScopeLabel(scope) {
-            if (scope === 'active') return 'Actividades activas';
-            if (scope === 'completed') return 'Actividades completadas';
-            if (scope === 'canceled') return 'Actividades canceladas';
-            return 'Todas las actividades';
+            const labels = { active: 'Actividades activas', completed: 'Actividades completadas', canceled: 'Actividades canceladas' };
+            return labels[scope] || 'Todas las actividades';
         }
 
         function setActiveScopeChip(scope) {
-            document.querySelectorAll('[data-scope]').forEach((btn) => {
-                btn.classList.toggle('active', btn.dataset.scope === scope);
-            });
+            document.querySelectorAll('[data-scope]').forEach(btn => btn.classList.toggle('active', btn.dataset.scope === scope));
         }
 
         function updateFilterActionsVisibility() {
@@ -1687,9 +1762,7 @@
 
         function bindViewControls() {
             const currentView = sessionStorage.getItem('actividades_view') || 'cards';
-            document.querySelectorAll('[data-view-btn]').forEach((btn) => {
-                btn.onclick = () => applyView(btn.dataset.viewBtn);
-            });
+            document.querySelectorAll('[data-view-btn]').forEach(btn => { btn.onclick = () => applyView(btn.dataset.viewBtn); });
             applyView(currentView);
         }
 
@@ -1708,11 +1781,21 @@
             try {
                 const response = await fetch(requestUrl, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    cache: 'no-store',
                     signal: controller.signal,
                 });
                 if (!response.ok) throw new Error(`No se pudo actualizar la vista (${response.status})`);
                 resultsContainer.innerHTML = await response.text();
                 history.replaceState({}, '', requestUrl);
+
+                // ── FIX: sincronizar pageInput con la página real del partial renderizado ──
+                const paginationWrap = resultsContainer.querySelector('.pagination-wrap');
+                if (paginationWrap && pageInput) {
+                    const realPage = paginationWrap.dataset.currentPage;
+                    if (realPage) pageInput.value = String(realPage);
+                }
+                // ─────────────────────────────────────────────────────────────────────────
+
                 bindViewControls();
                 updateFilterActionsVisibility();
             } catch (error) {
@@ -1724,15 +1807,40 @@
                 }
             }
         }
-
+        // ── PAGINACIÓN: FIX ─────────────────────────────────────────────────────────
+        // El bug era que goToPage actualizaba pageInput y llamaba submitFiltros, pero
+        // si el partial ya había actualizado la URL a page=2, el pageInput del DOM
+        // seguía sincronizado. El problema real: los botones en el partial renderizado
+        // llaman a goToPage con el número de página destino, pero necesitamos asegurarnos
+        // de que pageInput siempre refleje ese número antes de hacer el fetch.
         function goToPage(page) {
-            if (!pageInput || page < 1) return;
-            pageInput.value = String(page);
-            submitFiltros();
+            const pageNum = parseInt(page, 10);
+            if (!pageInput || isNaN(pageNum) || pageNum < 1) return;
+            pageInput.value = String(pageNum);
+
+            // DEBUG - borra esto después
+            console.log('goToPage llamado con:', pageNum);
+            console.log('pageInput.value después de asignar:', pageInput.value);
+            console.log('FormData page:', new FormData(filtrosForm).get('page'));
+
+            submitFiltros(false);
         }
 
-        const scopeButtons = document.querySelectorAll('[data-scope]');
-        scopeButtons.forEach((btn) => {
+        // ── PAGINACIÓN DELEGADA (robustez para botones recargados por partial) ─────
+        if (resultsContainer) {
+            resultsContainer.addEventListener('click', function (e) {
+                const btn = e.target.closest('.pagination-btn');
+                if (!btn || btn.disabled) return;
+                const targetPage = btn.dataset.page;
+                if (targetPage) {
+                    e.preventDefault();
+                    goToPage(targetPage);
+                }
+            });
+        }
+
+        // ── SCOPE CHIPS ────────────────────────────────────────────────────────────
+        document.querySelectorAll('[data-scope]').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (!scopeInput) return;
                 scopeInput.value = btn.dataset.scope;
@@ -1742,34 +1850,18 @@
             });
         });
 
-        const filterCfg = {
-            create: false,
-            onChange: function () { submitFiltros(true); },
+        // ── TOM SELECT FILTROS ─────────────────────────────────────────────────────
+        const filterSubmitCfg = {
+            ...tsCfg,
+            dropdownParent: 'body',
+            onChange: () => submitFiltros(true),
             render: {
                 option: (data, escape) => `<div class="option">${escape(data.text)}</div>`,
                 item: (data, escape) => `<div class="item">${escape(data.text)}</div>`,
             }
         };
 
-        const fpCfg = {
-            locale: "es",
-            altInput: true,
-            altFormat: "j F, Y",
-            dateFormat: "Y-m-d",
-            disableMobile: true,
-            allowInput: false,
-        };
-
-        const newFechaSolicitudPicker = flatpickr("#new-fecha-solicitud", fpCfg);
-        const newFechaInicioPicker = flatpickr("#new-fecha-inicio", fpCfg);
-        const newFechaFinEstPicker = flatpickr("#new-fecha-fin-est", fpCfg);
-
-        const filterSubmitCfg = {
-            ...filterCfg,
-            dropdownParent: 'body',
-            onChange: () => submitFiltros(true)
-        };
-
+        // ── SEARCH CON DEBOUNCE ────────────────────────────────────────────────────
         if (searchInput) {
             let searchDebounceTimer = null;
             let lastSubmittedSearch = (searchInput.value || '').trim();
@@ -1798,7 +1890,7 @@
                 searchDebounceTimer = setTimeout(() => triggerSearchSubmit(), 300);
             });
 
-            searchInput.addEventListener('keydown', (e) => {
+            searchInput.addEventListener('keydown', e => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     clearTimeout(searchDebounceTimer);
@@ -1823,42 +1915,29 @@
         syncStatusFilterState();
 
         const fpFiltro = {
-            locale: "es",
-            altInput: true,
-            altFormat: "j M Y",
-            dateFormat: "Y-m-d",
-            disableMobile: true,
-            allowInput: false,
+            locale: "es", altInput: true, altFormat: "j M Y", dateFormat: "Y-m-d",
+            disableMobile: true, allowInput: false,
             onClose: () => submitFiltros(true),
         };
         flatpickr("#filter-fecha-desde", fpFiltro);
         flatpickr("#filter-fecha-hasta", fpFiltro);
 
+        // ── VIEW TOGGLE ────────────────────────────────────────────────────────────
         function applyView(view) {
-            document.querySelectorAll('[data-view-btn]').forEach((btn) => {
-                btn.classList.toggle('active', btn.dataset.viewBtn === view);
-            });
-            document.querySelectorAll('[data-view-target]').forEach((target) => {
-                target.classList.toggle('active', target.dataset.viewTarget === view);
-            });
+            document.querySelectorAll('[data-view-btn]').forEach(btn => btn.classList.toggle('active', btn.dataset.viewBtn === view));
+            document.querySelectorAll('[data-view-target]').forEach(target => target.classList.toggle('active', target.dataset.viewTarget === view));
             sessionStorage.setItem('actividades_view', view);
         }
 
-        filtrosForm?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            submitFiltros();
-        });
+        filtrosForm?.addEventListener('submit', e => { e.preventDefault(); submitFiltros(); });
         bindViewControls();
 
-        // ── TomSelect modales ─────────────────────────────────────────────────────────
-        // IMPORTANTE: cada ID debe inicializarse UNA SOLA VEZ
-        // new TomSelect('#sel-proyecto', tsCfg);
-        // new TomSelect('#sel-estatus', tsCfg);
-        // new TomSelect('#sel-tipo', tsCfg);
-        // new TomSelect('#sel-entregable', tsCfg);
-        // new TomSelect('#sel-responsable', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona responsables...' });
-        // new TomSelect('#sel-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
-        // new TomSelect('#sel-actividad-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
+        // ── TOM SELECT MODALES ─────────────────────────────────────────────────────
+        const fpCfg = { locale: "es", altInput: true, altFormat: "j F, Y", dateFormat: "Y-m-d", disableMobile: true, allowInput: false };
+
+        const newFechaSolicitudPicker = flatpickr("#new-fecha-solicitud", fpCfg);
+        const newFechaInicioPicker = flatpickr("#new-fecha-inicio", fpCfg);
+        const newFechaFinEstPicker = flatpickr("#new-fecha-fin-est", fpCfg);
 
         const tsProyecto = new TomSelect('#sel-proyecto', tsCfg);
         new TomSelect('#sel-estatus', tsCfg);
@@ -1868,7 +1947,6 @@
         new TomSelect('#sel-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
         new TomSelect('#sel-actividad-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
 
-        // ── Quick Edit modal ──────────────────────────────────────────────────────────
         const quickEditModalEl = document.getElementById('modalEditarActividadRapida');
         const quickEditModal = quickEditModalEl ? new bootstrap.Modal(quickEditModalEl) : null;
         const quickEditForm = document.getElementById('form-editar-actividad-rapida');
@@ -1884,26 +1962,21 @@
         const quickEditFechaInicioPicker = flatpickr("#quick-edit-fecha-inicio", fpCfg);
         const quickEditFechaFinEstPicker = flatpickr("#quick-edit-fecha-fin-est", fpCfg);
 
-        // Una sola inicialización por campo — sin duplicados
         const quickEditProyectoTs = new TomSelect('#quick-edit-proyecto', tsCfg);
         const quickEditEstatusTs = new TomSelect('#quick-edit-estatus', tsCfg);
         const quickEditTipoTs = new TomSelect('#quick-edit-tipo', tsCfg);
         const quickEditResponsablesTs = new TomSelect('#quick-edit-responsables', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona responsables...' });
         const quickEditRecursosTs = new TomSelect('#quick-edit-recursos', { ...tsCfg, plugins: ['remove_button'], placeholder: 'Selecciona recursos...' });
         const quickEditPadreTs = new TomSelect('#quick-edit-padre', { ...tsCfg, placeholder: 'Sin actividad origen', allowEmptyOption: true });
-        const quickEditEntregableTs = new TomSelect('#quick-edit-entregable', tsCfg);  // ← única inicialización
+        const quickEditEntregableTs = new TomSelect('#quick-edit-entregable', tsCfg);
 
-
-        // ── Helpers ───────────────────────────────────────────────────────────────────
-        function normalizarFechaInput(value) {
-            return String(value || '').trim().slice(0, 10);
-        }
+        // ── HELPERS ────────────────────────────────────────────────────────────────
+        function normalizarFechaInput(value) { return String(value || '').trim().slice(0, 10); }
 
         function setPickerDateOrClear(picker, value) {
             const fecha = normalizarFechaInput(value);
             if (!picker) return;
-            if (fecha) picker.setDate(fecha, true);
-            else picker.clear();
+            if (fecha) picker.setDate(fecha, true); else picker.clear();
         }
 
         function calcularDiasAcordados(fechaInicio, fechaFin) {
@@ -1919,49 +1992,33 @@
         function syncDiasAcordadosField({ startPicker, endPicker, diasInput }) {
             if (!diasInput) return;
             const diasCalculados = calcularDiasAcordados(startPicker?.input?.value, endPicker?.input?.value);
-            if (diasCalculados === null) {
-                diasInput.readOnly = false;
-                diasInput.removeAttribute('readonly');
-                return;
-            }
+            if (diasCalculados === null) { diasInput.readOnly = false; diasInput.removeAttribute('readonly'); return; }
             diasInput.value = String(diasCalculados);
-            diasInput.readOnly = true;
-            diasInput.setAttribute('readonly', 'readonly');
+            diasInput.readOnly = true; diasInput.setAttribute('readonly', 'readonly');
         }
 
-        [newFechaInicioPicker?.input, newFechaFinEstPicker?.input].forEach((input) => {
-            input?.addEventListener('change', () => syncDiasAcordadosField({
-                startPicker: newFechaInicioPicker,
-                endPicker: newFechaFinEstPicker,
-                diasInput: newDiasAcordadosField,
-            }));
+        [newFechaInicioPicker?.input, newFechaFinEstPicker?.input].forEach(input => {
+            input?.addEventListener('change', () => syncDiasAcordadosField({ startPicker: newFechaInicioPicker, endPicker: newFechaFinEstPicker, diasInput: newDiasAcordadosField }));
         });
 
-        [quickEditFechaInicioPicker?.input, quickEditFechaFinEstPicker?.input].forEach((input) => {
-            input?.addEventListener('change', () => syncDiasAcordadosField({
-                startPicker: quickEditFechaInicioPicker,
-                endPicker: quickEditFechaFinEstPicker,
-                diasInput: quickEditDiasAcordadosField,
-            }));
+        [quickEditFechaInicioPicker?.input, quickEditFechaFinEstPicker?.input].forEach(input => {
+            input?.addEventListener('change', () => syncDiasAcordadosField({ startPicker: quickEditFechaInicioPicker, endPicker: quickEditFechaFinEstPicker, diasInput: quickEditDiasAcordadosField }));
         });
 
         function ensureQuickEditSolicitanteOption(nombre) {
             const valor = String(nombre || '').trim();
-            Array.from(quickEditSolicitante.options)
-                .filter((o) => o.dataset.legacyOption === '1')
-                .forEach((o) => o.remove());
+            Array.from(quickEditSolicitante.options).filter(o => o.dataset.legacyOption === '1').forEach(o => o.remove());
             if (!valor) return;
-            const existente = Array.from(quickEditSolicitante.options).some((o) => o.value === valor);
+            const existente = Array.from(quickEditSolicitante.options).some(o => o.value === valor);
             if (existente) return;
             const option = document.createElement('option');
-            option.value = valor;
-            option.textContent = `${valor} (actual, fuera de catálogo)`;
+            option.value = valor; option.textContent = `${valor} (actual, fuera de catálogo)`;
             option.dataset.legacyOption = '1';
             quickEditSolicitante.appendChild(option);
         }
 
         function syncQuickEditPadreOptions(activityId) {
-            Array.from(quickEditPadreField.options).forEach((option) => {
+            Array.from(quickEditPadreField.options).forEach(option => {
                 const isSelf = option.value && option.value === activityId;
                 option.disabled = isSelf;
                 if (isSelf && option.selected) option.selected = false;
@@ -1969,117 +2026,56 @@
             quickEditPadreTs.refreshOptions(false);
         }
 
-
-        // ── FUNCIÓN DE CONEXIÓN API PARA TOMSELECT ──────────────────────────────────
         async function actualizarCascadaEntregables(idProyecto, tsInstanciaEntregable, idPreseleccionado = null) {
             if (!tsInstanciaEntregable) return;
-
             function setPlaceholderText(texto) {
                 tsInstanciaEntregable.settings.placeholder = texto;
-                if (tsInstanciaEntregable.control_input) {
-                    tsInstanciaEntregable.control_input.placeholder = texto;
-                }
+                if (tsInstanciaEntregable.control_input) tsInstanciaEntregable.control_input.placeholder = texto;
             }
-
             function vaciarConPlaceholder(texto) {
-                tsInstanciaEntregable.clear(true);
-                tsInstanciaEntregable.clearOptions();
-                setPlaceholderText(texto);
+                tsInstanciaEntregable.clear(true); tsInstanciaEntregable.clearOptions(); setPlaceholderText(texto);
             }
-
-            if (!idProyecto) {
-                vaciarConPlaceholder('Selecciona primero un proyecto...');
-                return;
-            }
-
+            if (!idProyecto) { vaciarConPlaceholder('Selecciona primero un proyecto...'); return; }
             vaciarConPlaceholder('Cargando entregables...');
-
             try {
                 const response = await fetch(`/api/catalogos/entregables/por-proyecto/${idProyecto}`);
                 const res = await response.json();
-
                 if (res.status === 'success') {
                     tsInstanciaEntregable.clearOptions();
-
-                    if (!res.data || res.data.length === 0) {
-                        vaciarConPlaceholder('Sin entregables para este proyecto');
-                        return;
-                    }
-
-                    res.data.forEach(entregable => {
-                        tsInstanciaEntregable.addOption({ value: entregable.id, text: entregable.nombre });
-                    });
+                    if (!res.data || res.data.length === 0) { vaciarConPlaceholder('Sin entregables para este proyecto'); return; }
+                    res.data.forEach(e => tsInstanciaEntregable.addOption({ value: e.id, text: e.nombre }));
                     setPlaceholderText('Selecciona...');
-
-                    if (idPreseleccionado) {
-                        tsInstanciaEntregable.setValue(idPreseleccionado);
-                    } else {
-                        tsInstanciaEntregable.clear(true);
-                    }
-                } else {
-                    vaciarConPlaceholder('Error al cargar');
-                }
-            } catch (error) {
-                console.error("Error al actualizar entregables:", error);
-                vaciarConPlaceholder('Error de conexión');
-            }
+                    if (idPreseleccionado) tsInstanciaEntregable.setValue(idPreseleccionado);
+                    else tsInstanciaEntregable.clear(true);
+                } else vaciarConPlaceholder('Error al cargar');
+            } catch (error) { vaciarConPlaceholder('Error de conexión'); }
         }
 
+        tsProyecto.on('change', value => actualizarCascadaEntregables(value, tsEntregable));
+        quickEditProyectoTs.on('change', value => actualizarCascadaEntregables(value, quickEditEntregableTs));
 
-
-
-        // ── LISTENERS PARA CUANDO EL USUARIO INTERACTÚA CON LOS SELECTS ──────────────
-
-        // Escuchar cambios en el formulario de creación
-
-        // Escuchar cambios en el formulario de creación
-        tsProyecto.on('change', function (value) {
-            actualizarCascadaEntregables(value, tsEntregable);
-        });
-
-        quickEditProyectoTs.on('change', function (value) {
-            actualizarCascadaEntregables(value, quickEditEntregableTs);
-        });
-
-        // ── Abrir modal edición rápida ────────────────────────────────────────────────
         async function abrirEdicionRapidaActividad(event, actividadId) {
-            event?.preventDefault();
-            event?.stopPropagation();
+            event?.preventDefault(); event?.stopPropagation();
             if (!quickEditModal || !quickEditForm || !actividadId) return;
-
             Swal.fire({ title: 'Cargando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
                 const response = await fetch(`/api/actividades/${actividadId}`);
                 const payload = await response.json();
-                if (!response.ok || payload.status !== 'success' || !payload.actividad) {
-                    throw new Error(payload.message || 'No se pudo cargar la actividad.');
-                }
-
+                if (!response.ok || payload.status !== 'success' || !payload.actividad) throw new Error(payload.message || 'No se pudo cargar la actividad.');
                 const actividad = payload.actividad;
-                console.log('id_entregable recibido:', actividad.id_entregable); // ← temporal
-                console.log('Opciones disponibles en entregable:', quickEditEntregableTs.options);
                 quickEditActividadId.value = actividad.id;
                 quickEditForm.querySelector('[name="nombre_actividad"]').value = actividad.nombre_actividad || '';
                 quickEditForm.querySelector('[name="friendly_name"]').value = actividad.friendly_name || '';
                 quickEditForm.querySelector('[name="descripcion"]').value = actividad.descripcion || '';
                 quickEditForm.querySelector('[name="prioridad"]').value = actividad.prioridad || '2';
-
                 setPickerDateOrClear(quickEditFechaSolicitudPicker, actividad.fecha_solicitud);
                 setPickerDateOrClear(quickEditFechaInicioPicker, actividad.fecha_inicio);
                 setPickerDateOrClear(quickEditFechaFinEstPicker, actividad.fecha_fin_est);
-
                 if (quickEditDiasAcordadosField) quickEditDiasAcordadosField.value = actividad.dias_acordados || '';
                 if (quickEditAvancePctField) quickEditAvancePctField.value = actividad.avance_pct || '0';
-
-                syncDiasAcordadosField({
-                    startPicker: quickEditFechaInicioPicker,
-                    endPicker: quickEditFechaFinEstPicker,
-                    diasInput: quickEditDiasAcordadosField,
-                });
-
+                syncDiasAcordadosField({ startPicker: quickEditFechaInicioPicker, endPicker: quickEditFechaFinEstPicker, diasInput: quickEditDiasAcordadosField });
                 ensureQuickEditSolicitanteOption(actividad.solicitante);
                 quickEditSolicitante.value = actividad.solicitante || '';
-
                 quickEditProyectoTs.setValue(actividad.id_proyecto || '', true);
                 quickEditEstatusTs.setValue(actividad.id_estatus || '', true);
                 quickEditTipoTs.setValue(actividad.tipo || '', true);
@@ -2088,106 +2084,73 @@
                 quickEditRecursosTs.setValue(Array.isArray(actividad.recursos) ? actividad.recursos : [], true);
                 syncQuickEditPadreOptions(actividad.id);
                 quickEditPadreTs.setValue(actividad.id_actividad_padre || '', true);
-
-                Swal.close();
-                quickEditModal.show();
+                Swal.close(); quickEditModal.show();
             } catch (error) {
                 Swal.fire({ icon: 'error', title: 'Error', text: error.message || 'No se pudo cargar la actividad.' });
             }
         }
 
-        // ── Submit nueva actividad ────────────────────────────────────────────────────
         document.getElementById('form-nueva-actividad').addEventListener('submit', async function (e) {
             e.preventDefault();
             const fechaSolicitudField = document.getElementById('new-fecha-solicitud');
             if (!fechaSolicitudField?.value?.trim()) {
-                const visibleDateInput = fechaSolicitudField?._flatpickr?.altInput || fechaSolicitudField;
                 Swal.fire({ icon: 'warning', title: 'Fecha requerida', text: 'La fecha de solicitud es obligatoria.' })
-                    .then(() => visibleDateInput?.focus());
+                    .then(() => (fechaSolicitudField?._flatpickr?.altInput || fechaSolicitudField)?.focus());
                 return;
             }
             Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             const fd = new FormData(this);
             const tipo = String(fd.get('tipo') || '').trim();
-            if (!tipo) {
-                Swal.fire({ icon: 'warning', title: 'Tipo requerido', text: 'Selecciona el tipo de actividad (DESARROLLO o TAREA).' });
-                return;
-            }
+            if (!tipo) { Swal.fire({ icon: 'warning', title: 'Tipo requerido', text: 'Selecciona el tipo de actividad.' }); return; }
             try {
                 const r = await fetch('/actividades/nueva', { method: 'POST', body: fd });
                 const res = await r.json();
-                if (res.status === 'success') {
-                    Swal.fire({ icon: 'success', title: '¡Creada!', text: res.message, timer: 1800, showConfirmButton: false })
-                        .then(() => location.reload());
-                } else throw new Error(res.message);
-            } catch (err) {
-                Swal.fire({ icon: 'error', title: 'Error', text: err.message });
-            }
+                if (res.status === 'success') Swal.fire({ icon: 'success', title: '¡Creada!', text: res.message, timer: 1800, showConfirmButton: false }).then(() => location.reload());
+                else throw new Error(res.message);
+            } catch (err) { Swal.fire({ icon: 'error', title: 'Error', text: err.message }); }
         });
 
-        // ── Submit edición rápida ─────────────────────────────────────────────────────
         quickEditForm?.addEventListener('submit', async function (e) {
             e.preventDefault();
             const actividadId = quickEditActividadId.value;
             if (!actividadId) return;
-
             const fechaSolicitudField = document.getElementById('quick-edit-fecha-solicitud');
             if (!fechaSolicitudField?.value?.trim()) {
-                const visibleDateInput = fechaSolicitudField?._flatpickr?.altInput || fechaSolicitudField;
                 Swal.fire({ icon: 'warning', title: 'Fecha requerida', text: 'La fecha de solicitud es obligatoria.' })
-                    .then(() => visibleDateInput?.focus());
+                    .then(() => (fechaSolicitudField?._flatpickr?.altInput || fechaSolicitudField)?.focus());
                 return;
             }
-
             Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             const fd = new FormData(this);
             const tipo = String(fd.get('tipo') || '').trim();
-            if (!tipo) {
-                Swal.fire({ icon: 'warning', title: 'Tipo requerido', text: 'Selecciona el tipo de actividad (DESARROLLO o TAREA).' });
-                return;
-            }
+            if (!tipo) { Swal.fire({ icon: 'warning', title: 'Tipo requerido', text: 'Selecciona el tipo de actividad.' }); return; }
             fd.delete('actividad_id');
             try {
                 const r = await fetch(`/actividades/${actividadId}/editar`, { method: 'POST', body: fd });
                 const res = await r.json();
-                if (res.status === 'success') {
-                    Swal.fire({ icon: 'success', title: 'Actualizado', timer: 1500, showConfirmButton: false })
-                        .then(() => location.reload());
-                } else throw new Error(res.message);
-            } catch (err) {
-                Swal.fire({ icon: 'error', title: 'Error', text: err.message });
-            }
+                if (res.status === 'success') Swal.fire({ icon: 'success', title: 'Actualizado', timer: 1500, showConfirmButton: false }).then(() => location.reload());
+                else throw new Error(res.message);
+            } catch (err) { Swal.fire({ icon: 'error', title: 'Error', text: err.message }); }
         });
 
-        // ── Eliminar actividad ────────────────────────────────────────────────────────
         async function eliminarActividad(e, id, nombre) {
-            e.preventDefault();
-            e.stopPropagation();
+            e.preventDefault(); e.stopPropagation();
             const conf = await Swal.fire({
                 title: '¿Eliminar actividad?',
-                html: `<span style="font-weight:600;">${nombre}</span><br><span style="font-size:.85rem;color:#64748b;">Se eliminarán también sus responsables y evidencia. Los registros de horas quedarán pero sin actividad ligada.</span>`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                confirmButtonText: 'Sí, eliminar',
-                cancelButtonText: 'Cancelar'
+                html: `<span style="font-weight:600;">${nombre}</span><br><span style="font-size:.85rem;color:#64748b;">Se eliminarán también sus responsables y evidencia. Los registros de horas quedarán sin actividad ligada.</span>`,
+                icon: 'warning', showCancelButton: true,
+                confirmButtonColor: '#ef4444', confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar'
             });
             if (!conf.isConfirmed) return;
             Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             try {
                 const r = await fetch(`/actividades/${id}`, { method: 'DELETE' });
                 const res = await r.json();
-                if (res.status === 'success') {
-                    Swal.fire({ icon: 'success', title: 'Eliminada', timer: 1200, showConfirmButton: false })
-                        .then(() => location.reload());
-                } else throw new Error(res.message);
-            } catch (err) {
-                Swal.fire({ icon: 'error', title: 'Error', text: err.message });
-            }
+                if (res.status === 'success') Swal.fire({ icon: 'success', title: 'Eliminada', timer: 1200, showConfirmButton: false }).then(() => location.reload());
+                else throw new Error(res.message);
+            } catch (err) { Swal.fire({ icon: 'error', title: 'Error', text: err.message }); }
         }
     </script>
-
-
 </body>
 
 </html>
