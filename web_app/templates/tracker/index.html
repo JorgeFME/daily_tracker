@@ -3423,7 +3423,8 @@
                     // Inyectamos el ID_ENTREGABLE y el TIPO en los nuevos campos informativos
                     const entregableInput = document.getElementById('subactivity-entregable-id');
                     if (entregableInput) {
-                        entregableInput.value = padre.id_entregable || 'Sin entregable';
+                        entregableInput.value = padre.id_entregable || '';
+                        entregableInput.placeholder = padre.id_entregable ? '' : 'Sin entregable';
                     }
 
                     const tipoInput = document.getElementById('subactivity-tipo');

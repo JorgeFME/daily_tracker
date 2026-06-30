@@ -1815,7 +1815,11 @@
         // de que pageInput siempre refleje ese número antes de hacer el fetch.
         function goToPage(page) {
             const pageNum = parseInt(page, 10);
-            if (!pageInput || isNaN(pageNum) || pageNum < 1) return;
+            console.log('[goToPage] received:', page, 'parsed:', pageNum, 'pageInput:', pageInput?.id);
+            if (!pageInput || isNaN(pageNum) || pageNum < 1) {
+                console.log('[goToPage] early return — pageInput missing or pageNum invalid');
+                return;
+            }
             pageInput.value = String(pageNum);
 
             // DEBUG - borra esto después
@@ -1830,14 +1834,30 @@
         if (resultsContainer) {
             resultsContainer.addEventListener('click', function (e) {
                 const btn = e.target.closest('.pagination-btn');
+                console.log('[resultsContainer click] target:', e.target.tagName, 'btn found:', !!btn, 'disabled:', btn?.disabled, 'dataset.page:', btn?.dataset?.page);
                 if (!btn || btn.disabled) return;
                 const targetPage = btn.dataset.page;
                 if (targetPage) {
                     e.preventDefault();
+                    console.log('[resultsContainer click] calling goToPage:', targetPage);
                     goToPage(targetPage);
                 }
             });
         }
+
+        // ── PAGINACIÓN FALLBACK (document-level) ───────────────────────────────────
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.pagination-btn');
+            if (!btn || btn.disabled) return;
+            // Si ya lo procesó el listener de resultsContainer, evitar doble llamada
+            if (resultsContainer && resultsContainer.contains(btn)) return;
+            const targetPage = btn.dataset.page;
+            if (targetPage) {
+                e.preventDefault();
+                console.log('[document click] calling goToPage:', targetPage);
+                goToPage(targetPage);
+            }
+        });
 
         // ── SCOPE CHIPS ────────────────────────────────────────────────────────────
         document.querySelectorAll('[data-scope]').forEach(btn => {
