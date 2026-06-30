@@ -57,7 +57,7 @@ def exportar_reporte_excel(proyecto_id):
     proyecto = next((p for p in base["projects"] if str(p["ID"]) == str(filtros["proyecto_id"])), None)
     if not proyecto:
         return jsonify({"error": "Proyecto no encontrado"}), 404
-    actividades, evidencias_por_actividad = obtener_datos_reporte_proyecto(
+    actividades, evidencias_por_actividad, resumen_desarrolladores = obtener_datos_reporte_proyecto(
         filtros["proyecto_id"], filtros
     )
     nombre = proyecto["NOMBRE_PROYECTO"]
@@ -72,6 +72,7 @@ def exportar_reporte_excel(proyecto_id):
         evidencias_por_actividad,
         upload_base,
         export_context=export_context,
+        resumen_desarrolladores=resumen_desarrolladores,
     )
     return send_file(
         io.BytesIO(xlsx_bytes),

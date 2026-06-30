@@ -3,6 +3,7 @@ Generador de reporte Excel filtrado desde Registros.
 
 - Hoja 1: Resumen ejecutivo
 - Hoja 2: Detalle de actividades
+- Hoja 3: Resumen de horas por desarrollador
 - Evidencia resumida por tipo
 """
 
@@ -834,41 +835,43 @@ def _render_actividades(ws, proyecto_nombre, generado_en, actividades, evidencia
     legend.fill = _fill(C_GRAY)
 
 
-def _parse_desarrolladores(actividades):
-    devs = {}
-    for actividad in actividades:
-        act_id = actividad.get("ID") or actividad.get("NOMBRE_ACTIVIDAD")
-        desglose = actividad.get("DESGLOSE_REPORTE") or ""
-        current_dev = None
-        dev_names_in_act = []
-        for line in str(desglose).splitlines():
-            if line and not line.startswith(" ") and line.rstrip().endswith(":"):
-                dev_name = line.rstrip().rstrip(":")
-                if dev_name not in devs:
-                    devs[dev_name] = {"actividades": set(), "registros": 0}
-                current_dev = dev_name
-                if dev_name not in dev_names_in_act:
-                    dev_names_in_act.append(dev_name)
-                    devs[dev_name]["actividades"].add(act_id)
-            elif line.strip().startswith("•") and current_dev:
-                devs[current_dev]["registros"] += 1
-    return {
-        k: {"actividades": len(v["actividades"]), "registros": v["registros"]}
-        for k, v in sorted(devs.items())
-    }
+def _render_desarrolladores(ws, actividades, resumen_desarrolladores=None):
+    """
+    Hoja "Por Desarrollador": dos secciones.
 
+    1. Tabla resumen (vista rápida): por desarrollador, total de actividades,
+       registros y horas (Desarrollo / Tarea / Total).
+    2. Detalle por actividad: un bloque por desarrollador con la lista de
+       actividades a las que corresponden esas horas, para poder auditar
+       de dónde sale cada cifra del resumen.
 
-def _render_desarrolladores(ws, actividades):
+    `resumen_desarrolladores` viene de obtener_datos_reporte_proyecto() y tiene
+    la forma:
+        {
+            "Nombre Completo": {
+                "horas_total": float,
+                "horas_desarrollo": float,
+                "horas_tarea": float,
+                "registros": int,
+                "actividades": int,
+                "detalle": [
+                    {"nombre": str, "tipo": "DESARROLLO"|"TAREA", "horas": float, "registros": int},
+                    ...
+                ],
+            },
+            ...
+        }
+    """
     ws.title = "Por Desarrollador"
     ws.sheet_properties.tabColor = "10B981"
     ws.sheet_view.showGridLines = True
     ws.sheet_view.zoomScale = 100
     ws.freeze_panes = "A4"
-    ws.column_dimensions["A"].width = 36
-    ws.column_dimensions["B"].width = 18
-    ws.column_dimensions["C"].width = 18
+    ws.column_dimensions["A"].width = 42
+    for col in ("B", "C", "D", "E", "F"):
+        ws.column_dimensions[col].width = 17
 
-    ws.merge_cells("A1:C1")
+    ws.merge_cells("A1:F1")
     title = ws["A1"]
     title.value = "  Resumen por desarrollador"
     title.font = _font(bold=True, color=C_WHITE, size=14)
@@ -877,18 +880,17 @@ def _render_desarrolladores(ws, actividades):
     title.border = BORDER
     ws.row_dimensions[1].height = 32
 
-    ws.merge_cells("A2:C2")
+    ws.merge_cells("A2:F2")
     subtitle = ws["A2"]
-    subtitle.value = "  Extraído del desglose por actividad. Los registros son entradas de trabajo individuales."
+    subtitle.value = "  Horas reales registradas por cada desarrollador en el período exportado."
     subtitle.font = _font(size=8.5, color=C_MID, italic=True)
     subtitle.alignment = Alignment(horizontal="left", vertical="center")
     subtitle.fill = _fill(C_GRAY)
     subtitle.border = BORDER
     ws.row_dimensions[2].height = 20
 
-    for col_i, label in enumerate(
-        ("Desarrollador", "Actividades", "Registros"), start=1
-    ):
+    headers = ("Desarrollador", "Actividades", "Registros", "Horas Desarrollo", "Horas Tareas", "Horas Totales")
+    for col_i, label in enumerate(headers, start=1):
         cell = ws.cell(row=3, column=col_i, value=label)
         cell.font = _font(bold=True, color=C_WHITE)
         cell.fill = _fill(C_DARK)
@@ -896,28 +898,182 @@ def _render_desarrolladores(ws, actividades):
         cell.border = BORDER
     ws.row_dimensions[3].height = 24
 
-    devs = _parse_desarrolladores(actividades)
+    devs = resumen_desarrolladores or {}
     if not devs:
-        empty = ws.cell(row=4, column=1, value="Sin datos de desglose disponibles.")
+        ws.merge_cells("A4:F4")
+        empty = ws.cell(row=4, column=1, value="Sin datos de horas disponibles para este filtro.")
         empty.font = _font(italic=True, color=C_MID)
         empty.alignment = L_ALN
+        empty.border = BORDER
         return
 
-    for row_i, (dev, stats) in enumerate(devs.items(), start=4):
+    # Orden de mayor a menor aporte de horas totales (se reutiliza en ambas secciones)
+    devs_ordenados = sorted(devs.items(), key=lambda kv: kv[1].get("horas_total", 0), reverse=True)
+
+    # ── Sección 1: tabla resumen ─────────────────────────────────────────────
+    row_i = 4
+    for dev, stats in devs_ordenados:
         row_bg = C_WHITE if row_i % 2 == 0 else C_GRAY
-        c1 = ws.cell(row=row_i, column=1, value=f" {dev}")
-        c2 = ws.cell(row=row_i, column=2, value=stats["actividades"])
-        c3 = ws.cell(row=row_i, column=3, value=stats["registros"])
-        for cell in (c1, c2, c3):
+        valores = [
+            f" {dev}",
+            stats.get("actividades", 0),
+            stats.get("registros", 0),
+            round(stats.get("horas_desarrollo", 0), 2),
+            round(stats.get("horas_tarea", 0), 2),
+            round(stats.get("horas_total", 0), 2),
+        ]
+        for col_i, value in enumerate(valores, start=1):
+            cell = ws.cell(row=row_i, column=col_i, value=value)
             cell.fill = _fill(row_bg)
             cell.border = BORDER
-        c1.font = _font(bold=True, color=C_DARK)
-        c1.alignment = L_ALN
-        c2.font = _font(bold=True, color=C_BLUE)
-        c2.alignment = C_ALN
-        c3.font = _font(color=C_DARK)
-        c3.alignment = C_ALN
+            if col_i == 1:
+                cell.font = _font(bold=True, color=C_DARK)
+                cell.alignment = L_ALN
+            elif col_i in (4, 5, 6):
+                cell.font = _font(bold=(col_i == 6), color=C_BLUE if col_i == 6 else C_DARK)
+                cell.alignment = C_ALN
+                cell.number_format = "#,##0.0"
+            else:
+                cell.font = _font(color=C_DARK)
+                cell.alignment = C_ALN
         ws.row_dimensions[row_i].height = 20
+        row_i += 1
+
+    total_row = row_i
+    ws.merge_cells(start_row=total_row, start_column=1, end_row=total_row, end_column=3)
+    label_cell = ws.cell(row=total_row, column=1, value=" TOTAL")
+    label_cell.font = _font(bold=True, color=C_WHITE)
+    label_cell.fill = _fill(C_DARK)
+    label_cell.alignment = R_ALN
+    label_cell.border = BORDER
+
+    total_dev = sum(s.get("horas_desarrollo", 0) for s in devs.values())
+    total_tarea = sum(s.get("horas_tarea", 0) for s in devs.values())
+    total_gen = sum(s.get("horas_total", 0) for s in devs.values())
+    for col_i, value in ((4, total_dev), (5, total_tarea), (6, total_gen)):
+        cell = ws.cell(row=total_row, column=col_i, value=round(value, 2))
+        cell.number_format = "#,##0.0"
+        cell.font = _font(bold=True, color=C_WHITE)
+        cell.fill = _fill(C_DARK)
+        cell.alignment = C_ALN
+        cell.border = BORDER
+    ws.row_dimensions[total_row].height = 22
+
+    # ── Sección 2: detalle por actividad dentro de cada desarrollador ───────
+    detail_header_row = total_row + 3
+    ws.merge_cells(start_row=detail_header_row, start_column=1, end_row=detail_header_row, end_column=6)
+    detail_header = ws.cell(
+        row=detail_header_row, column=1,
+        value=" Detalle de horas por actividad y desarrollador",
+    )
+    detail_header.font = _font(bold=True, color=C_WHITE, size=10)
+    detail_header.fill = _fill(C_DARK)
+    detail_header.alignment = Alignment(horizontal="left", vertical="center")
+    detail_header.border = BORDER
+    ws.row_dimensions[detail_header_row].height = 22
+
+    detail_sub = detail_header_row + 1
+    ws.merge_cells(start_row=detail_sub, start_column=1, end_row=detail_sub, end_column=6)
+    detail_sub_cell = ws.cell(
+        row=detail_sub, column=1,
+        value="  Para cada desarrollador, las actividades a las que corresponden sus horas (ordenadas de mayor a menor aporte).",
+    )
+    detail_sub_cell.font = _font(size=8.5, color=C_MID, italic=True)
+    detail_sub_cell.fill = _fill(C_GRAY)
+    detail_sub_cell.alignment = Alignment(horizontal="left", vertical="center")
+    detail_sub_cell.border = BORDER
+    ws.row_dimensions[detail_sub].height = 20
+
+    row_cursor = detail_sub + 2
+
+    for dev, stats in devs_ordenados:
+        # Banda con el nombre del desarrollador y sus totales
+        ws.merge_cells(start_row=row_cursor, start_column=1, end_row=row_cursor, end_column=6)
+        resumen_txt = (
+            f"  {dev}   ·   {stats.get('actividades', 0)} actividad(es)   ·   "
+            f"{stats.get('registros', 0)} registro(s)   ·   "
+            f"{round(stats.get('horas_total', 0), 1):g}h totales "
+            f"(Desarrollo: {round(stats.get('horas_desarrollo', 0), 1):g}h · "
+            f"Tareas: {round(stats.get('horas_tarea', 0), 1):g}h)"
+        )
+        dev_band = ws.cell(row=row_cursor, column=1, value=resumen_txt)
+        dev_band.font = _font(bold=True, color=C_WHITE, size=9.5)
+        dev_band.fill = _fill("059669")
+        dev_band.alignment = Alignment(horizontal="left", vertical="center")
+        dev_band.border = BORDER
+        ws.row_dimensions[row_cursor].height = 22
+        row_cursor += 1
+
+        # Encabezado de columnas del bloque de detalle
+        sub_headers = ("Actividad", "Tipo", "Horas", "Registros")
+        for col_i, label in enumerate(sub_headers, start=1):
+            cell = ws.cell(row=row_cursor, column=col_i, value=label)
+            cell.font = _font(bold=True, color=C_DARK, size=8.5)
+            cell.fill = _fill(C_LBLUE)
+            cell.alignment = L_ALN if col_i == 1 else C_ALN
+            cell.border = BORDER
+        # Columnas E y F se mantienen vacías pero con borde para que el bloque se vea uniforme
+        for col_i in (5, 6):
+            cell = ws.cell(row=row_cursor, column=col_i, value="")
+            cell.fill = _fill(C_LBLUE)
+            cell.border = BORDER
+        ws.row_dimensions[row_cursor].height = 18
+        row_cursor += 1
+
+        detalle = stats.get("detalle") or []
+        if not detalle:
+            ws.merge_cells(start_row=row_cursor, start_column=1, end_row=row_cursor, end_column=4)
+            empty_cell = ws.cell(
+                row=row_cursor, column=1,
+                value="  Sin actividades formales asociadas (horas registradas directamente).",
+            )
+            empty_cell.font = _font(italic=True, color=C_MID, size=8.5)
+            empty_cell.alignment = L_ALN
+            empty_cell.border = BORDER
+            ws.row_dimensions[row_cursor].height = 18
+            row_cursor += 1
+        else:
+            for idx, item in enumerate(detalle):
+                row_bg = C_WHITE if idx % 2 == 0 else C_GRAY
+                tipo_item = item.get("tipo") or "—"
+                tipo_bg = "E0F2FE" if tipo_item == "DESARROLLO" else "FEF3C7"
+                tipo_color = "0369A1" if tipo_item == "DESARROLLO" else "B45309"
+
+                c1 = ws.cell(row=row_cursor, column=1, value=f"  ↳ {item.get('nombre', '—')}")
+                c2 = ws.cell(row=row_cursor, column=2, value=tipo_item)
+                c3 = ws.cell(row=row_cursor, column=3, value=round(item.get("horas", 0), 2))
+                c4 = ws.cell(row=row_cursor, column=4, value=item.get("registros", 0))
+
+                c1.font = _font(color=C_DARK, size=8.5)
+                c1.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
+                c1.fill = _fill(row_bg)
+
+                c2.font = _font(bold=True, color=tipo_color, size=8.5)
+                c2.alignment = C_ALN
+                c2.fill = _fill(tipo_bg)
+
+                c3.font = _font(bold=True, color=C_DARK, size=8.5)
+                c3.alignment = C_ALN
+                c3.fill = _fill(row_bg)
+                c3.number_format = "#,##0.0"
+
+                c4.font = _font(color=C_DARK, size=8.5)
+                c4.alignment = C_ALN
+                c4.fill = _fill(row_bg)
+
+                for col_i in (5, 6):
+                    cell = ws.cell(row=row_cursor, column=col_i, value="")
+                    cell.fill = _fill(row_bg)
+
+                for col_i in range(1, 7):
+                    ws.cell(row=row_cursor, column=col_i).border = BORDER
+
+                ws.row_dimensions[row_cursor].height = 20
+                row_cursor += 1
+
+        # Fila espaciadora entre desarrolladores
+        row_cursor += 1
+
 
 
 def generar_reporte(
@@ -926,6 +1082,7 @@ def generar_reporte(
     evidencias_por_actividad: dict,
     upload_base: str = "",
     export_context: dict | None = None,
+    resumen_desarrolladores: dict | None = None,
 ) -> bytes:
     del upload_base
 
@@ -956,7 +1113,7 @@ def generar_reporte(
     )
 
     ws_desarrolladores = wb.create_sheet("Por Desarrollador")
-    _render_desarrolladores(ws_desarrolladores, actividades)
+    _render_desarrolladores(ws_desarrolladores, actividades, resumen_desarrolladores)
 
     wb.active = 0
 
@@ -964,3 +1121,8 @@ def generar_reporte(
     wb.save(buffer)
     buffer.seek(0)
     return buffer.getvalue()
+
+
+# Alias por compatibilidad: routes.py importa "generar_reporte_proyecto_xlsx".
+# Si tu routes.py real usa otro nombre, ajusta el import o este alias en consecuencia.
+generar_reporte_proyecto_xlsx = generar_reporte
