@@ -25,6 +25,57 @@ def _obtener_estatus_id(cur, *descripciones):
     return rows[0][0]
 
 
+def _obtener_padre_y_estatus(cur, actividad_id):
+    """
+    Dada una actividad, devuelve (padre_id, estatus_padre_desc_en_mayusculas).
+    Si la actividad no existe, no tiene padre, o actividad_id es None,
+    devuelve (None, None).
+    """
+    if not actividad_id:
+        return None, None
+
+    cur.execute(
+        'SELECT "ID_ACTIVIDAD_PADRE" FROM "ACTIVIDADES" WHERE "ID"=?',
+        (actividad_id,)
+    )
+    row = cur.fetchone()
+    if not row or not row[0]:
+        return None, None
+
+    padre_id = row[0]
+    cur.execute(
+        'SELECT E."DESCRIPCION" '
+        'FROM "ACTIVIDADES" A '
+        'JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS"=E."ID" '
+        'WHERE A."ID"=?',
+        (padre_id,)
+    )
+    erow = cur.fetchone()
+    estatus_padre = str(erow[0] or '').strip().upper() if erow else None
+    return padre_id, estatus_padre
+
+
+def _recalcular_avance_padre(cur, padre_id):
+    """Recalcula AVANCE_PCT del padre como promedio del AVANCE_PCT de sus hijas."""
+    if not padre_id:
+        return
+    cur.execute(
+        'SELECT COALESCE(AVG(CAST("AVANCE_PCT" AS DECIMAL)), 0) '
+        'FROM "ACTIVIDADES" '
+        'WHERE "ID_ACTIVIDAD_PADRE"=?',
+        (padre_id,)
+    )
+    avg_row = cur.fetchone()
+    nuevo_avance = int(round(float(avg_row[0] or 0))) if avg_row else 0
+    nuevo_avance = max(0, min(100, nuevo_avance))
+    cur.execute(
+        'UPDATE "ACTIVIDADES" '
+        'SET "AVANCE_PCT"=?, "ACTUALIZADO_EN"=CURRENT_TIMESTAMP '
+        'WHERE "ID"=?',
+        (nuevo_avance, padre_id)
+    )
+
+
 def _crear_actividad_rapida_desde_registro(cur, datos):
     solicitante = (datos.get("quick_solicitante") or "").strip()
     friendly_name = (datos.get("quick_friendly_name") or "").strip() or None
@@ -139,39 +190,17 @@ def _propagar_horas_a_padre(cur, actividad_id, datos):
       3. Recalcula AVANCE_PCT del padre como promedio de sus hijas.
     Ejecuta dentro de la misma transacción abierta por el cursor `cur`.
     """
-    # 1. Obtener ID_ACTIVIDAD_PADRE de la hija
-    cur.execute(
-        'SELECT "ID_ACTIVIDAD_PADRE", "ID_PROYECTO" '
-        'FROM "ACTIVIDADES" '
-        'WHERE "ID"=?',
-        (actividad_id,)
-    )
-    row = cur.fetchone()
-    if not row:
-        return  # actividad no encontrada, nada que propagar
-
-    padre_id = row[0]
+    padre_id, estatus_padre = _obtener_padre_y_estatus(cur, actividad_id)
     if not padre_id:
         return  # no tiene padre, fin
 
-    # 2. Validar estatus del padre
-    cur.execute(
-        'SELECT A."ID_ESTATUS", E."DESCRIPCION" '
-        'FROM "ACTIVIDADES" A '
-        'JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS"=E."ID" '
-        'WHERE A."ID"=?',
-        (padre_id,)
-    )
-    padre_row = cur.fetchone()
-    if padre_row:
-        estatus_padre = str(padre_row[1] or '').strip().upper()
-        if estatus_padre in ('COMPLETADO', 'CANCELADO'):
-            raise ValueError(
-                f"No se pueden propagar horas: la actividad padre tiene estatus '{padre_row[1]}'. "
-                "Actualiza el estatus del padre antes de registrar horas en sus actividades hijas."
-            )
+    if estatus_padre in ('COMPLETADO', 'CANCELADO'):
+        raise ValueError(
+            f"No se pueden propagar horas: la actividad padre tiene estatus '{estatus_padre}'. "
+            "Actualiza el estatus del padre antes de registrar horas en sus actividades hijas."
+        )
 
-    # 3. Insertar registro espejo apuntando al padre (marcado como propagado)
+    # Insertar registro espejo apuntando al padre (marcado como propagado)
     cur.execute(
         """
             INSERT INTO "REGISTRO_ACTIVIDADES"
@@ -190,23 +219,7 @@ def _propagar_horas_a_padre(cur, actividad_id, datos):
         )
     )
 
-    # 4. Recalcular AVANCE_PCT del padre como promedio de sus hijas
-    cur.execute(
-        'SELECT COALESCE(AVG(CAST("AVANCE_PCT" AS DECIMAL)), 0) '
-        'FROM "ACTIVIDADES" '
-        'WHERE "ID_ACTIVIDAD_PADRE"=?',
-        (padre_id,)
-    )
-    avg_row = cur.fetchone()
-    nuevo_avance = int(round(float(avg_row[0] or 0))) if avg_row else 0
-    nuevo_avance = max(0, min(100, nuevo_avance))
-
-    cur.execute(
-        'UPDATE "ACTIVIDADES" '
-        'SET "AVANCE_PCT"=?, "ACTUALIZADO_EN"=CURRENT_TIMESTAMP '
-        'WHERE "ID"=?',
-        (nuevo_avance, padre_id)
-    )
+    _recalcular_avance_padre(cur, padre_id)
 
 
 def guardar_registro_actividad(datos):
@@ -448,25 +461,177 @@ def obtener_registro_por_id(registro_id):
 
 
 def actualizar_registro(registro_id, datos):
-    sql = """
-        UPDATE "REGISTRO_ACTIVIDADES"
-        SET "FECHA"       = ?,
-            "HORAS"       = ?,
-            "ACCION"      = ?,
-            "DETALLES"    = ?,
-            "ID_ACTIVIDAD"= ?,
-            "ID_TIPO_ACT" = ?
-        WHERE "ID" = ?
     """
-    return ejecutar_dml(sql, (
-        datos.get('fecha'),
-        datos.get('horas'),
-        datos.get('accion'),
-        datos.get('detalles') or None,
-        datos.get('id_actividad') or None,
-        datos.get('id_tipo_act') or None,
-        registro_id,
-    ))
+    Actualiza un registro de horas.
+
+    Si el registro pertenece a una actividad hija (tiene ID_ACTIVIDAD_PADRE),
+    localiza su registro espejo en la actividad padre y lo sincroniza con los
+    nuevos valores (fecha, horas, acción, detalles, tipo). Esto evita el
+    desfase de horas entre el registro hijo y su propagación al padre.
+
+    Si la actividad destino cambia de padre (o se le agrega/quita padre),
+    el espejo anterior se elimina y se crea uno nuevo donde corresponda,
+    recalculando el AVANCE_PCT de los padres involucrados.
+
+    Lanza ValueError con un mensaje de negocio si la edición no es válida
+    (registro propagado, actividad destino completada/cancelada, etc.).
+    """
+    if not registro_id:
+        return False
+
+    with _pool.get_connection() as conn:
+        cur = conn.cursor()
+        try:
+            # 1. Recuperar el registro original completo
+            cur.execute(
+                """
+                SELECT "FECHA", "ID_USUARIO", "ID_PROYECTO", "ID_ACTIVIDAD", "ID_TIPO_ACT",
+                       "ACCION", "HORAS", "DETALLES", COALESCE("ES_PROPAGADO", 0)
+                FROM "REGISTRO_ACTIVIDADES"
+                WHERE "ID" = ?
+                """,
+                (registro_id,)
+            )
+            original = cur.fetchone()
+            if not original:
+                return False
+
+            (fecha_orig, user_id, proyecto_id, actividad_orig, _tipo_orig,
+             accion_orig, horas_orig, detalles_orig, es_propagado) = original
+
+            if es_propagado == 1:
+                raise ValueError(
+                    "No se puede editar un registro propagado directamente. "
+                    "Edita el registro de la actividad hija correspondiente."
+                )
+
+            # 2. Nuevos valores a aplicar
+            nueva_fecha = datos.get('fecha')
+            nuevas_horas = datos.get('horas')
+            nueva_accion = datos.get('accion')
+            nuevos_detalles = datos.get('detalles') or None
+            nueva_actividad = datos.get('id_actividad') or None
+            nuevo_tipo = datos.get('id_tipo_act') or None
+
+            # 3. Ubicar el padre actual (antes de editar) y el padre destino (según la
+            #    actividad nueva, que puede ser la misma, otra, o ninguna)
+            padre_actual_id, _ = _obtener_padre_y_estatus(cur, actividad_orig)
+            padre_nuevo_id, estatus_padre_nuevo = _obtener_padre_y_estatus(cur, nueva_actividad)
+
+            # 4. Ubicar el registro espejo existente (si lo hay), con los valores ORIGINALES
+            mirror_id = None
+            if padre_actual_id:
+                cur.execute(
+                    """
+                    SELECT TOP 1 "ID"
+                    FROM "REGISTRO_ACTIVIDADES"
+                    WHERE "FECHA" = ?
+                      AND "ID_USUARIO" = ?
+                      AND "ID_PROYECTO" = ?
+                      AND "ID_ACTIVIDAD" = ?
+                      AND "ACCION" = ?
+                      AND "HORAS" = ?
+                      AND COALESCE("DETALLES", '') = COALESCE(?, '')
+                      AND "ES_PROPAGADO" = 1
+                    """,
+                    (fecha_orig, user_id, proyecto_id, padre_actual_id, accion_orig, horas_orig, detalles_orig)
+                )
+                mrow = cur.fetchone()
+                mirror_id = mrow[0] if mrow else None
+
+            # 5. Validar que la actividad destino (si se especifica) no esté completada/cancelada
+            if nueva_actividad:
+                cur.execute(
+                    'SELECT A."ID_ESTATUS", E."DESCRIPCION" '
+                    'FROM "ACTIVIDADES" A JOIN "CAT_ESTATUS_ACTIVIDAD" E ON A."ID_ESTATUS"=E."ID" '
+                    'WHERE A."ID"=?',
+                    (nueva_actividad,)
+                )
+                act_row = cur.fetchone()
+                if not act_row:
+                    raise ValueError('La actividad seleccionada ya no existe o no está disponible.')
+                estatus_actividad_desc = str(act_row[1] or '').strip().upper()
+                if estatus_actividad_desc in ('COMPLETADO', 'CANCELADO'):
+                    raise ValueError(
+                        f"No se pueden registrar horas en una actividad con estatus '{act_row[1]}'."
+                    )
+
+            # 6. Validar estatus del padre destino (si aplica propagación)
+            if padre_nuevo_id and estatus_padre_nuevo in ('COMPLETADO', 'CANCELADO'):
+                raise ValueError(
+                    f"No se pueden propagar horas: la actividad padre tiene estatus '{estatus_padre_nuevo}'. "
+                    "Actualiza el estatus del padre antes de editar este registro."
+                )
+
+            # 7. Actualizar el registro original
+            cur.execute(
+                """
+                UPDATE "REGISTRO_ACTIVIDADES"
+                SET "FECHA"       = ?,
+                    "HORAS"       = ?,
+                    "ACCION"      = ?,
+                    "DETALLES"    = ?,
+                    "ID_ACTIVIDAD"= ?,
+                    "ID_TIPO_ACT" = ?
+                WHERE "ID" = ?
+                """,
+                (nueva_fecha, nuevas_horas, nueva_accion, nuevos_detalles,
+                 nueva_actividad, nuevo_tipo, registro_id)
+            )
+
+            # 8. Sincronizar el registro espejo en la actividad padre
+            if padre_actual_id == padre_nuevo_id:
+                # Mismo padre (o ambos None, es decir, ni antes ni ahora hay propagación)
+                if padre_nuevo_id and mirror_id:
+                    # Actualizar el espejo existente con los nuevos valores
+                    cur.execute(
+                        """
+                        UPDATE "REGISTRO_ACTIVIDADES"
+                        SET "FECHA"=?, "HORAS"=?, "ACCION"=?, "DETALLES"=?, "ID_TIPO_ACT"=?
+                        WHERE "ID"=?
+                        """,
+                        (nueva_fecha, nuevas_horas, nueva_accion, nuevos_detalles, nuevo_tipo, mirror_id)
+                    )
+                elif padre_nuevo_id and not mirror_id:
+                    # No existía espejo previo (dato inconsistente heredado): crearlo ahora
+                    cur.execute(
+                        """
+                        INSERT INTO "REGISTRO_ACTIVIDADES"
+                            ("ID","FECHA","ID_USUARIO","ID_PROYECTO","ID_ACTIVIDAD","ID_TIPO_ACT",
+                             "ACCION","HORAS","DETALLES","ES_PROPAGADO","CREADO_EN")
+                        VALUES (SYSUUID,?,?,?,?,?,?,?,?,1,CURRENT_TIMESTAMP)
+                        """,
+                        (nueva_fecha, user_id, proyecto_id, padre_nuevo_id, nuevo_tipo,
+                         nueva_accion, nuevas_horas, nuevos_detalles)
+                    )
+                    _recalcular_avance_padre(cur, padre_nuevo_id)
+                # Si padre_nuevo_id es None y padre_actual_id también: nada que sincronizar.
+            else:
+                # Cambió de padre (incluye pasar de "sin padre" a "con padre" y viceversa)
+                if mirror_id:
+                    cur.execute('DELETE FROM "REGISTRO_ACTIVIDADES" WHERE "ID"=?', (mirror_id,))
+                    _recalcular_avance_padre(cur, padre_actual_id)
+
+                if padre_nuevo_id:
+                    cur.execute(
+                        """
+                        INSERT INTO "REGISTRO_ACTIVIDADES"
+                            ("ID","FECHA","ID_USUARIO","ID_PROYECTO","ID_ACTIVIDAD","ID_TIPO_ACT",
+                             "ACCION","HORAS","DETALLES","ES_PROPAGADO","CREADO_EN")
+                        VALUES (SYSUUID,?,?,?,?,?,?,?,?,1,CURRENT_TIMESTAMP)
+                        """,
+                        (nueva_fecha, user_id, proyecto_id, padre_nuevo_id, nuevo_tipo,
+                         nueva_accion, nuevas_horas, nuevos_detalles)
+                    )
+                    _recalcular_avance_padre(cur, padre_nuevo_id)
+
+            conn.commit()
+            return True
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            cur.close()
 
 
 def eliminar_registro(registro_id):
@@ -501,16 +666,7 @@ def eliminar_registro(registro_id):
             if es_propagado == 1:
                 raise ValueError("No se puede eliminar un registro propagado directamente. Elimina el registro de la actividad hija.")
 
-            padre_id = None
-            # 2. Si el registro tiene actividad, verificar si es una actividad hija para hallar al padre
-            if actividad_id:
-                cur.execute(
-                    'SELECT "ID_ACTIVIDAD_PADRE" FROM "ACTIVIDADES" WHERE "ID" = ?',
-                    (actividad_id,)
-                )
-                act_row = cur.fetchone()
-                if act_row:
-                    padre_id = act_row[0]
+            padre_id, _ = _obtener_padre_y_estatus(cur, actividad_id)
 
             # 3. Si existe un padre, buscar y eliminar su registro espejo correspondiente
             if padre_id:
@@ -534,26 +690,7 @@ def eliminar_registro(registro_id):
 
             # 5. Si hubo una actividad padre involucrada, recalcular su AVANCE_PCT inmediatamente
             if padre_id:
-                cur.execute(
-                    """
-                    SELECT COALESCE(AVG(CAST("AVANCE_PCT" AS DECIMAL)), 0)
-                    FROM "ACTIVIDADES"
-                    WHERE "ID_ACTIVIDAD_PADRE" = ?
-                    """,
-                    (padre_id,)
-                )
-                avg_row = cur.fetchone()
-                nuevo_avance = int(round(float(avg_row[0] or 0))) if avg_row else 0
-                nuevo_avance = max(0, min(100, nuevo_avance))
-
-                cur.execute(
-                    """
-                    UPDATE "ACTIVIDADES"
-                    SET "AVANCE_PCT" = ?, "ACTUALIZADO_EN" = CURRENT_TIMESTAMP
-                    WHERE "ID" = ?
-                    """,
-                    (nuevo_avance, padre_id)
-                )
+                _recalcular_avance_padre(cur, padre_id)
 
             conn.commit()
             return True

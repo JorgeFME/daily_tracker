@@ -372,16 +372,28 @@ def api_registro(registro_id):
 @tracker_bp.route("/registros/<registro_id>", methods=["PUT"])
 def api_actualizar_registro(registro_id):
     datos = request.get_json()
-    if actualizar_registro(registro_id, datos):
-        return jsonify({"status": "success"})
-    return jsonify({"status": "error", "message": "Error al actualizar"}), 500
+    try:
+        if actualizar_registro(registro_id, datos):
+            return jsonify({"status": "success"})
+        return jsonify({"status": "error", "message": "Registro no encontrado."}), 404
+    except ValueError as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+    except Exception:
+        current_app.logger.exception("Error inesperado al actualizar registro")
+        return jsonify({"status": "error", "message": "Ocurrió un error interno al actualizar el registro."}), 500
 
 
 @tracker_bp.route("/registros/<registro_id>", methods=["DELETE"])
 def api_eliminar_registro(registro_id):
-    if eliminar_registro(registro_id):
-        return jsonify({"status": "success"})
-    return jsonify({"status": "error", "message": "Error al eliminar"}), 500
+    try:
+        if eliminar_registro(registro_id):
+            return jsonify({"status": "success"})
+        return jsonify({"status": "error", "message": "Registro no encontrado."}), 404
+    except ValueError as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+    except Exception:
+        current_app.logger.exception("Error inesperado al eliminar registro")
+        return jsonify({"status": "error", "message": "Ocurrió un error interno al eliminar el registro."}), 500
 
 
 @tracker_bp.route("/registros/<registro_id>/duplicar", methods=["POST"])
