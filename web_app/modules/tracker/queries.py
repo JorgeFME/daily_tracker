@@ -131,7 +131,7 @@ def _crear_actividad_rapida_desde_registro(cur, datos):
                 ("ID","ID_PROYECTO","NOMBRE_ACTIVIDAD","DESCRIPCION",
                  "FECHA_SOLICITUD","SOLICITANTE","FRIENDLY_NAME","FECHA_INICIO","FECHA_FIN_REAL",
                  "ID_ESTATUS","PRIORIDAD","TIPO","CREADO_EN","CREADO_POR")
-            VALUES (SYSUUID,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)
+            VALUES (SYSUUID,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)
         """,
         (
             proyecto_id,
@@ -236,7 +236,7 @@ def guardar_registro_actividad(datos):
             if crear_actividad_rapida:
                 actividad_id = _crear_actividad_rapida_desde_registro(cur, datos)
 
-            if actividad_id:
+            if actividad_id and not crear_actividad_rapida:
                 cur.execute(
                     'SELECT A."ID_ESTATUS", E."DESCRIPCION" '
                     'FROM "ACTIVIDADES" A '
