@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte RH · Daily Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
+    <style>
+        :root { --primary:#2563eb; --dark:#0f172a; --muted:#64748b; --border:#dbe3ee; --bg:#eef2f7; --surface:#fff; --success:#16a34a; }
+        * { box-sizing:border-box; }
+        body { margin:0; background:var(--bg); color:var(--dark); font-family:'DM Sans',sans-serif; }
+        nav { height:58px; display:flex; align-items:center; gap:8px; padding:0 28px; background:#fff; border-bottom:1px solid var(--border); box-shadow:0 1px 12px rgba(15,23,42,.06); position:sticky; top:0; z-index:10; }
+        .nav-brand { margin-right:16px; text-decoration:none; color:var(--dark); font-weight:800; font-size:.95rem; }
+        .nav-link { display:inline-flex; gap:6px; align-items:center; text-decoration:none; color:#64748b; font-size:.82rem; font-weight:600; padding:7px 12px; border-radius:999px; }
+        .nav-link:hover { background:#dbeafe; color:var(--primary); } .nav-link.active { background:var(--primary); color:#fff; }
+        .page { max-width:100%; padding:30px 32px; }
+        .page-header { display:flex; justify-content:space-between; align-items:end; gap:20px; margin-bottom:20px; }
+        h1 { margin:0; font-size:1.65rem; letter-spacing:-.02em; } .sub { margin:5px 0 0; color:var(--muted); font-size:.88rem; }
+        .filters { position:relative; z-index:20; display:flex; align-items:end; gap:12px; flex-wrap:wrap; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; box-shadow:0 2px 6px rgba(15,23,42,.04); margin-bottom:18px; }
+        .field { display:flex; flex-direction:column; gap:5px; } .field label { color:#475569; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+        input, select { height:36px; min-width:155px; padding:0 10px; color:var(--dark); background:#fff; border:1px solid var(--border); border-radius:7px; font:inherit; font-size:.84rem; outline:none; transition:border-color .18s, box-shadow .18s; }
+        input:focus, select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.13); }
+        select { min-width:230px; } button { cursor:pointer; font:inherit; }
+        .ts-wrapper { min-width:230px; } .ts-wrapper.dropdown-active { z-index:30; } .ts-control { min-height:36px; border:1px solid var(--border); border-radius:7px; box-shadow:none; font-size:.84rem; }
+        .ts-wrapper.focus .ts-control { border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.13); }
+        .ts-dropdown, .ts-dropdown-content { z-index:1000 !important; background:#fff !important; opacity:1; }
+        .ts-dropdown { border-color:var(--border); border-radius:7px; box-shadow:0 10px 24px rgba(15,23,42,.12); font-size:.84rem; }
+        .ts-dropdown .option { display:block; min-height:34px; padding:8px 10px; color:var(--dark); background:#fff; line-height:1.3; white-space:normal; }
+        .ts-dropdown .option.active, .ts-dropdown .option:hover { color:var(--dark); background:#eff6ff; }
+        .flatpickr-calendar { font-family:'DM Sans',sans-serif; border:1px solid var(--border); box-shadow:0 12px 30px rgba(15,23,42,.14); }
+        .flatpickr-day.selected, .flatpickr-day.selected:hover { background:var(--primary); border-color:var(--primary); }
+        .btn-load, .btn-clear { height:36px; border-radius:7px; padding:0 15px; font-weight:700; font-size:.83rem; }
+        .btn-load { border:0; color:#fff; background:var(--primary); }
+        .btn-load:hover { background:#1d4ed8; } .count { color:var(--muted); font-size:.82rem; margin-left:auto; }
+        .btn-clear { color:#475569; border:1px solid var(--border); background:#fff; } .btn-clear:hover { background:#f8fafc; }
+        .parent-switch { display:inline-flex; align-items:center; gap:7px; height:36px; color:#475569; font-size:.8rem; font-weight:600; cursor:pointer; white-space:nowrap; }
+        .parent-switch input { min-width:0; width:16px; height:16px; accent-color:var(--primary); }
+        .card { position:relative; z-index:1; overflow:hidden; border:1px solid var(--border); border-radius:12px; box-shadow:0 2px 8px rgba(15,23,42,.05); background:#fff; }
+        .table-scroll { overflow:auto; max-height:calc(100vh - 270px); }
+        table { width:max-content; min-width:100%; border-collapse:collapse; font-size:.78rem; }
+        th { position:sticky; top:0; z-index:2; min-width:126px; padding:11px 10px; color:#fff; background:var(--dark); border:1px solid #334155; text-align:center; line-height:1.2; white-space:normal; }
+        td { max-width:285px; padding:9px 10px; border:1px solid var(--border); vertical-align:middle; line-height:1.35; background:#fff; text-align:center; }
+        tbody tr:nth-child(even) td { background:#f8fafc; } .number { font-family:'DM Mono',monospace; }
+        .cell-activities { min-width:460px; max-width:650px; } .activities-text { min-width:380px; text-align:left; }
+        .cell-activities > .cell-value { padding-right:34px; } .cell-activities > .cell-value > .copy-btn { top:0; transform:none; }
+        .activity-developers { margin-bottom:5px; color:var(--dark); font-weight:700; white-space:pre-wrap; }
+        .activity-day { padding:7px 0; border-bottom:1px dashed #cbd5e1; } .activity-day:last-child { border-bottom:0; }
+        .activity-day-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:3px; color:#475569; font-size:.7rem; font-weight:800; letter-spacing:.03em; }
+        .activity-day-text { white-space:pre-wrap; }
+        .day-copy-btn { width:24px; height:24px; border:1px solid #bfdbfe; border-radius:6px; color:#1d4ed8; background:#eff6ff; font-size:.78rem; line-height:1; }
+        .day-copy-btn:hover { background:#dbeafe; } .day-copy-btn.copied { color:#fff; border-color:var(--success); background:var(--success); }
+        .cell-value { position:relative; min-width:100%; text-align:center; }
+        .copy-btn { position:absolute; right:0; top:50%; transform:translateY(-50%); width:26px; height:26px; border:1px solid #bfdbfe; border-radius:6px; padding:0; color:#1d4ed8; background:#eff6ff; font-size:.84rem; line-height:1; white-space:nowrap; }
+        .copy-btn:hover { background:#dbeafe; } .copy-btn.copied { color:#fff; border-color:var(--success); background:var(--success); }
+        .empty { padding:38px; color:var(--muted); text-align:center; } .error { color:#b91c1c; }
+        @media (max-width:800px) { nav { padding:0 12px; overflow-x:auto; } .nav-brand { display:none; } .page { padding:20px 14px; } .page-header { align-items:start; flex-direction:column; } .count { margin-left:0; } }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/" class="nav-brand"><i class="bi bi-layers-half" style="color:#2563eb"></i> Dream Team Daily Tracker</a>
+        <a href="/" class="nav-link"><i class="bi bi-house"></i>Inicio</a>
+        <a href="/actividades" class="nav-link"><i class="bi bi-kanban"></i>Actividades</a>
+        <a href="/registros" class="nav-link"><i class="bi bi-clock-history"></i>Registros</a>
+        <a href="/reporte-rh" class="nav-link active"><i class="bi bi-clipboard-data"></i>Reporte RH</a>
+        <a href="/evidencias" class="nav-link"><i class="bi bi-images"></i>Evidencias</a>
+        <a href="/calendario" class="nav-link"><i class="bi bi-calendar3"></i>Calendario</a>
+        <a href="/catalogos" class="nav-link"><i class="bi bi-sliders"></i>Catálogos</a>
+    </nav>
+    <main class="page">
+        <div class="page-header">
+            <div><h1>Reporte RH</h1><p class="sub">Vista copiable de la hoja <strong>Actividades</strong> del reporte Excel.</p></div>
+        </div>
+        <section class="filters">
+            <div class="field"><label for="fecha-ini">Fecha inicio</label><input id="fecha-ini" type="date"></div>
+            <div class="field"><label for="fecha-fin">Fecha fin</label><input id="fecha-fin" type="date"></div>
+            <div class="field"><label for="proyecto">Proyecto</label>
+                <select id="proyecto"><option value="">Todos los proyectos</option>{% for project in projects %}<option value="{{ project.ID }}">{{ project.NOMBRE_PROYECTO }}</option>{% endfor %}</select>
+            </div>
+            <div class="field"><label for="actividad">Actividad</label>
+                <select id="actividad" disabled><option value="">Todas las actividades</option></select>
+            </div>
+            <div class="field"><label for="usuario">Usuario</label>
+                <select id="usuario"><option value="">Todos los usuarios</option>{% for user in users %}<option value="{{ user.ID }}" {% if user_id_sesion == user.ID|string %}selected{% endif %}>{{ user.NOMBRE_COMPLETO }}</option>{% endfor %}</select>
+            </div>
+            <button class="btn-load" id="btn-cargar"><i class="bi bi-funnel"></i> Aplicar filtros</button>
+            <button class="btn-clear" id="btn-limpiar" type="button"><i class="bi bi-x-circle"></i> Borrar filtros</button>
+            <label class="parent-switch" title="Muestra las actividades que contienen subactividades"><input id="mostrar-padres" type="checkbox"> Mostrar actividades padre</label>
+            <span class="count" id="contador">Cargando…</span>
+        </section>
+        <section class="card"><div class="table-scroll" id="contenedor"><div class="empty">Cargando reporte…</div></div></section>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script>
+        const columns = ['entregable','descripcion','tipo_desarrollo','fase','fecha_solicitud','fecha_inicio','fecha_fin','complejidad','horas_desarrollo','horas_tarea','avance','estatus','responsable','recurso','dependencia','actividades_texto'];
+        const headers = ['Entregables Ambiente Productivo','Descripción requerimiento','Tipo de Desarrollo','Desarrollo / Tarea','Fecha de solicitud','Fecha Inicio','Fecha Fin','Complejidad','Horas Desarrollo','Horas Tareas','% Avance','Estatus','Responsable (Solicitante)','Recurso','Dependencia','Actividades'];
+        const contenedor = document.getElementById('contenedor');
+        const contador = document.getElementById('contador');
+        const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
+        const proyectoSelect = new TomSelect('#proyecto', { create: false, allowEmptyOption: true });
+        const actividadSelect = new TomSelect('#actividad', { create: false, allowEmptyOption: true });
+        const usuarioSelect = new TomSelect('#usuario', { create: false, allowEmptyOption: true });
+        let filasActuales = [];
+
+        function textoCelda(row, key) {
+            if (key === 'avance') return `${((Number(row[key]) || 0) * 100).toFixed(1)}%`;
+            return row[key] ?? '';
+        }
+        function gruposActividad(texto) {
+            const grupos = new Map();
+            const encabezados = [];
+            let responsable = '';
+            String(texto || '').split('\n').forEach(linea => {
+                const match = linea.match(/^\s*•\s*(\d{4}-\d{2}-\d{2})\s*-/);
+                if (match) {
+                    const fecha = match[1];
+                    if (!grupos.has(fecha)) grupos.set(fecha, { fecha, lineas: [], lineasCopia: [] });
+                    const grupo = grupos.get(fecha);
+                    grupo.lineas.push(linea);
+                    grupo.lineasCopia.push(linea);
+                } else if (linea.trim()) {
+                    responsable = linea;
+                    if (!encabezados.includes(responsable)) encabezados.push(responsable);
+                }
+            });
+            return { encabezados, grupos: [...grupos.values()].sort((a, b) => b.fecha.localeCompare(a.fecha)) };
+        }
+        async function copiar(texto, button) {
+            try {
+                await navigator.clipboard.writeText(texto);
+                const original = button.innerHTML;
+                button.classList.add('copied'); button.innerHTML = '<i class="bi bi-check-lg"></i>';
+                setTimeout(() => { button.classList.remove('copied'); button.innerHTML = original; }, 1400);
+            } catch (error) { alert('No fue posible copiar al portapapeles.'); }
+        }
+        function renderizar(rows) {
+            filasActuales = rows;
+            const mostrarPadres = document.getElementById('mostrar-padres').checked;
+            const filasVisibles = mostrarPadres ? rows : rows.filter(row => !String(row.descripcion || '').trimStart().startsWith('▾'));
+            contador.textContent = `${filasVisibles.length} fila${filasVisibles.length === 1 ? '' : 's'}`;
+            if (!filasVisibles.length) { contenedor.innerHTML = '<div class="empty">No se encontraron actividades para los filtros seleccionados.</div>'; return; }
+            const encabezado = headers.map(header => `<th>${header}</th>`).join('');
+            const cuerpo = filasVisibles.map((row, index) => {
+                const cells = columns.map(key => {
+                    const value = textoCelda(row, key);
+                    let content;
+                    if (key === 'actividades_texto') {
+                        const detalle = gruposActividad(value);
+                        content = `<div class="activities-text">${detalle.grupos.length ? `<div class="activity-developers">${escapeHtml(detalle.encabezados.join('\n'))}</div>${detalle.grupos.map((grupo, grupoIndex) => `<div class="activity-day"><div class="activity-day-head"><span>${grupo.fecha}</span><button class="day-copy-btn" data-copy-day="${index}" data-day-index="${grupoIndex}" title="Copiar actividades del ${grupo.fecha}" aria-label="Copiar actividades del ${grupo.fecha}"><i class="bi bi-copy"></i></button></div><div class="activity-day-text">${escapeHtml(grupo.lineas.join('\n'))}</div></div>`).join('')}` : escapeHtml(value)}</div>`;
+                    } else {
+                        content = `<span>${escapeHtml(value)}</span>`;
+                    }
+                    const style = ['horas_desarrollo','horas_tarea'].includes(key) ? 'number' : '';
+                    return `<td class="${style} ${key === 'actividades_texto' ? 'cell-activities' : ''}"><div class="cell-value">${content}<button class="copy-btn" data-copy-cell="${index}" data-copy-key="${key}" title="Copiar contenido" aria-label="Copiar contenido"><i class="bi bi-copy"></i></button></div></td>`;
+                }).join('');
+                return `<tr>${cells}</tr>`;
+            }).join('');
+            contenedor.innerHTML = `<table><thead><tr>${encabezado}</tr></thead><tbody>${cuerpo}</tbody></table>`;
+            contenedor.querySelectorAll('[data-copy-cell]').forEach(button => button.addEventListener('click', () => copiar(textoCelda(filasVisibles[button.dataset.copyCell], button.dataset.copyKey), button)));
+            contenedor.querySelectorAll('[data-copy-day]').forEach(button => button.addEventListener('click', () => {
+                const detalle = gruposActividad(filasVisibles[button.dataset.copyDay].actividades_texto);
+                copiar(detalle.grupos[button.dataset.dayIndex].lineasCopia.join('\n'), button);
+            }));
+        }
+        async function cargarReporte() {
+            const params = new URLSearchParams();
+            const usuario = usuarioSelect.getValue(); const inicio = document.getElementById('fecha-ini').value; const fin = document.getElementById('fecha-fin').value; const proyecto = proyectoSelect.getValue(); const actividad = actividadSelect.getValue();
+            if (usuario) params.set('user_id', usuario); if (inicio) params.set('fecha_ini', inicio); if (fin) params.set('fecha_fin', fin); if (proyecto) params.set('proyecto_id', proyecto); if (actividad) params.set('actividad_id', actividad);
+            contador.textContent = 'Cargando…'; contenedor.innerHTML = '<div class="empty">Cargando reporte…</div>';
+            try { const response = await fetch(`/api/reporte-rh?${params}`); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Error al cargar.'); renderizar(data); }
+            catch (error) { contador.textContent = ''; contenedor.innerHTML = `<div class="empty error">${escapeHtml(error.message)}</div>`; }
+        }
+        async function cargarActividades() {
+            const proyecto = proyectoSelect.getValue();
+            actividadSelect.clear(true); actividadSelect.clearOptions(); actividadSelect.addOption({ value: '', text: 'Todas las actividades' }); actividadSelect.refreshOptions(false);
+            actividadSelect.disable();
+            if (!proyecto) return;
+            try {
+                const response = await fetch(`/api/reporte-rh/actividades?proyecto_id=${encodeURIComponent(proyecto)}`);
+                const actividades = await response.json();
+                actividades.sort((a, b) => String(b.CREADO_EN || '').localeCompare(String(a.CREADO_EN || '')));
+                actividades.forEach(item => actividadSelect.addOption({ value: item.ID, text: item.NOMBRE_ACTIVIDAD }));
+                actividadSelect.enable();
+            } catch (error) { console.error('No fue posible cargar las actividades', error); }
+        }
+        flatpickr('#fecha-ini, #fecha-fin', { dateFormat: 'Y-m-d', allowInput: true });
+        document.getElementById('btn-cargar').addEventListener('click', cargarReporte);
+        proyectoSelect.on('change', cargarActividades);
+        document.getElementById('mostrar-padres').addEventListener('change', () => renderizar(filasActuales));
+        document.getElementById('btn-limpiar').addEventListener('click', () => {
+            document.getElementById('fecha-ini')._flatpickr.clear(); document.getElementById('fecha-fin')._flatpickr.clear();
+            usuarioSelect.clear(true); proyectoSelect.clear(true); actividadSelect.clear(true); actividadSelect.clearOptions(); actividadSelect.addOption({ value: '', text: 'Todas las actividades' }); actividadSelect.disable();
+            cargarReporte();
+        });
+        cargarReporte();
+    </script>
+</body>
+</html>

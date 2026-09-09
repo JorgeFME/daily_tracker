@@ -1,13 +1,89 @@
 import io
 import os
 from datetime import datetime
-from flask import Blueprint, request, jsonify, send_file, current_app
+from flask import Blueprint, request, jsonify, send_file, current_app, render_template, session
 
+from web_app.database import ejecutar_query
 from web_app.modules.tracker.routes import _catalogo_base, _registros_filters_from_request, _registros_activity_options, _catalog_label, _fmt_fecha_corta
-from web_app.modules.reports.queries import obtener_datos_reporte_proyecto
+from web_app.modules.tracker.utils import _local_today
+from web_app.modules.reports.queries import obtener_datos_reporte_proyecto, obtener_matriz_reporte_rh
 from web_app.modules.reports.services import generar_reporte_proyecto_xlsx, generar_reporte_ausencias
 
 reports_bp = Blueprint("reports_bp", __name__)
+
+
+def _reporte_rh_filtros(args):
+    return {
+        "user_id": (args.get("user_id") or "").strip() or None,
+        "proyecto_id": (args.get("proyecto_id") or "").strip() or None,
+        "actividad_id": (args.get("actividad_id") or "").strip() or None,
+        "fecha_ini": (args.get("fecha_ini") or "").strip() or None,
+        "fecha_fin": (args.get("fecha_fin") or "").strip() or None,
+    }
+
+
+def _reporte_rh_usuario_sesion():
+    """Obtiene el ID aun cuando una instalación guarde el nombre en sesión."""
+    valor_sesion = session.get("user_id") or session.get("username") or ""
+    if not valor_sesion:
+        return ""
+    valor_sesion = str(valor_sesion)
+    for usuario in _catalogo_base()["users"]:
+        if str(usuario.get("ID")) == valor_sesion or usuario.get("NOMBRE_COMPLETO") == valor_sesion:
+            return str(usuario.get("ID"))
+    return valor_sesion
+
+
+@reports_bp.route("/reporte-rh")
+def vista_reporte_rh():
+    base = _catalogo_base()
+    # La aplicación no fuerza autenticación en todas las instalaciones; se toma
+    # el usuario de sesión cuando existe y se mantiene el selector disponible.
+    valor_sesion = session.get("user_id") or session.get("username") or ""
+    user_id_sesion = str(valor_sesion)
+    for usuario in base["users"]:
+        if usuario.get("NOMBRE_COMPLETO") == valor_sesion:
+            user_id_sesion = str(usuario.get("ID"))
+            break
+    return render_template(
+        "reports/reporte_rh.html",
+        users=base["users"],
+        projects=base["projects"],
+        user_id_sesion=str(user_id_sesion),
+    )
+
+
+@reports_bp.route("/api/reporte-rh")
+def api_reporte_rh():
+    filtros = _reporte_rh_filtros(request.args)
+    # La vista RH es operativa: mientras no se defina un rango, muestra sólo
+    # el día actual. Proyecto, actividad o usuario no cambian ese alcance.
+    if not filtros["fecha_ini"] and not filtros["fecha_fin"]:
+        fecha_actual = _local_today().isoformat()
+        filtros["fecha_ini"] = fecha_actual
+        filtros["fecha_fin"] = fecha_actual
+    if not filtros["user_id"]:
+        filtros["user_id"] = _reporte_rh_usuario_sesion() or None
+    try:
+        return jsonify(obtener_matriz_reporte_rh(filtros))
+    except Exception:
+        current_app.logger.exception("Error al consultar el reporte RH")
+        return jsonify({"error": "No fue posible obtener el reporte RH."}), 500
+
+
+@reports_bp.route("/api/reporte-rh/actividades")
+def api_reporte_rh_actividades():
+    proyecto_id = (request.args.get("proyecto_id") or "").strip()
+    if not proyecto_id:
+        return jsonify([])
+    actividades = ejecutar_query(
+        '''SELECT "ID", "NOMBRE_ACTIVIDAD", "CREADO_EN"
+           FROM "ACTIVIDADES"
+           WHERE "ID_PROYECTO" = ?
+           ORDER BY "CREADO_EN" DESC, "NOMBRE_ACTIVIDAD" ASC''',
+        (proyecto_id,),
+    )
+    return jsonify(actividades)
 
 
 def _build_registros_export_context(filtros, filtros_meta, base, actividades=None):

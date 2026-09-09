@@ -1,6 +1,136 @@
 from datetime import datetime
+import re
 from web_app.database import _pool, ejecutar_query
 from web_app.modules.tracker.queries import _registros_where
+
+
+def _reporte_rh_safe(value):
+    text = str(value).strip() if value is not None else ""
+    return text or "—"
+
+
+def _reporte_rh_fecha(value):
+    if value is None:
+        return "—"
+    text = str(value).strip()
+    return text[:10] if len(text) >= 10 else (text or "—")
+
+
+def _reporte_rh_prioridad(value):
+    if value is None:
+        return "—"
+    try:
+        return {1: "Alta", 2: "Media", 3: "Baja"}.get(int(value), "—")
+    except (TypeError, ValueError):
+        return "—"
+
+
+def _reporte_rh_horas(actividad):
+    """Replica las horas visibles de la hoja Actividades del Excel."""
+    es_padre_con_hijas = (
+        not actividad.get("ID_ACTIVIDAD_PADRE")
+        and int(actividad.get("NUM_HIJAS") or 0) > 0
+    )
+    campo = "HORAS_DIRECTAS" if es_padre_con_hijas else "HORAS_TOTALES"
+    return float(actividad.get(campo) or 0)
+
+
+def obtener_matriz_reporte_rh(filtros=None):
+    """
+    Devuelve las 16 columnas visibles de la hoja ``Actividades`` para la vista RH.
+
+    La consulta y el armado de ``DESGLOSE_REPORTE`` se reutilizan directamente de
+    ``obtener_datos_reporte_proyecto`` para preservar los saltos de línea, viñetas
+    y reglas de horas del archivo Excel.
+    """
+    filtros = dict(filtros or {})
+    proyectos = ejecutar_query(
+        'SELECT "ID" FROM "PROYECTOS" WHERE "ACTIVO"=1 ORDER BY "NOMBRE_PROYECTO"'
+    )
+    if filtros.get("proyecto_id"):
+        proyectos = [
+            proyecto for proyecto in proyectos
+            if str(proyecto.get("ID")) == str(filtros["proyecto_id"])
+        ]
+    where_registros, params_registros = _registros_where('R', filtros)
+    where_registros.extend([
+        'R."ID_ACTIVIDAD" IS NOT NULL',
+        'COALESCE(R."ES_PROPAGADO", 0) != 1',
+    ])
+    where_ultimo_registro = ' AND '.join(where_registros)
+    registros_recientes = ejecutar_query(
+        """
+        SELECT R."ID_ACTIVIDAD", MAX(R."CREADO_EN") AS "ULTIMO_REGISTRO"
+        FROM "REGISTRO_ACTIVIDADES" R
+        WHERE """ + where_ultimo_registro + """
+        GROUP BY R."ID_ACTIVIDAD"
+        """,
+        tuple(params_registros),
+    )
+    ultima_fecha_por_actividad = {
+        str(registro["ID_ACTIVIDAD"]): str(registro["ULTIMO_REGISTRO"])
+        for registro in registros_recientes
+    }
+    filas = []
+
+    for proyecto in proyectos:
+        actividades, _, _ = obtener_datos_reporte_proyecto(proyecto["ID"], filtros)
+        for actividad in actividades:
+            es_hija = bool(actividad.get("ID_ACTIVIDAD_PADRE"))
+            nombre = _reporte_rh_safe(actividad.get("NOMBRE_ACTIVIDAD"))
+            if es_hija:
+                descripcion = f"      ↳ {nombre}"
+            else:
+                numero_hijas = int(actividad.get("NUM_HIJAS") or 0)
+                descripcion = (
+                    f"▾ {nombre}  ({numero_hijas} subactividad{'es' if numero_hijas != 1 else ''})"
+                    if numero_hijas else f"  {nombre}"
+                )
+
+            horas = _reporte_rh_horas(actividad)
+            tipo = _reporte_rh_safe(actividad.get("TIPO"))
+            try:
+                avance = float(actividad.get("AVANCE_PCT") or 0)
+                avance = avance / 100.0 if avance > 1 else avance
+            except (TypeError, ValueError):
+                avance = 0
+
+            # El orden y significado de cada valor corresponde exactamente a A:P
+            # de la hoja Actividades. En particular, la columna C conserva los
+            # recursos y D el valor DESARROLLO/TAREA como el Excel actual.
+            fila = {
+                "entregable": _reporte_rh_safe(actividad.get("NOMBRE_ENTREGABLE")),
+                "descripcion": descripcion,
+                "tipo_desarrollo": _reporte_rh_safe(actividad.get("RECURSOS")),
+                "fase": tipo,
+                "fecha_solicitud": _reporte_rh_fecha(actividad.get("FECHA_SOLICITUD")),
+                "fecha_inicio": _reporte_rh_fecha(actividad.get("FECHA_INICIO")),
+                "fecha_fin": _reporte_rh_fecha(actividad.get("FECHA_FIN_REAL")),
+                "complejidad": _reporte_rh_prioridad(actividad.get("PRIORIDAD")),
+                "horas_desarrollo": horas if tipo == "DESARROLLO" else "",
+                "horas_tarea": horas if tipo == "TAREA" else "",
+                "avance": avance,
+                "estatus": _reporte_rh_safe(actividad.get("ESTATUS")),
+                "responsable": _reporte_rh_safe(actividad.get("SOLICITANTE")),
+                "recurso": _reporte_rh_safe(actividad.get("RESPONSABLES")),
+                "dependencia": (
+                    _reporte_rh_safe(actividad.get("NOMBRE_ACTIVIDAD_PADRE"))
+                    if es_hija else "—"
+                ),
+                "actividades_texto": _reporte_rh_safe(actividad.get("DESGLOSE_REPORTE")),
+            }
+            # La hoja se muestra por el último registro capturado, no por la
+            # fecha de creación de la actividad. Las fechas están en el mismo
+            # desglose que consume Excel y no se exponen como una 17ª columna.
+            fechas_registro = re.findall(r"\b\d{4}-\d{2}-\d{2}\b", fila["actividades_texto"])
+            fecha_orden = (
+                ultima_fecha_por_actividad.get(str(actividad.get("ID")))
+                or (max(fechas_registro) if fechas_registro else fila["fecha_solicitud"])
+            )
+            filas.append((fecha_orden, fila))
+
+    filas.sort(key=lambda item: item[0] if item[0] != "—" else "", reverse=True)
+    return [fila for _, fila in filas]
 
 def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
     """
