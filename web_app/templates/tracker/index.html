@@ -13,6 +13,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app-shell.css') }}">
+    <script src="{{ url_for('static', filename='js/daily-tracker-utils.js') }}"></script>
 
     <style>
         :root {
@@ -3630,12 +3632,15 @@
                 }
 
                 // Construir mensaje final
-                let htmlMsg = `<p>${res.message}</p>`;
+                let htmlMsg = `<p>${window.DailyTrackerUI.escapeHtml(res.message)}</p>`;
+                if (res.warning) {
+                    htmlMsg += `<p style="margin-top:8px;color:#b45309;">${window.DailyTrackerUI.escapeHtml(res.warning)}</p>`;
+                }
                 if (extraResultados.length > 0) {
                     htmlMsg += `<div style="margin-top:10px;text-align:left;font-size:.85rem;">`;
                     extraResultados.forEach(r => {
                         const icon = r.ok ? '✅' : '⚠️';
-                        htmlMsg += `<div style="margin-bottom:4px;">${icon} <strong>${r.nombre}</strong>${r.ok ? '' : ': ' + r.msg}</div>`;
+                        htmlMsg += `<div style="margin-bottom:4px;">${icon} <strong>${window.DailyTrackerUI.escapeHtml(r.nombre)}</strong>${r.ok ? '' : ': ' + window.DailyTrackerUI.escapeHtml(r.msg)}</div>`;
                     });
                     htmlMsg += `</div>`;
                 }
@@ -3986,13 +3991,14 @@
         function renderTable(records, mode) {
             const tbody = document.getElementById('tabla-recientes');
             const showUser = mode === 'global';
+            const { escapeHtml } = window.DailyTrackerUI;
 
             // Update the tipo filter dropdown with unique types from the full records set
             const tipoSelect = document.getElementById('filtro-tipo-act');
             const tiposDisponibles = [...new Set((records || []).map(r => r.tipo).filter(t => t && t !== '—'))].sort();
             const currentFilter = activeTipoFilter || tipoSelect.value;
             tipoSelect.innerHTML = '<option value="">Todos los tipos</option>' +
-                tiposDisponibles.map(t => `<option value="${t}"${t === currentFilter ? ' selected' : ''}>${t}</option>`).join('');
+                tiposDisponibles.map(t => `<option value="${escapeHtml(t)}"${t === currentFilter ? ' selected' : ''}>${escapeHtml(t)}</option>`).join('');
 
             if (activeTipoFilter && !tiposDisponibles.includes(activeTipoFilter)) {
                 activeTipoFilter = '';
@@ -4007,7 +4013,7 @@
             if (recordsCountEl) recordsCountEl.textContent = String(filtered.length);
             if (recordsFilterTextEl) {
                 recordsFilterTextEl.innerHTML = activeTipoFilter
-                    ? `Mostrando <strong>${activeTipoFilter}</strong> del período actual.`
+                    ? `Mostrando <strong>${escapeHtml(activeTipoFilter)}</strong> del período actual.`
                     : 'Mostrando <strong>todos los tipos</strong> del período actual.';
             }
             clearTipoBtn.classList.toggle('hidden', !activeTipoFilter);
@@ -4019,7 +4025,7 @@
 
             if (!filtered || filtered.length === 0) {
                 const emptyMsg = activeTipoFilter
-                    ? `No hay registros del tipo ${activeTipoFilter} en este período`
+                    ? `No hay registros del tipo ${escapeHtml(activeTipoFilter)} en este período`
                     : 'Sin registros para este período';
                 tbody.innerHTML = `<tr><td colspan="${colSpan}"><div class="empty-state"><i class="bi bi-inbox"></i><p>${emptyMsg}</p></div></td></tr>`;
                 return;
@@ -4029,11 +4035,11 @@
                 <tr>
                     <td style="white-space:nowrap; color:var(--text-secondary); font-family:'DM Mono',monospace; font-size:0.78rem;">${formatDate(r.fecha)}</td>
                     <td style="${showUser ? '' : 'display:none'}">
-                        <span style="font-size:0.8rem; color:var(--text-secondary);">${r.usuario || '—'}</span>
+                        <span style="font-size:0.8rem; color:var(--text-secondary);">${escapeHtml(r.usuario || '—')}</span>
                     </td>
-                    <td><span class="badge-project">${r.proyecto}</span></td>
-                    <td><span class="badge-tipo">${r.tipo || '—'}</span></td>
-                    <td class="accion-cell" title="${r.accion}">${r.accion}</td>
+                    <td><span class="badge-project">${escapeHtml(r.proyecto)}</span></td>
+                    <td><span class="badge-tipo">${escapeHtml(r.tipo || '—')}</span></td>
+                    <td class="accion-cell" title="${escapeHtml(r.accion)}">${escapeHtml(r.accion)}</td>
                     <td style="text-align:center;"><span class="badge-hrs">${parseFloat(r.horas).toFixed(1)}h</span></td>
                 </tr>
             `).join('');
@@ -4056,7 +4062,10 @@
             const showUser = !uid;
             const headers = ['Fecha', showUser ? 'Desarrollador' : null, 'Proyecto', 'Tipo', 'Acción', 'Horas'].filter(Boolean).join(',');
             const rows = recordsToExport.map(r =>
-                [r.fecha, showUser ? `"${r.usuario}"` : null, `"${r.proyecto}"`, `"${r.tipo}"`, `"${r.accion}"`, r.horas].filter(v => v !== null).join(',')
+                [r.fecha, showUser ? r.usuario : null, r.proyecto, r.tipo, r.accion, r.horas]
+                    .filter(v => v !== null)
+                    .map(window.DailyTrackerUI.escapeCsvCell)
+                    .join(',')
             );
             const csv = [headers, ...rows].join('\n');
             const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });

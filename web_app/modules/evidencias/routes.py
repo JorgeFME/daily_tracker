@@ -9,15 +9,16 @@ from web_app.modules.evidencias.queries import (
     obtener_evidencia_por_id,
     obtener_evidencias_filtradas,
     obtener_actividades_con_evidencia,
-    crear_evidencia,
     actualizar_evidencia,
     eliminar_evidencia,
 )
 from web_app.modules.evidencias.services import (
-    _allowed,
     _folder_size_mb,
-    _save_upload,
     _delete_evidence_file,
+    guardar_evidencia_actividad,
+    EvidenceUploadError,
+    EvidencePersistenceError,
+    ProjectStorageQuotaExceeded,
 )
 
 evidencias_bp = Blueprint("evidencias_bp", __name__)
@@ -74,25 +75,21 @@ def agregar_evidencia(actividad_id):
     datos = request.form.to_dict()
     from web_app.modules.dashboard.queries import obtener_actividad_por_id
     actividad = obtener_actividad_por_id(actividad_id)
-    proyecto_id = actividad["ID_PROYECTO"] if actividad else "sin_proyecto"
+    if not actividad:
+        return jsonify({"status": "error", "message": "La actividad no existe."}), 404
 
+    proyecto_id = actividad["ID_PROYECTO"]
     archivo = request.files.get("archivo")
-    if archivo and archivo.filename:
-        if not _allowed(archivo.filename):
-            return jsonify({"status": "error", "message": "Tipo de archivo no permitido."}), 400
-        try:
-            meta = _save_upload(archivo, proyecto_id, actividad_id)
-        except ValueError as quota_err:
-            return jsonify({"status": "error", "message": str(quota_err)}), 413
-        if meta:
-            datos["url_archivo"]    = meta["url"]
-            datos["nombre_archivo"] = meta["nombre"]
-            datos["mime_type"]      = meta["mime"]
-            datos["tamano_bytes"]   = str(meta["size"])
-
-    if crear_evidencia(actividad_id, datos):
+    try:
+        guardar_evidencia_actividad(actividad_id, proyecto_id, datos, archivo)
+    except ProjectStorageQuotaExceeded as quota_err:
+        return jsonify({"status": "error", "message": str(quota_err)}), 413
+    except EvidencePersistenceError as persistence_err:
+        return jsonify({"status": "error", "message": str(persistence_err)}), 500
+    except EvidenceUploadError as upload_err:
+        return jsonify({"status": "error", "message": str(upload_err)}), 400
+    else:
         return jsonify({"status": "success", "message": "Evidencia guardada."})
-    return jsonify({"status": "error", "message": "Error al guardar la evidencia."}), 500
 
 
 @evidencias_bp.route("/evidencia/<evidencia_id>", methods=["PUT", "DELETE"])
@@ -109,10 +106,9 @@ def api_evidencia(evidencia_id):
         return jsonify({"status": "success", "evidencia": _serialize_evidencia(evidencia)})
 
     rows = ejecutar_query('SELECT "URL_ARCHIVO" FROM "EVIDENCIA_ACTIVIDAD" WHERE "ID"=?', (evidencia_id,))
-    if rows:
-        _delete_evidence_file(rows[0].get("URL_ARCHIVO"))
-
     if eliminar_evidencia(evidencia_id):
+        if rows:
+            _delete_evidence_file(rows[0].get("URL_ARCHIVO"))
         return jsonify({"status": "success"})
     return jsonify({"status": "error"}), 500
 

@@ -222,6 +222,54 @@ def _propagar_horas_a_padre(cur, actividad_id, datos):
     _recalcular_avance_padre(cur, padre_id)
 
 
+def _validar_limite_diario(cur, usuario_id, fecha, horas, excluir_registro_id=None):
+    """Valida el tope diario dentro de la misma transacción que escribe el registro.
+
+    El bloqueo exclusivo serializa altas y ediciones de horas. Así dos
+    solicitudes simultáneas no pueden leer el mismo saldo disponible y superar
+    el límite de 8 horas.
+    """
+    try:
+        horas_solicitadas = float(horas)
+    except (TypeError, ValueError) as error:
+        raise ValueError("Las horas deben ser un número válido.") from error
+    if not usuario_id or not fecha:
+        raise ValueError("Usuario y fecha son obligatorios para registrar horas.")
+    if horas_solicitadas <= 0:
+        raise ValueError("Las horas deben ser mayores a cero.")
+
+    # La tabla recibe pocas escrituras y este bloqueo corto garantiza el límite
+    # incluso cuando existen dos workers de Gunicorn atendiendo a la vez.
+    cur.execute('LOCK TABLE "REGISTRO_ACTIVIDADES" IN EXCLUSIVE MODE')
+
+    sql_horas = (
+        'SELECT COALESCE(SUM("HORAS"), 0) FROM "REGISTRO_ACTIVIDADES" '
+        'WHERE "ID_USUARIO"=? AND "FECHA"=? '
+        'AND COALESCE("ES_PROPAGADO", 0) != 1'
+    )
+    params_horas = [usuario_id, fecha]
+    if excluir_registro_id:
+        sql_horas += ' AND "ID"<>?'
+        params_horas.append(excluir_registro_id)
+    cur.execute(sql_horas, tuple(params_horas))
+    fila_horas = cur.fetchone()
+    horas_registradas = float(fila_horas[0] or 0) if fila_horas else 0.0
+
+    cur.execute(
+        'SELECT COALESCE(SUM("HORAS_DIA"), 0) FROM "AUSENCIAS_USUARIO" '
+        'WHERE "ID_USUARIO"=? AND ? BETWEEN "FECHA_INICIO" AND "FECHA_FIN"',
+        (usuario_id, fecha),
+    )
+    fila_ausencia = cur.fetchone()
+    horas_ausencia = float(fila_ausencia[0] or 0) if fila_ausencia else 0.0
+
+    disponibles = max(0.0, 8.0 - horas_ausencia - horas_registradas)
+    if horas_solicitadas > disponibles + 1e-9:
+        raise ValueError(
+            f"No hay horas disponibles para ese día. Disponibles: {disponibles:.2f} h."
+        )
+
+
 def guardar_registro_actividad(datos):
     actividad_id = datos.get('actividad_id')
     crear_actividad_rapida = actividad_id == 'ad_hoc'
@@ -253,6 +301,13 @@ def guardar_registro_actividad(datos):
                     raise ValueError(
                         f"No se pueden registrar horas en una actividad con estatus '{actividad_row[1]}'."
                     )
+
+            _validar_limite_diario(
+                cur,
+                datos.get('user'),
+                datos.get('date'),
+                datos.get('hours'),
+            )
 
             cur.execute(
                 """
@@ -512,6 +567,14 @@ def actualizar_registro(registro_id, datos):
             nuevos_detalles = datos.get('detalles') or None
             nueva_actividad = datos.get('id_actividad') or None
             nuevo_tipo = datos.get('id_tipo_act') or None
+
+            _validar_limite_diario(
+                cur,
+                user_id,
+                nueva_fecha,
+                nuevas_horas,
+                excluir_registro_id=registro_id,
+            )
 
             # 3. Ubicar el padre actual (antes de editar) y el padre destino (según la
             #    actividad nueva, que puede ser la misma, otra, o ninguna)

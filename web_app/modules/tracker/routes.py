@@ -1,7 +1,5 @@
 from datetime import datetime, timedelta, date
 from flask import Blueprint, render_template, request, jsonify, url_for, redirect, current_app
-from config import Config
-
 from web_app.database import ejecutar_query
 from web_app.modules.tracker.queries import (
     guardar_registro_actividad,
@@ -109,40 +107,48 @@ def _parse_iso_date(value: str | None, field_name: str) -> str | None:
         raise ValueError(f"{field_name} debe tener formato YYYY-MM-DD.")
 
 
-def _allowed(filename: str) -> bool:
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in Config.ALLOWED_EXTENSIONS
-
-
 def _guardar_registro_con_evidencia(datos, request_files):
     from web_app.modules.dashboard.queries import obtener_actividad_por_id
-    from web_app.modules.evidencias.services import _save_upload
-    from web_app.modules.evidencias.queries import crear_evidencia
+    from web_app.modules.evidencias.services import (
+        EvidenceUploadError,
+        guardar_evidencia_actividad,
+    )
 
     ok = guardar_registro_actividad(datos)
     if ok:
         if datos.get("incluir_evidencia") == "on" and datos.get("actividad_id"):
             actividad_id = datos.get("actividad_id")
             actividad = obtener_actividad_por_id(actividad_id)
-            proyecto_id = actividad["ID_PROYECTO"] if actividad else "sin_proyecto"
+            if not actividad:
+                datos["_evidencia_advertencia"] = (
+                    "El registro se guardó, pero la actividad de la evidencia ya no existe."
+                )
+                return ok
+            if not datos.get("id_tipo_evidencia"):
+                datos["_evidencia_advertencia"] = (
+                    "El registro se guardó, pero falta seleccionar el tipo de evidencia."
+                )
+                return ok
 
-            archivo = request_files.get("archivo_evidencia")
-            if archivo and archivo.filename:
-                if _allowed(archivo.filename):
-                    try:
-                        meta = _save_upload(archivo, proyecto_id, actividad_id)
-                        datos["url_archivo"] = meta["url"]
-                        datos["nombre_archivo"] = meta["nombre"]
-                        datos["mime_type"] = meta["mime"]
-                        datos["tamano_bytes"] = str(meta["size"])
-                    except ValueError:
-                        pass
-
-            if datos.get("id_tipo_evidencia"):
-                datos["id_tipo"] = datos.get("id_tipo_evidencia")
-                datos["titulo"] = datos.get("titulo_evidencia") or None
-                datos["contenido_texto"] = datos.get("contenido_evidencia") or None
-                datos["subido_por"] = datos.get("user")
-                crear_evidencia(actividad_id, datos)
+            evidencia_datos = {
+                "id_tipo": datos.get("id_tipo_evidencia"),
+                "titulo": datos.get("titulo_evidencia") or None,
+                "contenido_texto": datos.get("contenido_evidencia") or None,
+                "subido_por": datos.get("user"),
+            }
+            try:
+                guardar_evidencia_actividad(
+                    actividad_id,
+                    actividad["ID_PROYECTO"],
+                    evidencia_datos,
+                    request_files.get("archivo_evidencia"),
+                )
+            except EvidenceUploadError as error:
+                current_app.logger.exception("No se pudo guardar la evidencia del registro")
+                datos["_evidencia_advertencia"] = (
+                    "El registro se guardó, pero no fue posible adjuntar la evidencia: "
+                    f"{error}"
+                )
     return ok
 
 
@@ -189,7 +195,7 @@ def index():
             horas_pedidas = float(datos.get("hours") or 0)
             user_id = datos.get("user")
 
-            registrados, omitidos, errores = [], [], []
+            registrados, omitidos, errores, advertencias = [], [], [], []
             current = date_start
 
             while current <= date_end:
@@ -219,6 +225,8 @@ def index():
                     ok = _guardar_registro_con_evidencia(datos_dia, request.files)
                     if ok:
                         registrados.append(fecha_str)
+                        if datos_dia.get("_evidencia_advertencia"):
+                            advertencias.append(fecha_str)
                     else:
                         errores.append(fecha_str)
                 except ValueError as e:
@@ -240,6 +248,8 @@ def index():
                 partes.append(f"⏭️ {len(omitidos)} día(s) omitido(s) (sin horas disponibles)")
             if errores:
                 partes.append(f"⚠️ {len(errores)} día(s) con error")
+            if advertencias:
+                partes.append(f"ℹ️ {len(advertencias)} evidencia(s) pendiente(s)")
 
             return jsonify({
                 "status": "success",
@@ -249,6 +259,7 @@ def index():
                 "errores": len(errores),
                 "fechas_registradas": registrados,
                 "fechas_omitidas": omitidos,
+                "fechas_evidencia_pendiente": advertencias,
             })
 
         # ── Modo fecha única (comportamiento original) ────────────────────────
@@ -276,7 +287,12 @@ def index():
             current_app.logger.exception("Error inesperado al guardar registro de actividad")
             return jsonify({"status": "error", "message": "Ocurrió un error interno al guardar el registro."}), 500
         if ok:
-            return jsonify({"status": "success", "message": "¡Registro guardado correctamente!"})
+            advertencia = datos.get("_evidencia_advertencia")
+            return jsonify({
+                "status": "success",
+                "message": "Registro guardado; la evidencia requiere atención." if advertencia else "¡Registro guardado correctamente!",
+                "warning": advertencia,
+            })
         return jsonify({"status": "error", "message": "Hubo un fallo al conectar con SAP HANA."}), 500
 
     base = _catalogo_base()
