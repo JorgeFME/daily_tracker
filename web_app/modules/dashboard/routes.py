@@ -10,6 +10,7 @@ from flask import (
 )
 
 from web_app.database import ejecutar_query
+from web_app.modules.evidencias.services import _delete_evidence_file
 from web_app.modules.dashboard.queries import (
     obtener_datos_grafica_proyectos,
     obtener_registros_recientes_filtrados,
@@ -805,7 +806,15 @@ def editar_actividad(actividad_id):
 
 @dashboard_bp.route("/actividades/<actividad_id>", methods=["DELETE"])
 def borrar_actividad(actividad_id):
+    # Se obtienen antes de borrar las filas; los archivos se eliminan sólo
+    # después de que la transacción de base de datos haya terminado con éxito.
+    evidencias = ejecutar_query(
+        'SELECT "URL_ARCHIVO" FROM "EVIDENCIA_ACTIVIDAD" WHERE "ID_ACTIVIDAD"=?',
+        (actividad_id,),
+    )
     if eliminar_actividad(actividad_id):
+        for evidencia in evidencias:
+            _delete_evidence_file(evidencia.get("URL_ARCHIVO"))
         return jsonify({"status": "success"})
     return (
         jsonify({"status": "error", "message": "Error al eliminar la actividad."}),

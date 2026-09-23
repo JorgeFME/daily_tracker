@@ -124,10 +124,6 @@ def crear_evidencia(actividad_id, datos):
     return ejecutar_dml(sql, (
         actividad_id, datos.get('id_tipo'),
         datos.get('titulo') or None, datos.get('contenido_texto') or None,
-        datos.get('url_archivo') or datos.get('nombre_archivo') or None,  # Match original parameter order/handling if needed, wait.
-        # Let's check original db.py:
-        # datos.get('nombre_archivo') or None, datos.get('url_archivo') or None,
-        # Yes:
         datos.get('nombre_archivo') or None,
         datos.get('url_archivo') or None,
         datos.get('mime_type') or None,
