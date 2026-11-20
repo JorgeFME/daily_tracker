@@ -144,7 +144,7 @@
 
         /* ─── PAGE ────────────────────────────────────────────── */
         .page-content {
-            padding: 20px 16px;
+            padding: 28px 20px;
         }
 
         /* ─── LAYOUT ──────────────────────────────────────────── */
@@ -210,14 +210,18 @@
             position: sticky;
             top: 72px;
             z-index: 100;
+            box-shadow: 0 12px 36px rgba(15, 23, 42, 0.07), 0 2px 8px rgba(15, 23, 42, 0.04);
         }
 
         /* ─── FORM HEADER ─────────────────────────────────────── */
         .panel-header {
-            padding: 24px 24px 18px;
+            padding: 22px 24px 18px;
             border-bottom: 1px solid var(--border);
-            text-align: center;
-            background: linear-gradient(180deg, #fafbff 0%, #ffffff 100%);
+            text-align: left;
+            background:
+                radial-gradient(circle at 94% 10%, rgba(37, 99, 235, .12), transparent 28%),
+                linear-gradient(145deg, #f8fbff 0%, #ffffff 70%);
+            position: relative;
         }
 
         .panel-icon {
@@ -230,7 +234,8 @@
             justify-content: center;
             color: var(--primary);
             font-size: 1.4rem;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8);
         }
 
         .panel-title {
@@ -239,6 +244,63 @@
             color: var(--text-main);
             margin: 0;
             letter-spacing: -0.3px;
+        }
+
+        .panel-subtitle {
+            margin: 5px 0 0;
+            color: var(--text-secondary);
+            font-size: .82rem;
+            line-height: 1.45;
+        }
+
+        .form-steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-top: 18px;
+        }
+
+        .form-step {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            min-width: 0;
+            color: var(--text-muted);
+            font-size: .7rem;
+            font-weight: 700;
+            transition: color .2s ease;
+        }
+
+        .form-step-dot {
+            display: grid;
+            place-items: center;
+            flex: 0 0 20px;
+            width: 20px;
+            height: 20px;
+            border: 1px solid #cbd5e1;
+            border-radius: 50%;
+            background: #fff;
+            color: #94a3b8;
+            font-size: .65rem;
+            transition: color .2s ease, background .2s ease, border-color .2s ease, transform .2s ease;
+        }
+
+        .form-step.active,
+        .form-step.complete { color: var(--primary); }
+
+        .form-step.active .form-step-dot,
+        .form-step.complete .form-step-dot {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        .form-step.active .form-step-dot { transform: scale(1.08); }
+
+        .form-step-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         /* ─── WEEKLY PROGRESS ─────────────────────────────────── */
@@ -257,13 +319,13 @@
             padding-bottom: 0;
             border-width: 0;
             transition:
-                max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.35s ease,
-                margin-top 0.4s ease,
-                margin-bottom 0.4s ease,
-                padding-top 0.4s ease,
-                padding-bottom 0.4s ease,
-                border-width 0.4s ease;
+                max-height 0.28s ease-out,
+                opacity 0.2s ease-out,
+                margin-top 0.28s ease-out,
+                margin-bottom 0.28s ease-out,
+                padding-top 0.28s ease-out,
+                padding-bottom 0.28s ease-out,
+                border-width 0.28s ease-out;
         }
 
         .weekly-widget.visible {
@@ -347,12 +409,14 @@
 
         /* ─── FORM ────────────────────────────────────────────── */
         .form-body {
-            padding: 24px 24px;
+            padding: 22px 24px 24px;
         }
 
         .field-group {
             margin-bottom: 18px;
         }
+
+        .field-group:focus-within > .field-label { color: var(--primary); }
 
         .field-label {
             font-size: 0.68rem;
@@ -742,7 +806,7 @@
             letter-spacing: 0.2px;
             cursor: pointer;
             box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
-            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, background 0.18s ease;
             margin-top: 4px;
             /* Tap highlight for mobile */
             -webkit-tap-highlight-color: transparent;
@@ -755,7 +819,9 @@
         }
 
         .btn-submit:disabled {
-            opacity: 0.5;
+            background: #cbd5e1;
+            color: #f8fafc;
+            opacity: 1;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
@@ -823,7 +889,7 @@
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: 3px;
-            margin-bottom: 10px;
+            margin: 2px 0 12px;
         }
 
         .date-mode-btn {
@@ -848,7 +914,7 @@
         .date-mode-btn.active {
             background: var(--surface);
             color: var(--primary);
-            box-shadow: 0 1px 4px rgba(15, 23, 42, .1);
+            box-shadow: 0 2px 6px rgba(15, 23, 42, .08);
         }
 
         .date-range-info {
@@ -1544,6 +1610,15 @@
             gap: 8px;
         }
 
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
         /* ─── RESPONSIVE: TABLET ─────────────────────────────── */
         @media (max-width: 1024px) {
             .tracker-layout {
@@ -1667,6 +1742,23 @@
             /* Form adjustments */
             .panel-header {
                 padding: 18px 16px 14px;
+            }
+
+            .form-steps {
+                margin-top: 14px;
+                gap: 4px;
+            }
+
+            .form-step {
+                gap: 5px;
+                font-size: .64rem;
+            }
+
+            .form-step-dot {
+                flex-basis: 18px;
+                width: 18px;
+                height: 18px;
+                font-size: .6rem;
             }
 
             .panel-icon {
@@ -1884,7 +1976,22 @@
             <div class="card-panel form-panel tab-active" id="panel-form">
                 <div class="panel-header">
                     <div class="panel-icon"><i class="bi bi-layers-half"></i></div>
-                    <h4 class="panel-title">Daily Tracker</h4>
+                    <h4 class="panel-title">Registra tu jornada</h4>
+                    <p class="panel-subtitle">Selecciona el contexto, documenta el avance y conserva tu bitácora al día.</p>
+                    <div class="form-steps" aria-label="Progreso del formulario">
+                        <div class="form-step active" id="form-step-context">
+                            <span class="form-step-dot"><i class="bi bi-person"></i></span>
+                            <span class="form-step-text">Contexto</span>
+                        </div>
+                        <div class="form-step" id="form-step-activity">
+                            <span class="form-step-dot">2</span>
+                            <span class="form-step-text">Actividad</span>
+                        </div>
+                        <div class="form-step" id="form-step-detail">
+                            <span class="form-step-dot">3</span>
+                            <span class="form-step-text">Detalle</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-body">
@@ -2039,6 +2146,21 @@
                             </div>
                             <span style="font-size:0.74rem; color:var(--text-muted); margin-top:4px; display:block;">
                                 Este estatus también se aplicará a las personas adicionales seleccionadas.
+                            </span>
+                        </div>
+
+                        <div class="field-group" id="activity-progress-group" style="display:none;">
+                            <label class="field-label" for="activity-progress">
+                                Porcentaje de avance
+                                <span style="font-size:0.68rem; font-weight:500; color:var(--text-muted);">Opcional</span>
+                            </label>
+                            <div class="input-wrap-suffix">
+                                <input type="number" class="field-input" id="activity-progress" name="avance_pct"
+                                    min="0" max="100" step="1" inputmode="numeric" disabled placeholder="Sin cambios">
+                                <span class="input-suffix">%</span>
+                            </div>
+                            <span id="activity-progress-help" style="font-size:0.74rem; color:var(--text-muted); margin-top:4px; display:block;">
+                                Déjalo vacío para conservar el avance actual.
                             </span>
                         </div>
 
@@ -2717,6 +2839,9 @@
         const quickPrioridadInput = document.getElementById('quick-prioridad');
         const activityActionLabel = document.getElementById('activity-action-label');
         const detailsLabel = document.getElementById('details-label');
+        const activityProgressGroup = document.getElementById('activity-progress-group');
+        const activityProgressInput = document.getElementById('activity-progress');
+        const activityProgressHelp = document.getElementById('activity-progress-help');
         const subactivityDatePicker = flatpickr("#subactivity-date", {
             locale: "es",
             altInput: true,
@@ -2810,6 +2935,7 @@
             }
 
             syncActivityStatusControl();
+            syncActivityProgressControl(activitySelect.getValue());
 
             validateForm();
         }
@@ -2837,6 +2963,11 @@
             activityStatusSelect.clear(true);
             const activityStatusGroup = document.getElementById('activity-status-group');
             if (activityStatusGroup) activityStatusGroup.style.display = 'none';
+            if (activityProgressGroup) activityProgressGroup.style.display = 'none';
+            if (activityProgressInput) {
+                activityProgressInput.value = '';
+                activityProgressInput.disabled = true;
+            }
             resetAddPeoplePanel();
             updateQuickActivityPanel();
             updateSubactivityTrigger();
@@ -2923,12 +3054,55 @@
             activityStatusSelect.disable();
         }
 
+        async function syncActivityProgressControl(activityId) {
+            const isRealActivity = Boolean(activityId && activityId !== 'ad_hoc');
+            if (activityProgressGroup) activityProgressGroup.style.display = !isRangeMode && isRealActivity ? '' : 'none';
+            if (!activityProgressInput) return;
+
+            activityProgressInput.value = '';
+            activityProgressInput.disabled = !isRealActivity || isRangeMode;
+            activityProgressInput.placeholder = 'Sin cambios';
+            if (activityProgressHelp) activityProgressHelp.textContent = 'Déjalo vacío para conservar el avance actual.';
+            if (!isRealActivity) return;
+
+            try {
+                const response = await fetch(`/api/actividades/${encodeURIComponent(activityId)}/contexto_completo`);
+                const result = await response.json();
+                if (activitySelect.getValue() !== activityId || !result.data) return;
+                const avanceActual = Number(result.data.avance_pct || 0);
+                activityProgressInput.placeholder = `Sin cambios (actual: ${avanceActual}%)`;
+                if (activityProgressHelp) {
+                    activityProgressHelp.textContent = `Avance actual: ${avanceActual}%. Escribe un valor sólo si deseas actualizarlo.`;
+                }
+            } catch (error) {
+                console.error('No se pudo consultar el avance de la actividad:', error);
+            }
+        }
+
         function resetQuickActivityForm() {
             quickSolicitanteSelect.setValue('', true);
             quickPrioridadSelect.setValue('2', true);
             quickActivityResourcesSelect.clear(true);
             if (quickFriendlyNameInput) quickFriendlyNameInput.value = '';
             updateQuickActivityPanel();
+        }
+
+        function updateFormSteps() {
+            const contextReady = Boolean(userSelect.getValue() && projectSelect.getValue());
+            const activityReady = contextReady && Boolean(activitySelect.getValue() && tipoSelect.getValue());
+            const currentStep = !contextReady ? 0 : !activityReady ? 1 : 2;
+            const steps = [
+                document.getElementById('form-step-context'),
+                document.getElementById('form-step-activity'),
+                document.getElementById('form-step-detail'),
+            ];
+
+            steps.forEach((step, index) => {
+                if (!step) return;
+                step.classList.toggle('complete', index < currentStep);
+                step.classList.toggle('active', index === currentStep);
+                step.setAttribute('aria-current', index === currentStep ? 'step' : 'false');
+            });
         }
 
         // ─── 3. VALIDACIÓN ────────────────────────────────────────────────────────
@@ -2964,6 +3138,7 @@
                 detailsInput.value.trim().length > 5 &&
                 quickActivityOk;
             btnSubmit.disabled = !ok;
+            updateFormSteps();
 
             // Mostrar/ocultar el toggle de personas adicionales cuando el form está listo
             const btnAddPeopleToggle = document.getElementById('btn-add-people-toggle');
@@ -3204,6 +3379,7 @@
                 if (checkFinalizar) checkFinalizar.checked = false;
             }
             syncActivityStatusControl();
+            syncActivityProgressControl(val);
             updateQuickActivityPanel();
             syncSubactivityContext();
             updateSubactivityTrigger();
