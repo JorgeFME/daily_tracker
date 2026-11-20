@@ -274,9 +274,20 @@ def guardar_registro_actividad(datos):
     actividad_id = datos.get('actividad_id')
     crear_actividad_rapida = actividad_id == 'ad_hoc'
     nuevo_estatus_id = str(datos.get('nuevo_estatus_id') or '').strip() or None
+    avance_raw = datos.get('avance_pct')
+    avance_pct = None
+    if avance_raw is not None and str(avance_raw).strip():
+        avance_texto = str(avance_raw).strip()
+        if not avance_texto.isdigit():
+            raise ValueError('El porcentaje de avance debe ser un número entero.')
+        avance_pct = int(avance_texto)
+        if not 0 <= avance_pct <= 100:
+            raise ValueError('El porcentaje de avance debe estar entre 0 y 100.')
+
     if crear_actividad_rapida or not actividad_id:
         actividad_id = None
         nuevo_estatus_id = None
+        avance_pct = None
 
     with _pool.get_connection() as conn:
         cur = conn.cursor()
@@ -361,6 +372,17 @@ def guardar_registro_actividad(datos):
                     'UPDATE "ACTIVIDADES" SET "ID_ESTATUS"=?, "FECHA_FIN_REAL"=?, "ACTUALIZADO_EN"=CURRENT_TIMESTAMP WHERE "ID"=?',
                     (estatus_objetivo_id, fecha_fin_real, actividad_id)
                 )
+
+            # Un campo vacío conserva el avance actual. Para subactividades,
+            # el avance del padre se mantiene como promedio de sus hijas.
+            if actividad_id and avance_pct is not None:
+                cur.execute(
+                    'UPDATE "ACTIVIDADES" SET "AVANCE_PCT"=?, "ACTUALIZADO_EN"=CURRENT_TIMESTAMP WHERE "ID"=?',
+                    (avance_pct, actividad_id),
+                )
+                padre_id, _ = _obtener_padre_y_estatus(cur, actividad_id)
+                if padre_id:
+                    _recalcular_avance_padre(cur, padre_id)
 
             conn.commit()
             return True
