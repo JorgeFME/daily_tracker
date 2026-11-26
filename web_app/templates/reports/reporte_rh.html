@@ -225,13 +225,12 @@
             const lineas = registros
                 .filter(registro => registro.AVANCE_DIA_PCT !== null && registro.AVANCE_DIA_PCT !== undefined)
                 .map(registro => ({
-                    fecha: String(registro.FECHA || '').slice(0, 10),
                     actividad: registro.NOMBRE_ACTIVIDAD || '—',
                     accion: registro.ACCION || registro.DETALLES || '—',
                     porcentaje: registro.AVANCE_DIA_PCT,
                 }));
             textoAvanceDia.value = lineas.length
-                ? `Avance del día:\n${lineas.map(item => `${item.fecha} | ${item.actividad} | ${item.accion}: ${item.porcentaje}%`).join('\n')}`
+                ? `Avance del día:\n${lineas.map(item => `${item.actividad} | ${item.accion}: ${item.porcentaje}%`).join('\n')}`
                 : 'Avance del día:\nNo hay registros con porcentaje de avance diario para los filtros seleccionados.';
         }
         function seleccionarPestana(nombre) {
