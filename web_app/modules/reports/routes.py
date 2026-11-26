@@ -77,13 +77,70 @@ def api_reporte_rh_actividades():
     if not proyecto_id:
         return jsonify([])
     actividades = ejecutar_query(
-        '''SELECT "ID", "NOMBRE_ACTIVIDAD", "CREADO_EN"
-           FROM "ACTIVIDADES"
-           WHERE "ID_PROYECTO" = ?
-           ORDER BY "CREADO_EN" DESC, "NOMBRE_ACTIVIDAD" ASC''',
+        '''SELECT A."ID", A."NOMBRE_ACTIVIDAD", A."CREADO_EN",
+                  MAX(R."FECHA") AS "ULTIMO_USO"
+           FROM "ACTIVIDADES" A
+           LEFT JOIN "REGISTRO_ACTIVIDADES" R
+             ON R."ID_ACTIVIDAD" = A."ID"
+            AND COALESCE(R."ES_PROPAGADO", 0) != 1
+           WHERE A."ID_PROYECTO" = ?
+           GROUP BY A."ID", A."NOMBRE_ACTIVIDAD", A."CREADO_EN"
+           ORDER BY CASE WHEN MAX(R."FECHA") IS NULL THEN 1 ELSE 0 END,
+                    MAX(R."FECHA") DESC, MAX(R."CREADO_EN") DESC,
+                    A."CREADO_EN" DESC, A."NOMBRE_ACTIVIDAD" ASC''',
         (proyecto_id,),
     )
     return jsonify(actividades)
+
+
+@reports_bp.route("/api/reporte-rh/avances-diarios")
+def api_reporte_rh_avances_diarios():
+    from web_app.modules.tracker.queries import _registros_where
+
+    filtros = _reporte_rh_filtros(request.args)
+    if not filtros["fecha_ini"] and not filtros["fecha_fin"]:
+        fecha_actual = _local_today().isoformat()
+        filtros["fecha_ini"] = fecha_actual
+        filtros["fecha_fin"] = fecha_actual
+    if not filtros["user_id"]:
+        filtros["user_id"] = _reporte_rh_usuario_sesion() or None
+
+    where, params = _registros_where("R", filtros)
+    where.extend(['R."ID_ACTIVIDAD" IS NOT NULL', 'COALESCE(R."ES_PROPAGADO", 0) != 1'])
+    registros = ejecutar_query(
+        '''SELECT R."ID", R."FECHA", R."ACCION", R."DETALLES", R."HORAS",
+                  R."AVANCE_DIA_PCT", A."NOMBRE_ACTIVIDAD", P."NOMBRE_PROYECTO",
+                  U."NOMBRE_COMPLETO" AS "DESARROLLADOR"
+           FROM "REGISTRO_ACTIVIDADES" R
+           JOIN "ACTIVIDADES" A ON A."ID" = R."ID_ACTIVIDAD"
+           LEFT JOIN "PROYECTOS" P ON P."ID" = R."ID_PROYECTO"
+           LEFT JOIN "USUARIOS" U ON U."ID" = R."ID_USUARIO"
+           WHERE ''' + ' AND '.join(where) + '''
+           ORDER BY R."FECHA" DESC, R."CREADO_EN" DESC, R."ID" DESC''',
+        tuple(params),
+    )
+    return jsonify(registros)
+
+
+@reports_bp.route("/api/reporte-rh/registros/<registro_id>/avance-dia", methods=["PATCH"])
+def api_actualizar_avance_dia_reporte_rh(registro_id):
+    from web_app.modules.tracker.queries import actualizar_avance_dia_registro
+
+    datos = request.get_json(silent=True) or {}
+    if "avance_dia_pct" not in datos:
+        return jsonify({"error": "Indica el porcentaje diario (0 a 100) o envíalo vacío para borrarlo."}), 400
+    valor = datos.get("avance_dia_pct")
+    if isinstance(valor, str) and not valor.strip():
+        valor = None
+    try:
+        if not actualizar_avance_dia_registro(registro_id, valor):
+            return jsonify({"error": "No se encontró un registro editable."}), 404
+        return jsonify({"status": "success"})
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+    except Exception:
+        current_app.logger.exception("Error al actualizar el avance diario desde Reporte RH")
+        return jsonify({"error": "No fue posible actualizar el avance diario."}), 500
 
 
 def _build_registros_export_context(filtros, filtros_meta, base, actividades=None):

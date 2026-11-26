@@ -308,6 +308,7 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
                     R."ACCION",
                     R."DETALLES",
                     R."HORAS",
+                    R."AVANCE_DIA_PCT",
                     COALESCE(R."ES_PROPAGADO", 0) AS "ES_PROPAGADO",
                     U."NOMBRE_COMPLETO" AS "DESARROLLADOR"
                 FROM "REGISTRO_ACTIVIDADES" R
@@ -318,8 +319,9 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
             cur.execute(sql_registros_desglose, tuple(params_registros))
             cols_r = [c[0] for c in cur.description]
             desglose_por_actividad = {}
-            for row in cur.fetchall():
-                registro = dict(zip(cols_r, row))
+            registros_desglose = [dict(zip(cols_r, row)) for row in cur.fetchall()]
+
+            for registro in registros_desglose:
                 actividad_id = registro.get("ID_ACTIVIDAD")
                 if not actividad_id:
                     continue
@@ -340,7 +342,10 @@ def obtener_datos_reporte_proyecto(proyecto_id, filtros=None):
                 detalles = (registro.get("DETALLES") or "").strip()
                 accion_o_detalle = accion or detalles or "—"
                 descripcion_registro = detalles or "—"
-                linea = f"• {fecha_registro} - {accion_o_detalle}: {descripcion_registro} ({horas_registro:g}h)"
+                sufijo_avance = ""
+                if registro.get("AVANCE_DIA_PCT") is not None:
+                    sufijo_avance = f" · {int(registro['AVANCE_DIA_PCT'])}% avance al cierre del día"
+                linea = f"• {fecha_registro} - {accion_o_detalle}: {descripcion_registro} ({horas_registro:g}h){sufijo_avance}"
                 bloques_actividad = desglose_por_actividad.setdefault(actividad_id, {})
                 bloques_actividad.setdefault(desarrollador, []).append(linea)
 

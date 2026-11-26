@@ -24,10 +24,11 @@
         h1 { margin:0; font-size:1.65rem; letter-spacing:-.02em; } .sub { margin:5px 0 0; color:var(--muted); font-size:.88rem; }
         .filters { position:relative; z-index:20; display:flex; align-items:end; gap:12px; flex-wrap:wrap; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; box-shadow:0 2px 6px rgba(15,23,42,.04); margin-bottom:18px; }
         .field { display:flex; flex-direction:column; gap:5px; } .field label { color:#475569; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
-        input, select { height:36px; min-width:155px; padding:0 10px; color:var(--dark); background:#fff; border:1px solid var(--border); border-radius:7px; font:inherit; font-size:.84rem; outline:none; transition:border-color .18s, box-shadow .18s; }
-        input:focus, select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.13); }
-        select { min-width:230px; } button { cursor:pointer; font:inherit; }
-        .ts-wrapper { min-width:230px; } .ts-wrapper.dropdown-active { z-index:30; } .ts-control { min-height:36px; border:1px solid var(--border); border-radius:7px; box-shadow:none; font-size:.84rem; }
+        .field > input, .field > select { height:36px; min-width:155px; padding:0 10px; color:var(--dark); background:#fff; border:1px solid var(--border); border-radius:7px; font:inherit; font-size:.84rem; outline:none; transition:border-color .18s, box-shadow .18s; }
+        .field > input:focus, .field > select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.13); }
+        .field > select { min-width:230px; } button { cursor:pointer; font:inherit; }
+        .ts-wrapper { flex:none; width:230px; min-width:230px; height:36px; align-self:stretch; } .ts-wrapper.dropdown-active { z-index:30; } .ts-control { width:100%; height:36px !important; min-height:36px !important; max-height:36px; display:flex; align-items:center; border:1px solid var(--border); border-radius:7px; box-shadow:none; font-size:.84rem; }
+        .ts-control > input { width:auto !important; min-width:0 !important; height:auto !important; padding:0 !important; border:0 !important; border-radius:0 !important; box-shadow:none !important; font:inherit !important; }
         .ts-wrapper.focus .ts-control { border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.13); }
         .ts-dropdown, .ts-dropdown-content { z-index:1000 !important; background:#fff !important; opacity:1; }
         .ts-dropdown { border-color:var(--border); border-radius:7px; box-shadow:0 10px 24px rgba(15,23,42,.12); font-size:.84rem; }
@@ -59,6 +60,31 @@
         .copy-btn { position:absolute; right:0; top:50%; transform:translateY(-50%); width:26px; height:26px; border:1px solid #bfdbfe; border-radius:6px; padding:0; color:#1d4ed8; background:#eff6ff; font-size:.84rem; line-height:1; white-space:nowrap; }
         .copy-btn:hover { background:#dbeafe; } .copy-btn.copied { color:#fff; border-color:var(--success); background:var(--success); }
         .empty { padding:38px; color:var(--muted); text-align:center; } .error { color:#b91c1c; }
+        .report-tabs { display:flex; gap:8px; margin:0 0 12px; border-bottom:1px solid var(--border); }
+        .report-tab { display:inline-flex; align-items:center; gap:7px; padding:10px 14px; border:0; border-bottom:2px solid transparent; color:var(--muted); background:transparent; font-size:.86rem; font-weight:700; }
+        .report-tab.active { color:var(--primary); border-bottom-color:var(--primary); }
+        .report-panel[hidden] { display:none; }
+        .quick-edit-panel { padding:20px; }
+        .quick-edit-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px; }
+        .quick-edit-head h2 { margin:0; font-size:1rem; }
+        .quick-edit-head p { margin:4px 0 0; color:var(--muted); font-size:.8rem; }
+        .quick-edit-status { min-height:20px; color:var(--success); font-size:.82rem; font-weight:700; }
+        .quick-edit-status.error { color:#b91c1c; }
+        .quick-edit-scroll { overflow:auto; }
+        .quick-edit-table { width:100%; min-width:900px; border-collapse:collapse; font-size:.82rem; }
+        .quick-edit-table th { position:static; padding:10px; color:#475569; background:#f1f5f9; border:1px solid var(--border); }
+        .quick-edit-table td { padding:9px 10px; text-align:left; }
+        .quick-edit-table .edit-value { width:100px; min-width:100px; height:36px; }
+        .quick-edit-table .edit-save { height:34px; padding:0 11px; border:0; border-radius:6px; color:#fff; background:var(--primary); font-size:.8rem; font-weight:700; white-space:nowrap; }
+        .quick-edit-table .edit-save:disabled { opacity:.6; cursor:wait; }
+        .quick-edit-action { min-width:220px; max-width:360px; }
+        .text-panel { padding:20px; }
+        .text-panel-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:12px; }
+        .text-panel-head h2 { margin:0; font-size:1rem; }
+        .text-panel-head p { margin:4px 0 0; color:var(--muted); font-size:.8rem; }
+        .btn-copy-report { height:36px; padding:0 14px; border:1px solid #bfdbfe; border-radius:7px; color:#1d4ed8; background:#eff6ff; font-size:.83rem; font-weight:700; white-space:nowrap; }
+        .btn-copy-report:hover { background:#dbeafe; }
+        #texto-avance-dia { width:100%; min-height:300px; padding:14px; border:1px solid var(--border); border-radius:9px; color:var(--dark); background:#f8fafc; font: .9rem/1.6 'DM Mono',monospace; resize:vertical; }
         @media (max-width:800px) { nav { padding:0 12px; overflow-x:auto; } .nav-brand { display:none; } .page { padding:20px 14px; } .page-header { align-items:start; flex-direction:column; } .count { margin-left:0; } }
     </style>
 </head>
@@ -94,7 +120,30 @@
             <label class="parent-switch" title="Muestra las actividades que contienen subactividades"><input id="mostrar-padres" type="checkbox"> Mostrar actividades padre</label>
             <span class="count" id="contador">Cargando…</span>
         </section>
-        <section class="card"><div class="table-scroll" id="contenedor"><div class="empty">Cargando reporte…</div></div></section>
+        <div class="report-tabs" role="tablist" aria-label="Vistas del reporte">
+            <button class="report-tab active" id="tab-tabla" type="button" role="tab" aria-selected="true" aria-controls="panel-tabla"><i class="bi bi-table"></i>Tabla RH</button>
+            <button class="report-tab" id="tab-avance-dia" type="button" role="tab" aria-selected="false" aria-controls="panel-avance-dia"><i class="bi bi-card-text"></i>Texto de avance diario</button>
+            <button class="report-tab" id="tab-edicion-avance" type="button" role="tab" aria-selected="false" aria-controls="panel-edicion-avance"><i class="bi bi-pencil-square"></i>Edición rápida de avances</button>
+        </div>
+        <section class="card report-panel" id="panel-tabla" role="tabpanel" aria-labelledby="tab-tabla"><div class="table-scroll" id="contenedor"><div class="empty">Cargando reporte…</div></div></section>
+        <section class="card report-panel" id="panel-avance-dia" role="tabpanel" aria-labelledby="tab-avance-dia" hidden>
+            <div class="text-panel">
+                <div class="text-panel-head">
+                    <div><h2>Avance del día</h2><p>Texto generado con las actividades filtradas que tienen porcentaje de avance diario.</p></div>
+                    <button class="btn-copy-report" id="btn-copiar-avance" type="button"><i class="bi bi-copy"></i> Copiar texto</button>
+                </div>
+                <textarea id="texto-avance-dia" readonly aria-label="Texto de avance diario generado"></textarea>
+            </div>
+        </section>
+        <section class="card report-panel" id="panel-edicion-avance" role="tabpanel" aria-labelledby="tab-edicion-avance" hidden>
+            <div class="quick-edit-panel">
+                <div class="quick-edit-head">
+                    <div><h2>Editar avances diarios</h2><p>Actualiza el porcentaje de cada registro según los filtros aplicados. Deja el campo vacío y guarda para borrar un porcentaje.</p></div>
+                    <span class="quick-edit-status" id="edicion-avance-status" aria-live="polite"></span>
+                </div>
+                <div class="quick-edit-scroll" id="tabla-edicion-avances"><div class="empty">Cargando registros…</div></div>
+            </div>
+        </section>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
@@ -103,6 +152,9 @@
         const headers = ['Entregables Ambiente Productivo','Descripción requerimiento','Tipo de Desarrollo','Desarrollo / Tarea','Fecha de solicitud','Fecha Inicio','Fecha Fin','Complejidad','Horas Desarrollo','Horas Tareas','% Avance','Estatus','Responsable (Solicitante)','Recurso','Dependencia','Actividades'];
         const contenedor = document.getElementById('contenedor');
         const contador = document.getElementById('contador');
+        const textoAvanceDia = document.getElementById('texto-avance-dia');
+        const tablaEdicionAvances = document.getElementById('tabla-edicion-avances');
+        const edicionAvanceStatus = document.getElementById('edicion-avance-status');
         const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
         const proyectoSelect = new TomSelect('#proyecto', { create: false, allowEmptyOption: true });
         const actividadSelect = new TomSelect('#actividad', { create: false, allowEmptyOption: true });
@@ -142,6 +194,7 @@
         }
         function renderizar(rows) {
             filasActuales = rows;
+            renderizarTextoAvance(rows);
             const mostrarPadres = document.getElementById('mostrar-padres').checked;
             const filasVisibles = mostrarPadres ? rows : rows.filter(row => !String(row.descripcion || '').trimStart().startsWith('▾'));
             contador.textContent = `${filasVisibles.length} fila${filasVisibles.length === 1 ? '' : 's'}`;
@@ -169,13 +222,77 @@
                 copiar(detalle.grupos[button.dataset.dayIndex].lineasCopia.join('\n'), button);
             }));
         }
+        function renderizarTextoAvance(rows) {
+            const lineas = [];
+            rows.forEach(row => {
+                const actividad = String(row.descripcion || '').trim()
+                    .replace(/^▾\s*/, '')
+                    .replace(/\s+\(\d+ subactividades?\)$/, '')
+                    .replace(/^↳\s*/, '↳ ');
+                const detalle = gruposActividad(row.actividades_texto);
+                detalle.grupos.forEach(grupo => grupo.lineas.forEach(linea => {
+                    const match = linea.match(/^\s*•\s*(\d{4}-\d{2}-\d{2})\s*-\s*(.*?)\s*\((?:\d+(?:\.\d+)?)h\)\s*·\s*(\d+)% avance al cierre del día\s*$/);
+                    if (!match) return;
+                    const accion = match[2].split(': ')[0].trim();
+                    lineas.push({ fecha: match[1], actividad, accion, porcentaje: match[3] });
+                }));
+            });
+            lineas.sort((a, b) => b.fecha.localeCompare(a.fecha) || a.actividad.localeCompare(b.actividad));
+            textoAvanceDia.value = lineas.length
+                ? `Avance del día:\n${lineas.map(item => `${item.fecha} | ${item.actividad} | ${item.accion}: ${item.porcentaje}%`).join('\n')}`
+                : 'Avance del día:\nNo hay registros con porcentaje de avance diario para los filtros seleccionados.';
+        }
+        function seleccionarPestana(nombre) {
+            const pestanas = [
+                ['tabla', 'tab-tabla', 'panel-tabla'],
+                ['avance', 'tab-avance-dia', 'panel-avance-dia'],
+                ['edicion', 'tab-edicion-avance', 'panel-edicion-avance'],
+            ];
+            pestanas.forEach(([clave, tabId, panelId]) => {
+                const activa = nombre === clave;
+                document.getElementById(tabId).classList.toggle('active', activa);
+                document.getElementById(tabId).setAttribute('aria-selected', String(activa));
+                document.getElementById(panelId).hidden = !activa;
+            });
+        }
+        function renderizarRegistrosDiarios(registros) {
+            if (!registros.length) {
+                tablaEdicionAvances.innerHTML = '<div class="empty">No hay registros de actividades para los filtros seleccionados.</div>';
+                return;
+            }
+            const filas = registros.map(registro => `
+                <tr>
+                    <td style="white-space:nowrap">${escapeHtml(String(registro.FECHA || '').slice(0, 10))}</td>
+                    <td>${escapeHtml(registro.NOMBRE_PROYECTO || '—')}</td>
+                    <td>${escapeHtml(registro.NOMBRE_ACTIVIDAD || '—')}</td>
+                    <td>${escapeHtml(registro.DESARROLLADOR || '—')}</td>
+                    <td class="quick-edit-action" title="${escapeHtml(registro.DETALLES || '')}"><strong>${escapeHtml(registro.ACCION || '—')}</strong>${registro.DETALLES ? `<br><span style="color:var(--muted)">${escapeHtml(registro.DETALLES)}</span>` : ''}</td>
+                    <td style="white-space:nowrap">${escapeHtml(registro.HORAS ?? '—')} h</td>
+                    <td><input class="edit-value" type="number" min="0" max="100" step="1" value="${registro.AVANCE_DIA_PCT ?? ''}" placeholder="Sin dato" aria-label="Porcentaje diario para ${escapeHtml(registro.ACCION || 'registro')}" data-avance-input="${escapeHtml(registro.ID)}"></td>
+                    <td><button class="edit-save" type="button" data-guardar-avance="${escapeHtml(registro.ID)}">Guardar</button></td>
+                </tr>`).join('');
+            tablaEdicionAvances.innerHTML = `<table class="quick-edit-table"><thead><tr><th>Fecha</th><th>Proyecto</th><th>Actividad</th><th>Desarrollador</th><th>Acción / detalles</th><th>Horas</th><th>Avance diario</th><th></th></tr></thead><tbody>${filas}</tbody></table>`;
+        }
         async function cargarReporte() {
             const params = new URLSearchParams();
             const usuario = usuarioSelect.getValue(); const inicio = document.getElementById('fecha-ini').value; const fin = document.getElementById('fecha-fin').value; const proyecto = proyectoSelect.getValue(); const actividad = actividadSelect.getValue();
             if (usuario) params.set('user_id', usuario); if (inicio) params.set('fecha_ini', inicio); if (fin) params.set('fecha_fin', fin); if (proyecto) params.set('proyecto_id', proyecto); if (actividad) params.set('actividad_id', actividad);
             contador.textContent = 'Cargando…'; contenedor.innerHTML = '<div class="empty">Cargando reporte…</div>';
-            try { const response = await fetch(`/api/reporte-rh?${params}`); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Error al cargar.'); renderizar(data); }
-            catch (error) { contador.textContent = ''; contenedor.innerHTML = `<div class="empty error">${escapeHtml(error.message)}</div>`; }
+            tablaEdicionAvances.innerHTML = '<div class="empty">Cargando registros…</div>';
+            try {
+                const [respuestaReporte, respuestaRegistros] = await Promise.all([
+                    fetch(`/api/reporte-rh?${params}`),
+                    fetch(`/api/reporte-rh/avances-diarios?${params}`),
+                ]);
+                const [data, registros] = await Promise.all([respuestaReporte.json(), respuestaRegistros.json()]);
+                if (!respuestaReporte.ok) throw new Error(data.error || 'Error al cargar el reporte.');
+                if (!respuestaRegistros.ok) throw new Error(registros.error || 'Error al cargar los registros editables.');
+                renderizar(data);
+                renderizarRegistrosDiarios(registros);
+            } catch (error) {
+                contador.textContent = ''; contenedor.innerHTML = `<div class="empty error">${escapeHtml(error.message)}</div>`;
+                tablaEdicionAvances.innerHTML = `<div class="empty error">${escapeHtml(error.message)}</div>`;
+            }
         }
         async function cargarActividades() {
             const proyecto = proyectoSelect.getValue();
@@ -185,20 +302,61 @@
             try {
                 const response = await fetch(`/api/reporte-rh/actividades?proyecto_id=${encodeURIComponent(proyecto)}`);
                 const actividades = await response.json();
-                actividades.sort((a, b) => String(b.CREADO_EN || '').localeCompare(String(a.CREADO_EN || '')));
                 actividades.forEach(item => actividadSelect.addOption({ value: item.ID, text: item.NOMBRE_ACTIVIDAD }));
                 actividadSelect.enable();
             } catch (error) { console.error('No fue posible cargar las actividades', error); }
         }
-        flatpickr('#fecha-ini, #fecha-fin', { dateFormat: 'Y-m-d', allowInput: true });
+        const fechaInicioPicker = flatpickr('#fecha-ini', { dateFormat: 'Y-m-d', allowInput: true });
+        const fechaFinPicker = flatpickr('#fecha-fin', { dateFormat: 'Y-m-d', allowInput: true });
         document.getElementById('btn-cargar').addEventListener('click', cargarReporte);
+        document.getElementById('tab-tabla').addEventListener('click', () => seleccionarPestana('tabla'));
+        document.getElementById('tab-avance-dia').addEventListener('click', () => seleccionarPestana('avance'));
+        document.getElementById('tab-edicion-avance').addEventListener('click', () => seleccionarPestana('edicion'));
+        document.getElementById('btn-copiar-avance').addEventListener('click', async event => {
+            await copiar(textoAvanceDia.value, event.currentTarget);
+        });
         proyectoSelect.on('change', cargarActividades);
+        tablaEdicionAvances.addEventListener('click', async event => {
+            const button = event.target.closest('[data-guardar-avance]');
+            if (!button) return;
+            const registroId = button.dataset.guardarAvance;
+            const input = tablaEdicionAvances.querySelector(`[data-avance-input="${CSS.escape(registroId)}"]`);
+            const valor = input.value.trim();
+            if (valor && (!/^\d+$/.test(valor) || Number(valor) < 0 || Number(valor) > 100)) {
+                edicionAvanceStatus.textContent = 'El porcentaje debe ser un entero entre 0 y 100.';
+                edicionAvanceStatus.classList.add('error');
+                input.focus();
+                return;
+            }
+            button.disabled = true;
+            button.textContent = 'Guardando…';
+            edicionAvanceStatus.textContent = '';
+            edicionAvanceStatus.classList.remove('error');
+            try {
+                const response = await fetch(`/api/reporte-rh/registros/${encodeURIComponent(registroId)}/avance-dia`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ avance_dia_pct: valor === '' ? null : Number(valor) }),
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'No fue posible guardar el avance.');
+                edicionAvanceStatus.textContent = 'Avance diario actualizado.';
+                await cargarReporte();
+            } catch (error) {
+                edicionAvanceStatus.textContent = error.message;
+                edicionAvanceStatus.classList.add('error');
+                button.disabled = false;
+                button.textContent = 'Guardar';
+            }
+        });
         document.getElementById('mostrar-padres').addEventListener('change', () => renderizar(filasActuales));
         document.getElementById('btn-limpiar').addEventListener('click', () => {
             document.getElementById('fecha-ini')._flatpickr.clear(); document.getElementById('fecha-fin')._flatpickr.clear();
             usuarioSelect.clear(true); proyectoSelect.clear(true); actividadSelect.clear(true); actividadSelect.clearOptions(); actividadSelect.addOption({ value: '', text: 'Todas las actividades' }); actividadSelect.disable();
             cargarReporte();
         });
+        const hoy = new Date();
+        fechaInicioPicker.setDate(new Date(hoy.getFullYear(), hoy.getMonth(), 1), false);
+        fechaFinPicker.setDate(new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0), false);
         cargarReporte();
     </script>
 </body>
