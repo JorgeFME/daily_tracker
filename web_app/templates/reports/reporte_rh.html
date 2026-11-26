@@ -194,7 +194,6 @@
         }
         function renderizar(rows) {
             filasActuales = rows;
-            renderizarTextoAvance(rows);
             const mostrarPadres = document.getElementById('mostrar-padres').checked;
             const filasVisibles = mostrarPadres ? rows : rows.filter(row => !String(row.descripcion || '').trimStart().startsWith('▾'));
             contador.textContent = `${filasVisibles.length} fila${filasVisibles.length === 1 ? '' : 's'}`;
@@ -222,24 +221,16 @@
                 copiar(detalle.grupos[button.dataset.dayIndex].lineasCopia.join('\n'), button);
             }));
         }
-        function renderizarTextoAvance(rows) {
-            const lineas = [];
-            rows.forEach(row => {
-                const actividad = String(row.descripcion || '').trim()
-                    .replace(/^▾\s*/, '')
-                    .replace(/\s+\(\d+ subactividades?\)$/, '')
-                    .replace(/^↳\s*/, '↳ ');
-                const detalle = gruposActividad(row.actividades_texto);
-                detalle.grupos.forEach(grupo => grupo.lineas.forEach(linea => {
-                    const match = linea.match(/^\s*•\s*(\d{4}-\d{2}-\d{2})\s*-\s*(.*?)\s*\((?:\d+(?:\.\d+)?)h\)\s*·\s*(\d+)% avance al cierre del día\s*$/);
-                    if (!match) return;
-                    const accion = match[2].split(': ')[0].trim();
-                    lineas.push({ fecha: match[1], actividad, accion, porcentaje: match[3] });
+        function renderizarTextoAvance(registros) {
+            const lineas = registros
+                .filter(registro => registro.AVANCE_DIA_PCT !== null && registro.AVANCE_DIA_PCT !== undefined)
+                .map(registro => ({
+                    actividad: registro.NOMBRE_ACTIVIDAD || '—',
+                    accion: registro.ACCION || registro.DETALLES || '—',
+                    porcentaje: registro.AVANCE_DIA_PCT,
                 }));
-            });
-            lineas.sort((a, b) => b.fecha.localeCompare(a.fecha) || a.actividad.localeCompare(b.actividad));
             textoAvanceDia.value = lineas.length
-                ? `Avance del día:\n${lineas.map(item => `${item.fecha} | ${item.actividad} | ${item.accion}: ${item.porcentaje}%`).join('\n')}`
+                ? `Avance del día:\n${lineas.map(item => `${item.actividad} | ${item.accion}: ${item.porcentaje}%`).join('\n')}`
                 : 'Avance del día:\nNo hay registros con porcentaje de avance diario para los filtros seleccionados.';
         }
         function seleccionarPestana(nombre) {
@@ -289,6 +280,7 @@
                 if (!respuestaRegistros.ok) throw new Error(registros.error || 'Error al cargar los registros editables.');
                 renderizar(data);
                 renderizarRegistrosDiarios(registros);
+                renderizarTextoAvance(registros);
             } catch (error) {
                 contador.textContent = ''; contenedor.innerHTML = `<div class="empty error">${escapeHtml(error.message)}</div>`;
                 tablaEdicionAvances.innerHTML = `<div class="empty error">${escapeHtml(error.message)}</div>`;
