@@ -507,6 +507,44 @@
             margin-top: 1px;
         }
 
+        .daily-progress-card {
+            margin-top: 4px;
+            padding: 15px 16px;
+            border: 1px solid #c7d2fe;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #f5f7ff 0%, #fbfcff 100%);
+        }
+
+        .daily-progress-card .field-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 4px;
+            color: #3730a3;
+        }
+
+        .daily-progress-optional {
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: #e0e7ff;
+            color: #4338ca;
+            font-size: 0.68rem;
+            font-weight: 600;
+        }
+
+        .daily-progress-description {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--text-muted);
+            font-size: 0.76rem;
+            line-height: 1.45;
+        }
+
+        .daily-progress-card .input-wrap-suffix {
+            max-width: 220px;
+        }
+
         .subactivity-modal .modal-content {
             border: 1px solid var(--border);
             border-radius: 24px;
@@ -2151,16 +2189,19 @@
 
                         <div class="field-group" id="activity-progress-group" style="display:none;">
                             <label class="field-label" for="activity-progress">
-                                Porcentaje de avance
+                                Avance global de la actividad
                                 <span style="font-size:0.68rem; font-weight:500; color:var(--text-muted);">Opcional</span>
                             </label>
+                            <span style="font-size:0.74rem; color:var(--text-muted); margin:-5px 0 8px; display:block;">
+                                Actualiza el progreso total acumulado de la actividad seleccionada.
+                            </span>
                             <div class="input-wrap-suffix">
                                 <input type="number" class="field-input" id="activity-progress" name="avance_pct"
                                     min="0" max="100" step="1" inputmode="numeric" disabled placeholder="Sin cambios">
                                 <span class="input-suffix">%</span>
                             </div>
                             <span id="activity-progress-help" style="font-size:0.74rem; color:var(--text-muted); margin-top:4px; display:block;">
-                                Déjalo vacío para conservar el avance actual.
+                                Déjalo vacío para conservar el avance global actual.
                             </span>
                         </div>
 
@@ -2265,6 +2306,21 @@
                                         class="bi bi-card-text"></i></span>
                                 <textarea class="field-input" name="details" rows="3"
                                     placeholder="Descripción detallada..." required disabled></textarea>
+                            </div>
+                        </div>
+
+                        <div class="field-group daily-progress-card" id="daily-progress-group">
+                            <label class="field-label" for="daily-progress">
+                                Avance de la tarea registrada hoy
+                                <span class="daily-progress-optional">Opcional</span>
+                            </label>
+                            <span class="daily-progress-description">
+                                Indica qué porcentaje de esta tarea o trabajo de hoy completaste. Este valor corresponde solo a este registro diario.
+                            </span>
+                            <div class="input-wrap-suffix">
+                                <input type="number" class="field-input" id="daily-progress" name="avance_dia_pct"
+                                    min="0" max="100" step="1" inputmode="numeric" placeholder="0 a 100">
+                                <span class="input-suffix">%</span>
                             </div>
                         </div>
 

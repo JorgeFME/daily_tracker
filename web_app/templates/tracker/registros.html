@@ -1410,7 +1410,7 @@
                                     </span>
                                     {% else %}
                                     <button class="btn-action edit" title="Editar"
-                                        onclick="abrirEditar({{ r.ID | tojson | forceescape }}, {{ r.FECHA|strftime('%Y-%m-%d') | tojson | forceescape }}, {{ r.HORAS | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }}, {{ (r.DETALLES or '') | tojson | forceescape }}, {{ r.ID_USUARIO | tojson | forceescape }}, {{ r.ID_PROYECTO | tojson | forceescape }}, {{ (r.ID_ACTIVIDAD or '') | tojson | forceescape }}, {{ (r.ID_TIPO_ACT or '') | tojson | forceescape }})">
+                                        onclick="abrirEditar({{ r.ID | tojson | forceescape }}, {{ r.FECHA|strftime('%Y-%m-%d') | tojson | forceescape }}, {{ r.HORAS | tojson | forceescape }}, {{ r.ACCION | tojson | forceescape }}, {{ (r.DETALLES or '') | tojson | forceescape }}, {{ r.ID_USUARIO | tojson | forceescape }}, {{ r.ID_PROYECTO | tojson | forceescape }}, {{ (r.ID_ACTIVIDAD or '') | tojson | forceescape }}, {{ (r.ID_TIPO_ACT or '') | tojson | forceescape }}, {{ (r.AVANCE_DIA_PCT if r.AVANCE_DIA_PCT is not none else '') | tojson | forceescape }})">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     <button class="btn-action dup" title="Duplicar"
@@ -1505,6 +1505,11 @@
                                 style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);">(opcional)</span></label>
                         <textarea class="form-input" id="edit-detalles"
                             placeholder="Detalles adicionales..."></textarea>
+                    </div>
+                    <div class="form-group full">
+                        <label class="form-label" for="edit-avance-dia">Avance de la tarea registrada ese día (%)</label>
+                        <input type="number" class="form-input" id="edit-avance-dia" min="0" max="100" step="1" placeholder="Sin especificar">
+                        <small style="color:var(--text-muted);">Porcentaje correspondiente únicamente a este registro diario.</small>
                     </div>
                 </div>
             </div>
@@ -1728,12 +1733,13 @@
         document.getElementById('edit-fecha').addEventListener('change', validarLimiteDiario);
 
         // ── Abrir modal de edición ─────────────────────────────────────────────
-        async function abrirEditar(id, fecha, horas, accion, detalles, userId, proyId, actId, tipoId) {
+        async function abrirEditar(id, fecha, horas, accion, detalles, userId, proyId, actId, tipoId, avanceDia) {
             document.getElementById('edit-id').value = id;
             document.getElementById('edit-fecha').value = fecha;
             document.getElementById('edit-horas').value = horas;
             document.getElementById('edit-accion').value = accion;
             document.getElementById('edit-detalles').value = detalles;
+            document.getElementById('edit-avance-dia').value = avanceDia ?? '';
             document.getElementById('warn-horas').classList.remove('show');
 
             editOriginalHoras = parseFloat(horas);
@@ -1776,6 +1782,7 @@
                 detalles: document.getElementById('edit-detalles').value,
                 id_actividad: editActividadTs.getValue(),
                 id_tipo_act: editTipoTs.getValue(),
+                avance_dia_pct: document.getElementById('edit-avance-dia').value,
             };
 
             if (!payload.fecha || !payload.horas || !payload.accion.trim()) {

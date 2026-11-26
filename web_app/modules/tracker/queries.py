@@ -284,6 +284,16 @@ def guardar_registro_actividad(datos):
         if not 0 <= avance_pct <= 100:
             raise ValueError('El porcentaje de avance debe estar entre 0 y 100.')
 
+    avance_dia_raw = datos.get('avance_dia_pct')
+    avance_dia_pct = None
+    if avance_dia_raw is not None and str(avance_dia_raw).strip():
+        avance_dia_texto = str(avance_dia_raw).strip()
+        if not avance_dia_texto.isdigit():
+            raise ValueError('El porcentaje de avance diario debe ser un número entero.')
+        avance_dia_pct = int(avance_dia_texto)
+        if not 0 <= avance_dia_pct <= 100:
+            raise ValueError('El porcentaje de avance diario debe estar entre 0 y 100.')
+
     if crear_actividad_rapida or not actividad_id:
         actividad_id = None
         nuevo_estatus_id = None
@@ -323,8 +333,8 @@ def guardar_registro_actividad(datos):
             cur.execute(
                 """
                     INSERT INTO "REGISTRO_ACTIVIDADES"
-                        ("ID","FECHA","ID_USUARIO","ID_PROYECTO","ID_ACTIVIDAD","ID_TIPO_ACT","ACCION","HORAS","DETALLES","CREADO_EN")
-                    VALUES (SYSUUID,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+                        ("ID","FECHA","ID_USUARIO","ID_PROYECTO","ID_ACTIVIDAD","ID_TIPO_ACT","ACCION","HORAS","DETALLES","AVANCE_DIA_PCT","CREADO_EN")
+                    VALUES (SYSUUID,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
                 """,
                 (
                     datos.get('date'),
@@ -335,6 +345,7 @@ def guardar_registro_actividad(datos):
                     datos.get('activity_action'),
                     datos.get('hours'),
                     datos.get('details'),
+                    avance_dia_pct,
                 )
             )
             datos["actividad_id"] = actividad_id
@@ -508,7 +519,7 @@ def obtener_registros(filtros=None):
 
     where_sql = ('WHERE ' + ' AND '.join(where)) if where else ''
     sql = f"""
-        SELECT R."ID", R."FECHA", R."HORAS", R."ACCION", R."DETALLES",
+        SELECT R."ID", R."FECHA", R."HORAS", R."ACCION", R."DETALLES", R."AVANCE_DIA_PCT",
                U."NOMBRE_COMPLETO" as "USUARIO", U."ID" as "ID_USUARIO",
                P."NOMBRE_PROYECTO", P."ID" as "ID_PROYECTO",
                A."NOMBRE_ACTIVIDAD", A."ID" as "ID_ACTIVIDAD",
@@ -528,13 +539,48 @@ def obtener_registros(filtros=None):
 
 def obtener_registro_por_id(registro_id):
     sql = """
-        SELECT R."ID", R."FECHA", R."HORAS", R."ACCION", R."DETALLES",
+        SELECT R."ID", R."FECHA", R."HORAS", R."ACCION", R."DETALLES", R."AVANCE_DIA_PCT",
                R."ID_USUARIO", R."ID_PROYECTO", R."ID_ACTIVIDAD", R."ID_TIPO_ACT"
         FROM "REGISTRO_ACTIVIDADES" R
         WHERE R."ID" = ?
     """
     rows = ejecutar_query(sql, (registro_id,))
     return rows[0] if rows else None
+
+
+def actualizar_avance_dia_registro(registro_id, avance_dia_pct):
+    """Actualiza únicamente el porcentaje diario de un registro directo."""
+    if avance_dia_pct is not None:
+        if isinstance(avance_dia_pct, bool):
+            raise ValueError('El porcentaje de avance diario debe ser un número entero.')
+        if isinstance(avance_dia_pct, str):
+            avance_texto = avance_dia_pct.strip()
+            if not avance_texto.isdigit():
+                raise ValueError('El porcentaje de avance diario debe ser un número entero.')
+            avance_dia_pct = int(avance_texto)
+        elif isinstance(avance_dia_pct, int):
+            pass
+        else:
+            raise ValueError('El porcentaje de avance diario debe ser un número entero.')
+        if not 0 <= avance_dia_pct <= 100:
+            raise ValueError('El porcentaje de avance diario debe estar entre 0 y 100.')
+
+    with _pool.get_connection() as conn:
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                'UPDATE "REGISTRO_ACTIVIDADES" SET "AVANCE_DIA_PCT"=? '
+                'WHERE "ID"=? AND COALESCE("ES_PROPAGADO", 0) != 1',
+                (avance_dia_pct, registro_id),
+            )
+            actualizado = cur.rowcount > 0
+            conn.commit()
+            return actualizado
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            cur.close()
 
 
 def actualizar_registro(registro_id, datos):
@@ -563,7 +609,7 @@ def actualizar_registro(registro_id, datos):
             cur.execute(
                 """
                 SELECT "FECHA", "ID_USUARIO", "ID_PROYECTO", "ID_ACTIVIDAD", "ID_TIPO_ACT",
-                       "ACCION", "HORAS", "DETALLES", COALESCE("ES_PROPAGADO", 0)
+                       "ACCION", "HORAS", "DETALLES", COALESCE("ES_PROPAGADO", 0), "AVANCE_DIA_PCT"
                 FROM "REGISTRO_ACTIVIDADES"
                 WHERE "ID" = ?
                 """,
@@ -574,7 +620,7 @@ def actualizar_registro(registro_id, datos):
                 return False
 
             (fecha_orig, user_id, proyecto_id, actividad_orig, _tipo_orig,
-             accion_orig, horas_orig, detalles_orig, es_propagado) = original
+             accion_orig, horas_orig, detalles_orig, es_propagado, avance_dia_orig) = original
 
             if es_propagado == 1:
                 raise ValueError(
@@ -589,6 +635,17 @@ def actualizar_registro(registro_id, datos):
             nuevos_detalles = datos.get('detalles') or None
             nueva_actividad = datos.get('id_actividad') or None
             nuevo_tipo = datos.get('id_tipo_act') or None
+            avance_dia_raw = datos.get('avance_dia_pct')
+            avance_dia_pct = None
+            if avance_dia_raw is not None and str(avance_dia_raw).strip():
+                try:
+                    avance_dia_pct = int(avance_dia_raw)
+                except (TypeError, ValueError) as error:
+                    raise ValueError('El porcentaje de avance diario debe ser un número entero.') from error
+                if not 0 <= avance_dia_pct <= 100:
+                    raise ValueError('El porcentaje de avance diario debe estar entre 0 y 100.')
+            else:
+                avance_dia_pct = avance_dia_orig
 
             _validar_limite_diario(
                 cur,
@@ -657,11 +714,12 @@ def actualizar_registro(registro_id, datos):
                     "ACCION"      = ?,
                     "DETALLES"    = ?,
                     "ID_ACTIVIDAD"= ?,
-                    "ID_TIPO_ACT" = ?
+                    "ID_TIPO_ACT" = ?,
+                    "AVANCE_DIA_PCT" = ?
                 WHERE "ID" = ?
                 """,
                 (nueva_fecha, nuevas_horas, nueva_accion, nuevos_detalles,
-                 nueva_actividad, nuevo_tipo, registro_id)
+                 nueva_actividad, nuevo_tipo, avance_dia_pct, registro_id)
             )
 
             # 8. Sincronizar el registro espejo en la actividad padre
