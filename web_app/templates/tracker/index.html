@@ -545,6 +545,38 @@
             max-width: 220px;
         }
 
+        .range-progress-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .range-progress-day {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 88px;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 11px;
+            border: 1px solid #dbe3ee;
+            border-radius: 10px;
+            background: #fff;
+        }
+
+        .range-progress-date {
+            color: var(--text-main);
+            font-size: 0.78rem;
+            font-weight: 650;
+            text-transform: capitalize;
+        }
+
+        .range-progress-day input {
+            width: 88px;
+            min-width: 0;
+            height: 36px;
+            text-align: right;
+        }
+
         .subactivity-modal .modal-content {
             border: 1px solid var(--border);
             border-radius: 24px;
@@ -2310,17 +2342,26 @@
                         </div>
 
                         <div class="field-group daily-progress-card" id="daily-progress-group">
-                            <label class="field-label" for="daily-progress">
-                                Avance de la tarea registrada hoy
-                                <span class="daily-progress-optional">Opcional</span>
-                            </label>
-                            <span class="daily-progress-description">
-                                Indica qué porcentaje de esta tarea o trabajo de hoy completaste. Este valor corresponde solo a este registro diario.
-                            </span>
-                            <div class="input-wrap-suffix">
-                                <input type="number" class="field-input" id="daily-progress" name="avance_dia_pct"
-                                    min="0" max="100" step="1" inputmode="numeric" placeholder="0 a 100">
-                                <span class="input-suffix">%</span>
+                            <div id="daily-progress-single-fields">
+                                <label class="field-label" for="daily-progress">
+                                    Avance de la tarea registrada hoy
+                                    <span class="daily-progress-optional">Opcional</span>
+                                </label>
+                                <span class="daily-progress-description">
+                                    Indica qué porcentaje de esta tarea o trabajo de hoy completaste. Este valor corresponde solo a este registro diario.
+                                </span>
+                                <div class="input-wrap-suffix">
+                                    <input type="number" class="field-input" id="daily-progress" name="avance_dia_pct"
+                                        min="0" max="100" step="1" inputmode="numeric" placeholder="0 a 100">
+                                    <span class="input-suffix">%</span>
+                                </div>
+                            </div>
+                            <div id="range-daily-progress-fields" style="display:none;">
+                                <label class="field-label">Avance de la tarea por día <span class="daily-progress-optional">Opcional</span></label>
+                                <span class="daily-progress-description">Captura por separado el avance al cierre de cada jornada del rango.</span>
+                                <div id="range-daily-progress-list" class="range-progress-list">
+                                    <span class="inline-helper">Selecciona las fechas del rango para agregar los campos diarios.</span>
+                                </div>
                             </div>
                         </div>
 
@@ -2924,6 +2965,11 @@
 
         // ─── RANGO DE FECHAS ──────────────────────────────────────────────────────
         let isRangeMode = false;
+        const rangeProgressValues = new Map();
+        const dailyProgressInput = document.getElementById('daily-progress');
+        const dailyProgressSingleFields = document.getElementById('daily-progress-single-fields');
+        const rangeDailyProgressFields = document.getElementById('range-daily-progress-fields');
+        const rangeDailyProgressList = document.getElementById('range-daily-progress-list');
 
         const fpCfgRange = {
             locale: "es",
@@ -2933,7 +2979,7 @@
             maxDate: currentWeekEnd,
             disableMobile: true,
             disable: [function (date) { return date.getDay() === 0 || date.getDay() === 6; }],
-            onChange: () => validateForm(),
+            onChange: () => { renderRangeProgressInputs(); validateForm(); },
         };
         const fpStart = flatpickr("#date-start", fpCfgRange);
         const fpEnd = flatpickr("#date-end", {
@@ -2945,10 +2991,54 @@
                         fpEnd.setDate(fpStart.selectedDates[0]);
                     }
                 }
+                renderRangeProgressInputs();
                 validateForm();
             },
         });
         const hoursRangeInput = null; // removed: hours always default to 8 in range mode
+
+        function renderRangeProgressInputs() {
+            rangeDailyProgressList.querySelectorAll('input[name^="avance_dia_pct__"]').forEach(input => {
+                rangeProgressValues.set(input.name.slice('avance_dia_pct__'.length), input.value);
+            });
+
+            const start = fpStart.selectedDates[0];
+            const end = fpEnd.selectedDates[0];
+            if (!start || !end) {
+                rangeDailyProgressList.innerHTML = '<span class="inline-helper">Selecciona las fechas del rango para agregar los campos diarios.</span>';
+                return;
+            }
+
+            const dates = [];
+            const current = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+            const last = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+            while (current <= last) {
+                if (current.getDay() !== 0 && current.getDay() !== 6) {
+                    const dateKey = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+                    dates.push({
+                        key: dateKey,
+                        label: current.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'long' }),
+                    });
+                }
+                current.setDate(current.getDate() + 1);
+            }
+            if (!dates.length) {
+                rangeDailyProgressList.innerHTML = '<span class="inline-helper">El rango no contiene días hábiles.</span>';
+                return;
+            }
+
+            rangeDailyProgressList.innerHTML = dates.map(({ key, label }) => `
+                <label class="range-progress-day">
+                    <span class="range-progress-date">${label}</span>
+                    <input class="field-input" type="number" min="0" max="100" step="1" inputmode="numeric"
+                        name="avance_dia_pct__${key}" placeholder="Sin dato" aria-label="Avance del ${label}"
+                        value="${rangeProgressValues.get(key) || ''}">
+                </label>`).join('');
+        }
+        rangeDailyProgressList.addEventListener('input', event => {
+            const input = event.target.closest('input[name^="avance_dia_pct__"]');
+            if (input) rangeProgressValues.set(input.name.slice('avance_dia_pct__'.length), input.value);
+        });
 
         const btnModeSingle = document.getElementById('btn-mode-single');
         const btnModeRange = document.getElementById('btn-mode-range');
@@ -2962,6 +3052,10 @@
             btnModeRange.classList.toggle('active', isRangeMode);
             dateSingleRow.style.display = isRangeMode ? 'none' : '';
             dateRangeRow.style.display = isRangeMode ? '' : 'none';
+            dailyProgressSingleFields.style.display = isRangeMode ? 'none' : '';
+            rangeDailyProgressFields.style.display = isRangeMode ? '' : 'none';
+            dailyProgressInput.disabled = isRangeMode;
+            if (isRangeMode) renderRangeProgressInputs();
 
             // Toggle required on single-date inputs
             const singleDateInput = document.getElementById('date');
@@ -3814,6 +3908,7 @@
                         Swal.fire({ icon: 'success', title: '¡Rango registrado!', html, confirmButtonText: 'Aceptar' });
                         this.reset(); setInitialState();
                         userSelect.clear(); projectSelect.clear(); activitySelect.clear(); tipoSelect.clear(); tipoSelect.disable();
+                        rangeProgressValues.clear();
                         fpStart.clear(); fpEnd.clear();
                         if (hoursRangeInput) hoursRangeInput.value = '';
                         resetEvidenceFields({ collapsePanel: true });
