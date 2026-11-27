@@ -19,7 +19,11 @@ def _semana_actual_limites() -> tuple[date, date]:
     return inicio, fin
 
 
-def _validar_fecha_hasta_fin_semana_actual(fecha_obj: date) -> bool:
-    """Permite fechas históricas y bloquea solo fechas posteriores al fin de semana actual."""
-    _, fin = _semana_actual_limites()
-    return fecha_obj <= fin
+def _fecha_maxima_registro() -> date:
+    """Última fecha permitida para registros: hoy más siete días calendario."""
+    return _local_today() + timedelta(days=7)
+
+
+def _validar_fecha_hasta_siete_dias(fecha_obj: date) -> bool:
+    """Permite fechas pasadas y hasta siete días calendario después de hoy."""
+    return fecha_obj <= _fecha_maxima_registro()

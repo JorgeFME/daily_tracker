@@ -14,7 +14,8 @@ from web_app.modules.tracker.queries import (
 )
 from web_app.modules.tracker.utils import (
     _semana_actual_limites,
-    _validar_fecha_hasta_fin_semana_actual,
+    _fecha_maxima_registro,
+    _validar_fecha_hasta_siete_dias,
     _local_today,
 )
 
@@ -167,7 +168,7 @@ def index():
     if request.method == "POST":
         datos = request.form.to_dict()
         datos["quick_recursos"] = request.form.getlist("quick_recursos")
-        _, semana_fin = _semana_actual_limites()
+        fecha_maxima_registro = _fecha_maxima_registro()
 
         # ── Modo rango de fechas ──────────────────────────────────────────────
         date_start_str = datos.get("date_start", "").strip()
@@ -183,13 +184,10 @@ def index():
             if date_start > date_end:
                 return jsonify({"status": "error", "message": "La fecha de inicio debe ser anterior o igual a la fecha fin."}), 400
 
-            if not (_validar_fecha_hasta_fin_semana_actual(date_start) and _validar_fecha_hasta_fin_semana_actual(date_end)):
+            if not (_validar_fecha_hasta_siete_dias(date_start) and _validar_fecha_hasta_siete_dias(date_end)):
                 return jsonify({
                     "status": "error",
-                    "message": (
-                        "No puedes registrar fechas posteriores al fin de la semana en curso "
-                        f"({semana_fin.isoformat()})."
-                    ),
+                    "message": f"No puedes registrar fechas posteriores al {fecha_maxima_registro.isoformat()} (hoy + 7 días).",
                 }), 400
 
             horas_pedidas = float(datos.get("hours") or 0)
@@ -271,13 +269,10 @@ def index():
             except ValueError:
                 return jsonify({"status": "error", "message": "Formato de fecha inválido."}), 400
 
-            if not _validar_fecha_hasta_fin_semana_actual(date_single):
+            if not _validar_fecha_hasta_siete_dias(date_single):
                 return jsonify({
                     "status": "error",
-                    "message": (
-                        "No puedes registrar fechas posteriores al fin de la semana en curso "
-                        f"({semana_fin.isoformat()})."
-                    ),
+                    "message": f"No puedes registrar fechas posteriores al {fecha_maxima_registro.isoformat()} (hoy + 7 días).",
                 }), 400
 
         try:
@@ -297,7 +292,7 @@ def index():
         return jsonify({"status": "error", "message": "Hubo un fallo al conectar con SAP HANA."}), 500
 
     base = _catalogo_base()
-    semana_inicio, semana_fin = _semana_actual_limites()
+    semana_inicio, _ = _semana_actual_limites()
     return render_template(
         "tracker/index.html",
         users=base["users"],
@@ -309,7 +304,7 @@ def index():
         tipos_actividad=obtener_tipos_actividad(),
         tipos_evidencia=obtener_tipos_evidencia(),
         current_week_start=semana_inicio.isoformat(),
-        current_week_end=semana_fin.isoformat(),
+        max_register_date=_fecha_maxima_registro().isoformat(),
     )
 
 
@@ -425,14 +420,11 @@ def api_duplicar_registro(registro_id):
     except ValueError:
         return jsonify({"status": "error", "message": "Formato de fecha inválido."}), 400
 
-    if not _validar_fecha_hasta_fin_semana_actual(fecha_obj):
-        _, semana_fin = _semana_actual_limites()
+    if not _validar_fecha_hasta_siete_dias(fecha_obj):
+        fecha_maxima_registro = _fecha_maxima_registro()
         return jsonify({
             "status": "error",
-            "message": (
-                "No puedes duplicar en fechas posteriores al fin de la semana en curso "
-                f"({semana_fin.isoformat()})."
-            ),
+            "message": f"No puedes duplicar en fechas posteriores al {fecha_maxima_registro.isoformat()} (hoy + 7 días).",
         }), 400
 
     origen = obtener_registro_por_id(registro_id)

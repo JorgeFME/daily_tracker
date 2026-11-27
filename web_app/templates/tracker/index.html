@@ -2170,7 +2170,7 @@
                             <div style="margin-top:8px;">
                                 <p class="date-range-info">
                                     <i class="bi bi-info-circle" style="margin-top:2px; flex-shrink:0;"></i>
-                                    Se registrarán 8 horas por día hábil. Los fines de semana se omiten
+                                    Puedes registrar hasta 7 días calendario después de hoy. Se registrarán 8 horas por día hábil. Los fines de semana se omiten
                                     automáticamente. Si un día ya tiene horas registradas, se completará con las horas
                                     disponibles restantes.
                                 </p>
@@ -2948,8 +2948,7 @@
             disableMobile: true,
         });
 
-        const currentWeekStart = "{{ current_week_start }}";
-        const currentWeekEnd = "{{ current_week_end }}";
+        const maxRegisterDate = "{{ max_register_date }}";
 
         const fp = flatpickr("#date", {
             locale: "es",
@@ -2957,7 +2956,7 @@
             altFormat: "j F, Y",
             dateFormat: "Y-m-d",
             defaultDate: "today",
-            maxDate: currentWeekEnd,
+            maxDate: maxRegisterDate,
             disableMobile: true,
             disable: [function (date) { return date.getDay() === 0 || date.getDay() === 6; }],
             onChange: () => { fetchWeeklyHours(); validateForm(); }
@@ -2976,7 +2975,7 @@
             altInput: true,
             altFormat: "j F, Y",
             dateFormat: "Y-m-d",
-            maxDate: currentWeekEnd,
+            maxDate: maxRegisterDate,
             disableMobile: true,
             disable: [function (date) { return date.getDay() === 0 || date.getDay() === 6; }],
             onChange: () => { renderRangeProgressInputs(); validateForm(); },
