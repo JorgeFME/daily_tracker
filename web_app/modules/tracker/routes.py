@@ -218,6 +218,7 @@ def index():
                 datos_dia = dict(datos)
                 datos_dia["date"] = fecha_str
                 datos_dia["hours"] = str(horas_dia)
+                datos_dia["avance_dia_pct"] = datos.get(f"avance_dia_pct__{fecha_str}", "")
                 datos_dia.pop("nuevo_estatus_id", None)
                 datos_dia.pop("finalizar_actividad", None)
 
